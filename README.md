@@ -182,10 +182,39 @@ operator's line of sight) and a panel with:
 - Measured speeds within 1 km (Ookla tiles), in the cell and the neighbouring cells, with
   test counts and strength; the 4-quarter trend; Ofcom area figures (area-level wording);
   current weather, Met Office warnings and flood warnings.
-- Placeholders for the agents: "Explanation (agents)", "Diagnose with agents" and "Draft
-  evidence letter" (disabled); "See this area in Explore" goes back to the area view.
+- Placeholders for the agents: "Explanation (agents)" and "Diagnose with agents" (disabled);
+  "See this area in Explore" goes back to the area view. Sending a finished diagnosis to the
+  council or a network is covered in "Sending the diagnosis" below.
 
 ![My signal, near Rhayader](docs/screenshots/signal_rhayader.png)
+
+## Sending the diagnosis (council or operator)
+
+A finished diagnosis can be sent: **Send this diagnosis** → pick a recipient → **Write the
+email**. The letter writer drafts for that recipient by name, the code guard checks it, and
+code (never the model) adds the address, the subject, a signature with the resident's
+postcode, coordinates and the diagnosis reference, and the `mailto` link. *Open in email
+app* hands the message to the resident's own mail client; the app never sends anything on
+their behalf. *Copy message* and *Download .md* cover every other case.
+
+Who can be reached, and how, is a table: `data/reference/operator_contacts.csv` and
+`council_contacts.csv`, each row carrying the page the address was published on and the date
+it was checked (`scripts/check_outreach.py` re-checks the table). The council comes from the
+point's local authority (postcodes.io), so a resident at Great Langdale gets Westmorland and
+Furness Council. EE and O2 publish complaints email addresses (Ofcom's FOI response; O2's
+Customer Code of Practice); Three and Vodafone publish a complaints form and a postal
+address only, so for those the panel offers the form and the address and says there is no
+email rather than inventing one. A council missing from the table gets gov.uk's council
+finder, never a guessed address.
+
+API: `GET /api/outreach/recipients?district=` and `POST /api/runs/{id}/email {to, sent_by}`
+(+ optional `subject` and `body_markdown` to reuse a drafted letter and skip the model) →
+`to`, `subject`, `body_text`, `body_html`, `mailto`, `routes`, `channel`, `truncated`.
+Check: `.venv/bin/python scripts/check_outreach.py --to all` (the table and a saved run; no
+Zetaris, no LLM, no Meterless).
+
+![The email to the council](docs/screenshots/signal_agents_great_langdale_email_council.png)
+![No published address: the complaints form and the postal address](docs/screenshots/signal_agents_great_langdale_email_operator_form.png)
 
 ## Council view
 
