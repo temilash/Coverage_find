@@ -504,7 +504,7 @@ svg.wm { width: 100%; height: auto; max-height: 340px; background: #fff; border:
 .net-rank, .actions { margin: 0; padding-left: var(--s4); }
 .net-rank li, .actions li { margin-bottom: var(--s1); }
 .conf-word { font-size: var(--fs-s); color: var(--muted); }
-.letter-controls { display: flex; gap: var(--s2); align-items: center; flex-wrap: wrap; font-size: var(--fs-s); margin: var(--s2) 0; }
+.letter-controls { display: flex; gap: var(--s2); align-items: center; flex-wrap: wrap; font-size: var(--fs-s); margin: var(--s2) 0; min-width: 0; }
 .letter-text { width: 100%; font: var(--fs-s)/1.5 var(--mono); padding: var(--s2); border: 1px solid var(--line); border-radius: 8px; resize: vertical; background: #fff; }
 .email-card { border: 1px solid var(--line); border-radius: 10px; padding: var(--s3); margin: var(--s2) 0 var(--s3); background: #fff; }
 .email-head { font-size: var(--fs-s); margin: 0 0 var(--s2); word-break: break-word; }
@@ -513,6 +513,8 @@ svg.wm { width: 100%; height: auto; max-height: 340px; background: #fff; border:
 .email-head strong { color: var(--muted); margin-right: var(--s1); }
 .email-head a { color: var(--accent); }
 .letter-controls input#email-name { font: 600 var(--fs-s) var(--sans); padding: 4px var(--s2); border: 1px solid var(--line); border-radius: 6px; max-width: 190px; }
+.letter-controls > label:has(#email-to) { flex: 1 1 100%; min-width: 0; max-width: 100%; }
+.letter-controls #email-to { width: 100%; max-width: 100%; min-width: 0; }
 .md { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: var(--s3) var(--s4); }
 
 /* Council view: zone table */
