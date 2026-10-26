@@ -197,9 +197,9 @@ coordinates and the diagnosis reference, and the `mailto` link. *Open in email a
 message to the resident's own mail client, and the app never sends anything itself. *Copy
 message* and *Download .md* cover every other case.
 
-Recipients live in two committed tables, `data/reference/operator_contacts.csv` and
-`council_contacts.csv`. Each row carries the page the address was published on and the date it
-was checked, and `scripts/check_outreach.py` re-checks them. The council comes from the point's
+`data/reference/operator_contacts.csv` and `council_contacts.csv` list the recipients. Each row
+carries the page that published the address and the date someone checked it, and
+`scripts/check_outreach.py` re-checks the rows. The council comes from the point's
 local authority (postcodes.io), so a resident at Great Langdale gets Westmorland and Furness
 Council. EE and O2 publish complaints email addresses (Ofcom's 2025 FOI response; O2's Customer
 Code of Practice). Three and Vodafone publish a complaints form and a postal address only, so
