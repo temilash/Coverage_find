@@ -289,7 +289,7 @@ function recipientOptions() {
   const rs = state.recipients?.recipients;
   if (!rs) return RECIPIENTS.map((v) => [v, v === "council" ? "the council" : v]);
   return rs.map((c) => [c.kind === "council" ? "council" : c.key,
-    c.email ? `${c.name} — ${c.email}` : `${c.name} — ${channelWord(c)}`]);
+    c.email ? `${c.name} · ${c.email}` : `${c.name} · ${channelWord(c)}`]);
 }
 
 function emailCard(e) {

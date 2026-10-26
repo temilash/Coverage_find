@@ -190,22 +190,21 @@ operator's line of sight) and a panel with:
 
 ## Sending the diagnosis (council or operator)
 
-A finished diagnosis can be sent: **Send this diagnosis** → pick a recipient → **Write the
-email**. The letter writer drafts for that recipient by name, the code guard checks it, and
-code (never the model) adds the address, the subject, a signature with the resident's
-postcode, coordinates and the diagnosis reference, and the `mailto` link. *Open in email
-app* hands the message to the resident's own mail client; the app never sends anything on
-their behalf. *Copy message* and *Download .md* cover every other case.
+A finished diagnosis can be sent. Pick a recipient under **Send this diagnosis** and press
+**Write the email**. The letter writer drafts for that recipient by name, the code guard checks
+it, and code adds the address, the subject, a signature with the resident's postcode,
+coordinates and the diagnosis reference, and the `mailto` link. *Open in email app* hands the
+message to the resident's own mail client, and the app never sends anything itself. *Copy
+message* and *Download .md* cover every other case.
 
-Who can be reached, and how, is a table: `data/reference/operator_contacts.csv` and
-`council_contacts.csv`, each row carrying the page the address was published on and the date
-it was checked (`scripts/check_outreach.py` re-checks the table). The council comes from the
-point's local authority (postcodes.io), so a resident at Great Langdale gets Westmorland and
-Furness Council. EE and O2 publish complaints email addresses (Ofcom's FOI response; O2's
-Customer Code of Practice); Three and Vodafone publish a complaints form and a postal
-address only, so for those the panel offers the form and the address and says there is no
-email rather than inventing one. A council missing from the table gets gov.uk's council
-finder, never a guessed address.
+Recipients live in two committed tables, `data/reference/operator_contacts.csv` and
+`council_contacts.csv`. Each row carries the page the address was published on and the date it
+was checked, and `scripts/check_outreach.py` re-checks them. The council comes from the point's
+local authority (postcodes.io), so a resident at Great Langdale gets Westmorland and Furness
+Council. EE and O2 publish complaints email addresses (Ofcom's 2025 FOI response; O2's Customer
+Code of Practice). Three and Vodafone publish a complaints form and a postal address only, so
+the panel offers those and says there is no email rather than inventing one. A council missing
+from the table gets gov.uk's council finder.
 
 API: `GET /api/outreach/recipients?district=` and `POST /api/runs/{id}/email {to, sent_by}`
 (+ optional `subject` and `body_markdown` to reuse a drafted letter and skip the model) →
