@@ -24,7 +24,8 @@ const fmt = (v, d = 1) => (v === null || v === undefined || Number.isNaN(v) ? "�
 const rgb = (hex, a = 255) => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16), a];
 const speedColor = (v) => SPEED.colors[SPEED.breaks.filter((b) => v >= b).length];
 
-const state = { bundle: null, request: null, run: null, runId: null, letter: null, view: null };
+const state = { bundle: null, request: null, run: null, runId: null, email: null, emailTo: null,
+                recipients: null, recipientsFor: null, view: null };
 
 const map = new maplibregl.Map({ container: "map", style: BASEMAP, center: [-3.2, 54.6], zoom: 4.9, attributionControl: { compact: true } });
 map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
@@ -276,24 +277,75 @@ function bestNetworkHTML(run) {
       <span class="muted">${esc(AG.firstSentence(n.why))}</span></li>`).join("")}</ol></div>`;
 }
 
-function letterHTML() {
-  const l = state.letter;
-  return `<h3 class="rp-h">Draft evidence letter</h3>
-    <div class="letter-controls"><label>To <select id="recipient">${[["operator", "the mobile operator"], ["council", "the local council"], ["mp", "the local MP"]]
-      .map(([v, t]) => `<option value="${v}" ${l?.recipient === v ? "selected" : ""}>${t}</option>`).join("")}</select></label>
-      <button type="button" id="draft-letter" ${l?.busy ? "disabled" : ""}>${l?.text ? "Draft again" : "Draft evidence letter"}</button></div>
-    ${l?.busy ? `<p class="muted">The letter writer is drafting from the reviewed diagnosis…</p>` : ""}
-    ${l?.error ? `<p class="error">${esc(l.error)}</p>` : ""}
-    ${l?.text ? `<p class="muted">Edit before sending. Sources are listed from the evidence by code${l.guard ? `; the guard made ${l.guard} correction${l.guard > 1 ? "s" : ""}` : ""}.</p>
-      <textarea id="letter-text" class="letter-text" rows="14" aria-label="Letter (Markdown)">${esc(l.text)}</textarea>
-      <div class="letter-controls"><button type="button" class="secondary" id="letter-download">Download .md</button></div>` : ""}`;
+/* ---------- sending the diagnosis: the resident's council, or a network ---------- */
+
+const RECIPIENTS = ["council", "EE", "O2", "Three", "Vodafone"];
+const MAILTO_MAX = 1800;   // the same limit as outreach.MAX_MAILTO
+const channelWord = (c) => ({ form: "their complaints form", post: "their postal address" }[c.routes?.[0]?.kind]
+  || "no address we can verify");
+const hostOf = (url) => { try { return new URL(url).host.replace(/^www\./, ""); } catch { return ""; } };
+
+function recipientOptions() {
+  const rs = state.recipients?.recipients;
+  if (!rs) return RECIPIENTS.map((v) => [v, v === "council" ? "the council" : v]);
+  return rs.map((c) => [c.kind === "council" ? "council" : c.key,
+    c.email ? `${c.name} — ${c.email}` : `${c.name} — ${channelWord(c)}`]);
+}
+
+function emailCard(e) {
+  const d = e.data;
+  const emailRoute = d.routes.find((r) => r.kind === "email");
+  const formRoute = d.routes.find((r) => r.kind === "form");
+  const postRoute = d.routes.find((r) => r.kind === "post");
+  const published = emailRoute?.source_url
+    ? ` published at <a href="${esc(emailRoute.source_url)}" target="_blank" rel="noopener">${esc(hostOf(emailRoute.source_url))}</a>`
+    : "";
+  const toLine = emailRoute
+    ? `<strong>To</strong> ${esc(emailRoute.value)} <span class="sub-note">${esc(emailRoute.label)}${published}${emailRoute.verified ? `, checked ${esc(emailRoute.verified)}` : ""}</span>`
+    : `<strong>To</strong> ${esc(d.contact.name)} <span class="warn-text">no complaints email published</span>
+       <span class="sub-note">${formRoute ? `Copy the message and paste it into their <a href="${esc(formRoute.value)}" target="_blank" rel="noopener">complaints form</a>` : `<a href="${esc(d.routes[0].value)}" target="_blank" rel="noopener">Find your council on gov.uk</a>`}${postRoute ? `, or write to ${esc(postRoute.value)}` : ""}.</span>`;
+  const canMail = Boolean(emailRoute) && Boolean(mailtoFor(e));
+  const mailPrimary = canMail && !d.truncated;   // a message the mail app can take whole stays the primary action
+  return `<div class="email-card">
+    <p class="email-head">${toLine}</p>
+    <p class="email-head"><strong>Subject</strong> ${esc(e.subject)}</p>
+    <textarea id="email-text" class="email-text" rows="16" aria-label="Email text">${esc(e.text)}</textarea>
+    <div class="letter-controls">
+      ${canMail ? `<button type="button" class="${mailPrimary ? "primary" : "secondary"}" id="email-open">Open in email app</button>` : ""}
+      <button type="button" class="${mailPrimary ? "secondary" : "primary"}" id="email-copy">Copy message</button>
+      <button type="button" class="secondary" id="email-download">Download .md</button>
+    </div>
+    <p class="footnote">${canMail ? "This app does not send anything: the button opens your own email app with the message filled in."
+      : emailRoute ? "This app does not send anything, and this message is too long to hand to a mail app after editing: Copy message has all of it."
+      : "This app does not send anything: copy the message into their form yourself."}
+      ${d.guard?.length ? `The guard corrected ${d.guard.length} claim${d.guard.length > 1 ? "s" : ""} in the draft.` : ""}</p>
+    ${d.truncated && canMail ? `<p class="footnote warn-text">This message is longer than a mail link can carry, so the button
+      opens your email app with the start and the sign-off. Copy message has all of it.</p>` : ""}
+  </div>`;
+}
+
+function sendHTML() {
+  const e = state.email;
+  const chosen = e?.to || state.emailTo;
+  const opts = recipientOptions()
+    .map(([v, t]) => `<option value="${esc(v)}" ${chosen === v ? "selected" : ""}>${esc(t)}</option>`).join("");
+  return `<h3 class="rp-h">Send this diagnosis</h3>
+    <p class="muted">To your council, which can act on a local gap, or to a network to complain about its service here.</p>
+    <div class="letter-controls">
+      <label>To <select id="email-to">${opts}</select></label>
+      <input id="email-name" type="text" maxlength="80" placeholder="Your name (optional)" value="${esc(e?.sentBy || "")}">
+      <button type="button" id="draft-email" ${e?.busy ? "disabled" : ""}>${e?.data ? "Write again" : "Write the email"}</button>
+    </div>
+    ${e?.busy ? `<p class="muted">The letter writer is drafting for ${esc(e.to)} from the reviewed diagnosis…</p>` : ""}
+    ${e?.error ? `<p class="error">${esc(e.error)}</p>` : ""}
+    ${e?.data ? emailCard(e) : ""}`;
 }
 
 function afterWhyHTML(run) {
   const r = run.result || {};
   return `${(r.actions || []).length ? `<h3 class="rp-h">What to do</h3><ul class="actions">${r.actions.map((a) => `<li>${AG.cite(a.text, run)}</li>`).join("")}</ul>` : ""}
     ${(r.limitations || []).filter(Boolean).length ? `<details class="more-block"><summary>Limitations</summary><ul class="plain-list muted">${r.limitations.filter(Boolean).map((l) => `<li>${esc(l)}</li>`).join("")}</ul></details>` : ""}
-    ${letterHTML()}
+    ${sendHTML()}
     <div class="rp-actions"><button type="button" class="secondary" id="diagnose">Diagnose again</button></div>`;
 }
 
@@ -306,13 +358,66 @@ function idleHTML() {
 function bindAgentButtons() {
   const d = $("diagnose");
   if (d) { d.addEventListener("click", diagnose); d.disabled = AG.running(state.run); }
-  if ($("draft-letter")) $("draft-letter").addEventListener("click", draftLetter);
-  if ($("recipient")) $("recipient").addEventListener("change", (e) => { state.letter = { ...(state.letter || {}), recipient: e.target.value }; });
-  if ($("letter-text")) $("letter-text").addEventListener("input", (e) => { state.letter.text = e.target.value; });
-  if ($("letter-download")) {
-    const place = (state.bundle.point.nearest_postcode || state.bundle.point.label || "location").replace(/\W+/g, "-");
-    $("letter-download").addEventListener("click", () => AG.download(`evidence-letter-${state.letter.recipient}-${place}.md`, state.letter.text));
+  if ($("email-to")) $("email-to").addEventListener("change", (e) => {
+    state.emailTo = e.target.value;
+    state.email = null;
+    state.view.render();
+  });
+  if ($("email-name")) $("email-name").addEventListener("input", (e) => { if (state.email) state.email.sentBy = e.target.value; });
+  if ($("draft-email")) $("draft-email").addEventListener("click", draftEmail);
+  if ($("email-text")) $("email-text").addEventListener("input", (e) => { state.email.text = e.target.value; state.email.dirty = true; });
+  if ($("email-open")) $("email-open").addEventListener("click", (ev) => {
+    const href = mailtoFor(state.email);
+    if (href) { location.href = href; return; }
+    ev.target.insertAdjacentHTML("afterend", '<span class="footnote warn-text">Too long for a mail link: use Copy message.</span>');
+  });
+  if ($("email-copy")) $("email-copy").addEventListener("click", async (e) => {
+    const ok = await copyText(`${state.email.subject}\n\n${state.email.text}`);
+    e.target.textContent = ok ? "Copied" : "Copy failed";
+    setTimeout(() => { e.target.textContent = "Copy message"; }, 1500);
+  });
+  if ($("email-download")) {
+    $("email-download").addEventListener("click", () => {
+      const { subject, text, data } = state.email;
+      AG.download(data.filename, `To: ${data.to || data.contact.name}\nSubject: ${subject}\n\n${text}\n`);
+    });
   }
+}
+
+function mailtoFor(e) {
+  if (!e?.data?.to) return "";
+  if (!e.dirty) return e.data.mailto;          // the server keeps the signature and says when it cut
+  const body = encodeURIComponent(e.text);
+  const uri = `mailto:${e.data.to}?subject=${encodeURIComponent(e.subject)}&body=${body}`;
+  return uri.length <= MAILTO_MAX ? uri : "";  // no mail link at all rather than one that loses the end
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    const box = document.createElement("textarea");
+    box.value = text;
+    document.body.appendChild(box);
+    box.select();
+    const ok = document.execCommand("copy");
+    box.remove();
+    return ok;
+  }
+}
+
+async function loadRecipients() {
+  const district = state.bundle?.point?.admin_district || "";
+  if (state.recipientsFor === district) return;
+  state.recipientsFor = district;
+  try {
+    const r = await fetch(`/api/outreach/recipients?district=${encodeURIComponent(district)}`);
+    state.recipients = await r.json();
+  } catch {
+    state.recipients = null;
+  }
+  if (state.view) state.view.render();
 }
 
 function makeView() {
@@ -321,6 +426,7 @@ function makeView() {
     scroller: () => $("panel"),
     scrollTop: () => $("panel").scrollTop + $("agents").getBoundingClientRect().top - $("panel").getBoundingClientRect().top - 8,
   });
+  loadRecipients();
 }
 
 function renderRun(run) {
@@ -343,7 +449,7 @@ async function attachRun(runId) {
 async function diagnose() {
   const p = state.bundle.point;
   $("diagnose").disabled = true;
-  state.letter = null;
+  state.email = null;
   try {
     const r = await AG.post("/api/diagnose", { lat: p.lat, lon: p.lon, audience: $("audience").value });
     await attachRun(r.run_id);
@@ -353,15 +459,17 @@ async function diagnose() {
   }
 }
 
-async function draftLetter() {
-  const recipient = $("recipient").value;
-  state.letter = { ...(state.letter || {}), recipient, busy: true, error: null };
+async function draftEmail() {
+  const to = $("email-to").value;
+  state.emailTo = to;
+  const sentBy = ($("email-name")?.value || "").trim();
+  state.email = { to, sentBy, busy: true, data: null, error: null };
   state.view.render();
   try {
-    const l = await AG.post(`/api/runs/${state.runId}/letter`, { recipient });
-    state.letter = { recipient, text: `# ${l.subject}\n\n${l.body_markdown}\n`, guard: l.guard.length };
+    const d = await AG.post(`/api/runs/${state.runId}/email`, { to, sent_by: sentBy });
+    state.email = { to, sentBy, data: d, subject: d.subject, text: d.body_text, dirty: false };
   } catch (e) {
-    state.letter = { ...state.letter, busy: false, error: e.message };
+    state.email = { to, sentBy, data: null, error: e.message };
   }
   state.view.render();
 }
@@ -381,7 +489,8 @@ $("panel-collapse").addEventListener("click", () => {
 
 async function check(request) {
   state.request = request;
-  state.run = state.runId = state.letter = null;
+  state.run = state.runId = state.email = null;
+  state.recipients = state.recipientsFor = null;
   const panel = $("panel");
   panel.innerHTML = `<p class="loading">Gathering evidence for this point (Zetaris queries, line of sight, live sources)…</p>`;
   const qs = request.query ? `?q=${encodeURIComponent(request.query)}` : `?lat=${request.lat.toFixed(5)}&lon=${request.lon.toFixed(5)}`;

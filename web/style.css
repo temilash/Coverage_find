@@ -506,6 +506,13 @@ svg.wm { width: 100%; height: auto; max-height: 340px; background: #fff; border:
 .conf-word { font-size: var(--fs-s); color: var(--muted); }
 .letter-controls { display: flex; gap: var(--s2); align-items: center; flex-wrap: wrap; font-size: var(--fs-s); margin: var(--s2) 0; }
 .letter-text { width: 100%; font: var(--fs-s)/1.5 var(--mono); padding: var(--s2); border: 1px solid var(--line); border-radius: 8px; resize: vertical; background: #fff; }
+.email-card { border: 1px solid var(--line); border-radius: 10px; padding: var(--s3); margin: var(--s2) 0 var(--s3); background: #fff; }
+.email-head { font-size: var(--fs-s); margin: 0 0 var(--s2); word-break: break-word; }
+.email-text { width: 100%; font: var(--fs-s)/1.55 var(--sans); padding: var(--s2) var(--s3); border: 1px solid var(--line);
+  border-radius: 8px; resize: vertical; background: #fff; color: var(--text); }
+.email-head strong { color: var(--muted); margin-right: var(--s1); }
+.email-head a { color: var(--accent); }
+.letter-controls input#email-name { font: 600 var(--fs-s) var(--sans); padding: 4px var(--s2); border: 1px solid var(--line); border-radius: 6px; max-width: 190px; }
 .md { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: var(--s3) var(--s4); }
 
 /* Council view: zone table */
