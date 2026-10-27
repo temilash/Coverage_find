@@ -225,7 +225,7 @@ const AG = (() => {
     if (notes.length) steps.push(`<li class="tl-step"><span class="tl-who">Coordinator</span> ${notes.map((x) => esc(x.summary)).join("; ")}</li>`);
     if (tech) {
       steps.push(`<li class="tl-step tech"><span class="tl-who">Model calls</span><ul class="tl-sub">${c.llm_calls.map((l) =>
-        `<li>${esc(AGENTS[l.agent] || l.agent)}${l.purpose ? ` (${esc(l.purpose)})` : ""}: ${esc(l.model)}, ${fmt((l.duration_ms || 0) / 1000, 1)} s${l.retries ? `, ${l.retries} retr${l.retries > 1 ? "ies" : "y"}` : ""}${l.fallback ? ", model switched" : ""}${l.error ? ", failed" : ""}</li>`).join("")}</ul></li>`);
+        `<li>${esc(AGENTS[l.agent] || l.agent)}${l.purpose ? ` (${esc(l.purpose)})` : ""}: ${esc(l.model)}${l.provider && l.provider !== l.model ? ` via ${esc(l.provider)}` : ""}${l.model_answered && l.model_answered.split("/").pop() !== l.model ? `, answered by ${esc(l.model_answered.split("/").pop())}` : ""}${l.receipt_id ? `, receipt ${esc(String(l.receipt_id).slice(0, 12))}${l.signature_valid === true ? " (signed)" : l.signature_valid === false ? " (signature invalid)" : ""}` : ""}, ${fmt((l.duration_ms || 0) / 1000, 1)} s${l.retries ? `, ${l.retries} retr${l.retries > 1 ? "ies" : "y"}` : ""}${l.fallback ? ", model switched" : ""}${l.error ? ", failed" : ""}</li>`).join("")}</ul></li>`);
     }
     const key = isFinal ? "final" : `r${c.round}`;
     return `<li class="tl-item"><details class="tl-card" data-key="${key}" ${open.has(key) ? "open" : ""}>

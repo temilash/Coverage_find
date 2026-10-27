@@ -35,7 +35,7 @@ def client(monkeypatch, tmp_path):
     monkeypatch.setattr(C, "RUNS_DIR", tmp_path)
     monkeypatch.setattr(API, "memory", FakeMemory())
     monkeypatch.setattr(API.llm, "_key", "test-key")
-    monkeypatch.setattr(API.llm, "model", "m")
+    monkeypatch.setattr(API.llm, "model", "nvidia/m")
     monkeypatch.setattr(API.ev, "resolve", lambda q, lat, lon: (
         {"kind": "point", "lat": 54.445, "lon": -3.105, "nearest_postcode": "LA22 9JY"}, None))
     return TestClient(app), tmp_path
@@ -105,7 +105,10 @@ def test_diagnose_needs_a_location_and_an_llm_key(client, monkeypatch):
     c, _ = client
     assert c.post("/api/diagnose", json={}).status_code == 422
     monkeypatch.setattr(API.llm, "_key", None)
-    assert c.post("/api/diagnose", json={"query": "LA22 9JY"}).status_code == 503
+    monkeypatch.delenv("METERLESS_RUNTIME_TOKEN", raising=False)
+    monkeypatch.delenv("METERLESS_RUNTIME_TOKEN_FILE", raising=False)
+    r = c.post("/api/diagnose", json={"query": "LA22 9JY"})
+    assert r.status_code == 503 and "METERLESS_RUNTIME_TOKEN" in r.json()["detail"]
 
 
 def test_a_crashing_run_is_marked_failed(client, monkeypatch):

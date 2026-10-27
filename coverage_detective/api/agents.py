@@ -88,7 +88,7 @@ def _need_llm() -> None:
     if R.replaying():  # recorded replies, no key needed
         return
     if not llm.configured:
-        raise HTTPException(503, "The agents need LLM_API_KEY and LLM_MODEL in .env (or run with --sample).")
+        raise HTTPException(503, f"The agents cannot call a model: {llm.problem} (or run with --sample).")
 
 
 def _queued(run_id: str, scope: str, label: str) -> None:
@@ -178,12 +178,15 @@ def _rounds(notes: list[dict], critiques: list[dict], beliefs: list[dict], evide
                                "summary": n.get("summary")})
         elif t in ("llm_call", "llm_error"):
             c["llm_calls"].append({"agent": n.get("by"), "model": (n.get("model") or "").split("/")[-1],
+                                   "provider": n.get("provider"), "model_answered": n.get("model_answered"),
+                                   "receipt_id": (n.get("receipt") or {}).get("receipt_id"),
+                                   "signature_valid": (n.get("receipt") or {}).get("signature_valid"),
                                    "duration_ms": n.get("duration_ms"), "retries": len(n.get("retries") or []),
                                    "fallback": n.get("fallback"), "error": t == "llm_error", "purpose": n.get("purpose"),
                                    "summary": n.get("summary")})
         elif t == "guard":
             c["guard"].append({"agent": n.get("agent"), "kind": n.get("guard_kind"), "summary": n.get("summary")})
-        elif t in ("coordinator", "fallback", "agent_error", "round"):
+        elif t in ("coordinator", "fallback", "provider_fallback", "agent_error", "round"):
             c["coordinator"].append({"type": t, "summary": n.get("summary")})
     for e in evidence:
         card(e.get("round"))["evidence"].append(e.get("evidence_id"))

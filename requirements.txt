@@ -6,6 +6,7 @@ shapely>=2
 geopandas
 rasterio
 httpx
+cryptography
 fastapi
 uvicorn[standard]
 pydantic

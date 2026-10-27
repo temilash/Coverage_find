@@ -45,7 +45,7 @@ def client(monkeypatch, tmp_path):
     monkeypatch.setattr(C, "RUNS_DIR", tmp_path)
     monkeypatch.setattr(API, "memory", FakeMemory())
     monkeypatch.setattr(API.llm, "_key", None)
-    monkeypatch.setattr(API.llm, "model", "m")
+    monkeypatch.setattr(API.llm, "model", "nvidia/m")
     return TestClient(app), tmp_path
 
 
@@ -97,7 +97,7 @@ def test_email_endpoint_reports_only_the_guard_notes_its_own_draft_earned(client
 
     monkeypatch.setattr(API.A, "write_letter", fake_letter)
     monkeypatch.setattr(API.llm, "_key", "test-key")
-    monkeypatch.setattr(API.llm, "model", "m")
+    monkeypatch.setattr(API.llm, "model", "nvidia/m")
     body = c.post("/api/runs/run_1/email", json={"to": "EE"}).json()
     assert body["guard"] == ["removed [invented] from this draft"]
     assert body["to"] == "customer.complaints@ee.co.uk"

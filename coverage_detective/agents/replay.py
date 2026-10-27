@@ -95,14 +95,20 @@ class Session:
         rec = self.data["replies"].get(k)
         if rec is None:
             raise ReplayMissing(f"no recorded reply for this step: example {self.example_id}, {k}")
+        # provider / model_answered / receipt say who answered when the reply was recorded (absent in older recordings)
         return LLMResult(model="recorded", content=rec.get("content"), tool_calls=rec.get("tool_calls") or [],
                          parsed=schema.model_validate(rec["parsed"]) if schema and rec.get("parsed") is not None else None,
-                         usage={}, duration_ms=0)
+                         usage={}, duration_ms=0, provider="recorded",
+                         model_answered=rec.get("model_answered") or rec.get("model"),
+                         receipt={"recorded_provider": rec.get("provider"), **(rec.get("receipt") or {})})
 
     def save(self, k: str, r: LLMResult) -> None:
         self.data["replies"][k] = {"model": r.model, "parsed": r.parsed.model_dump() if r.parsed else None,
                                    "tool_calls": r.tool_calls, "content": None if r.parsed else r.content,
-                                   "duration_ms": r.duration_ms}
+                                   "duration_ms": r.duration_ms, "provider": r.provider, "model_answered": r.model_answered,
+                                   "receipt": {k: v for k, v in (r.receipt or {}).items()
+                                               if k in ("receipt_id", "route", "signer", "signature_valid", "note")},
+                                   "provider_fallback": r.provider_fallback}
         with _lock:
             p = _path(self.example_id)
             p.parent.mkdir(parents=True, exist_ok=True)
