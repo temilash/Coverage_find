@@ -11,3 +11,6 @@ The technical reference is now split by topic:
 - [data.md](data.md): data sources, licences, freshness, repository layout ([data_report.md](data_report.md) has
   each Zetaris source's rows, query time and age)
 - [SUBMISSION.md](SUBMISSION.md): the HackOS submission text
+- [usl.md](usl.md): the unified semantic layer view over five Zetaris sources, with queries run through Zetaris
+- [data_quality.md](data_quality.md): a data quality rule on the Ookla sources, shown running, and the rules the agents rely on
+- [reflection.md](reflection.md): reflections on Zetaris and Meterless
