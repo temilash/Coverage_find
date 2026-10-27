@@ -206,7 +206,8 @@ class LLM:
     @property
     def problem(self) -> str | None:
         """Why the agents cannot call a model (None when they can)."""
-        bad = model_problem(self.model) or (model_problem(self.reasoning_model) if self.reasoning_model != self.model else None)
+        reasoning = self.reasoning_model or self.model  # unset: the fast model also runs the critic
+        bad = model_problem(self.model) or (model_problem(reasoning) if reasoning != self.model else None)
         if bad:
             return bad
         if not (self._token() or self._key):
