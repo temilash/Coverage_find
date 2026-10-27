@@ -152,6 +152,7 @@ const AG = (() => {
     return `
       ${r.replayed ? `<p class="recorded-badge" title="Sample mode: no LLM calls were made">Recorded: these agent replies are replayed from
         examples/${esc(r.example_id)} (sample mode)</p>` : ""}
+      ${r.rules_only ? `<p class="recorded-badge" title="Sample mode: no model was called; fixed rules ranked the causes from the evidence">Rules only, no model (sample mode): the evidence and checks are real; the causes were ranked by fixed rules</p>` : ""}
       <p class="rp-headline">${esc(plain(r.headline))}</p>
       ${r.status === "partial" ? `<p class="warn-text">Partial result: an agent failed twice, so this is built from the evidence alone.</p>` : ""}
       ${r.explanation ? `<details class="more-block"><summary>Full explanation</summary><p>${cite(r.explanation, run)}</p></details>` : ""}
@@ -225,7 +226,7 @@ const AG = (() => {
     if (notes.length) steps.push(`<li class="tl-step"><span class="tl-who">Coordinator</span> ${notes.map((x) => esc(x.summary)).join("; ")}</li>`);
     if (tech) {
       steps.push(`<li class="tl-step tech"><span class="tl-who">Model calls</span><ul class="tl-sub">${c.llm_calls.map((l) =>
-        `<li>${esc(AGENTS[l.agent] || l.agent)}${l.purpose ? ` (${esc(l.purpose)})` : ""}: ${esc(l.model)}, ${fmt((l.duration_ms || 0) / 1000, 1)} s${l.retries ? `, ${l.retries} retr${l.retries > 1 ? "ies" : "y"}` : ""}${l.fallback ? ", model switched" : ""}${l.error ? ", failed" : ""}</li>`).join("")}</ul></li>`);
+        `<li>${esc(AGENTS[l.agent] || l.agent)}${l.purpose ? ` (${esc(l.purpose)})` : ""}: ${esc(l.model)}${l.provider && l.provider !== l.model ? ` via ${esc(l.provider)}` : ""}${l.model_answered && l.model_answered.split("/").pop() !== l.model ? `, answered by ${esc(l.model_answered.split("/").pop())}` : ""}${l.receipt_id ? `, receipt ${esc(String(l.receipt_id).slice(0, 12))}${l.signature_valid === true ? " (signed)" : l.signature_valid === false ? " (signature invalid)" : ""}` : ""}, ${fmt((l.duration_ms || 0) / 1000, 1)} s${l.retries ? `, ${l.retries} retr${l.retries > 1 ? "ies" : "y"}` : ""}${l.fallback ? ", model switched" : ""}${l.error ? ", failed" : ""}</li>`).join("")}</ul></li>`);
     }
     const key = isFinal ? "final" : `r${c.round}`;
     return `<li class="tl-item"><details class="tl-card" data-key="${key}" ${open.has(key) ? "open" : ""}>
@@ -238,7 +239,7 @@ const AG = (() => {
     const calls = rounds.reduce((n, c) => n + c.llm_calls.length, 0);
     const audit = run.trace?.audit || [];
     const rn = run.result?.rounds;
-    const rec = run.result?.replayed ? " · recorded replies (sample mode)" : "";
+    const rec = run.result?.replayed ? " · recorded replies (sample mode)" : run.result?.rules_only ? " · rules only, no model (sample mode)" : "";
     return `${running(run) ? progressHTML(run) : `<p class="rp-meta">Took ${fmt(run.elapsed_s, 0)} s · ${rn ?? "–"} round${rn === 1 ? "" : "s"} · ${calls} agent calls${rec}</p>`}
       <label class="tech-toggle"><input type="checkbox" id="tech-toggle" ${tech ? "checked" : ""}> Technical details</label>
       ${rounds.length ? `<ol class="timeline">${rounds.map((c) => roundCard(c, run, tech, open)).join("")}</ol>` : `<p class="muted">Waiting for the first round.</p>`}
@@ -394,7 +395,7 @@ const AG = (() => {
     const b = document.createElement("div");
     b.className = "sample-banner";
     b.textContent = "Sample mode: data from small committed extracts (DuckDB in place of Zetaris), saved live responses and "
-      + "recorded agent replies. Only the example places and zones can be diagnosed.";
+      + "recorded agent replies for the examples. Other points near them run with fixed rules instead of the model.";
     document.body.prepend(b);
   }).catch(() => {});
 

@@ -1,0 +1,144 @@
+{
+ "request": {
+  "lat": 54.445,
+  "lon": -3.105
+ },
+ "http_status": 200,
+ "response": {
+  "run_id": "run_20261027131053_uu27",
+  "status": "complete",
+  "mode": "recorded replies (sample mode)",
+  "scope": "point",
+  "headline": "Hills between you and the nearest masts are the likely cause [terrain_blocking][los_ee][los_o2][los_three][los_vodafone][network_comparison].",
+  "location": {
+   "label": "54.44500, -3.10500",
+   "lat": 54.445,
+   "lon": -3.105,
+   "postcode": "LA22 9JY",
+   "nearest_postcode": "LA22 9JY",
+   "admin_district": "Westmorland and Furness",
+   "region": "North West",
+   "country": "England",
+   "cell_id": "871955454ffffff"
+  },
+  "causes": [
+   {
+    "cause": "terrain_blocking",
+    "confidence": 0.7,
+    "status": "active",
+    "evidence_ids": [
+     "los_ee",
+     "los_o2",
+     "los_three",
+     "los_vodafone",
+     "network_comparison"
+    ],
+    "contradicting_ids": [
+     "speed_neighbours"
+    ],
+    "explanation": "Terrain rises above the direct line to every operator's nearest site, with no operator having a clear line of sight [los_ee][los_o2][los_three][los_vodafone][network_comparison]; antenna heights are assumed, so the exact margin is uncertain."
+   },
+   {
+    "cause": "distance_to_mast",
+    "confidence": 0.45,
+    "status": "active",
+    "evidence_ids": [
+     "nearest_site",
+     "los_vodafone",
+     "los_o2"
+    ],
+    "contradicting_ids": [],
+    "explanation": "The nearest identified mast is 3.8 km away [nearest_site][los_vodafone]; O2's nearest approximate site is 5.7 km away [los_o2]; operators are inferred from crowd-sourced data [nearest_site][los_vodafone][los_o2]."
+   },
+   {
+    "cause": "weather",
+    "confidence": 0.4,
+    "status": "active",
+    "evidence_ids": [
+     "weather",
+     "met_office_warnings"
+    ],
+    "contradicting_ids": [],
+    "explanation": "A Met Office yellow wind warning covers the district and gusts may reach 81.4 km/h [weather][met_office_warnings], but this only explains current or recent degradation and is weak sample evidence."
+   },
+   {
+    "cause": "insufficient_data",
+    "confidence": 0.35,
+    "status": "active",
+    "evidence_ids": [
+     "speed_cell",
+     "speed_1km",
+     "operators_5km"
+    ],
+    "contradicting_ids": [],
+    "explanation": "No speed tests exist in this cell or within 1 km [speed_cell][speed_1km], and nearby neighbour data are sparse [speed_neighbours], so the exact point-level cause cannot be confirmed."
+   }
+  ],
+  "ruled_out": [],
+  "actions": [
+   {
+    "text": "Try O2 first, as it has the least obstructed line of sight to an identified site [network_comparison][los_o2].",
+    "audience": "resident"
+   },
+   {
+    "text": "Use Wi-Fi calling indoors if your phone and network support it.",
+    "audience": "resident"
+   },
+   {
+    "text": "Check your address on Ofcom\u2019s mobile coverage checker: https://www.ofcom.org.uk/mobile-coverage-checker",
+    "audience": "resident"
+   },
+   {
+    "text": "Emergency calls work on any available network.",
+    "audience": "resident"
+   }
+  ],
+  "best_network": "O2 is ranked first because it has the least obstructed line of sight, though its site is farther away [network_comparison][los_o2]. EE, Three and Vodafone have closer identified sites but steeper terrain blocking [los_ee][los_three][los_vodafone]. All operators are inferred from crowd-sourced data, so confidence is low [los_ee][los_o2][los_three][los_vodafone][nearest_site].",
+  "fix_plan": null,
+  "rounds": 1,
+  "elapsed_s": 2.4,
+  "models": [
+   {
+    "agent": "investigator",
+    "provider": "recorded",
+    "model_answered": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "calls": 1
+   },
+   {
+    "agent": "diagnostician",
+    "provider": "recorded",
+    "model_answered": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "calls": 2
+   },
+   {
+    "agent": "critic",
+    "provider": "recorded",
+    "model_answered": "nvidia/nemotron-3-ultra-550b-a55b",
+    "calls": 1
+   },
+   {
+    "agent": "critic",
+    "provider": "recorded",
+    "model_answered": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "calls": 3
+   },
+   {
+    "agent": "advisor",
+    "provider": "recorded",
+    "model_answered": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "calls": 1
+   }
+  ],
+  "limitations": [
+   "Sites are approximate and antenna heights are assumed; Ofcom figures are area-level, not exact for this address.",
+   "Causes are inferred from public data, not confirmed: operators' network data is not public.",
+   "Ookla speeds are quarterly aggregates with no time-of-day detail; congestion can only be inferred.",
+   "No address-level Ofcom coverage; Ofcom figures are for the whole constituency and are predictions.",
+   "Mast sites are approximate (crowd-sourced OpenCelliD, OpenStreetMap, Ofcom's licence register) and incomplete, so 'no sites found' is weak evidence.",
+   "Line of sight uses a surface model (trees and buildings included) and mostly assumed antenna heights; blocked means a weaker signal, not no signal."
+  ],
+  "notes": [],
+  "trace": "logs/run_20261027131053_uu27.jsonl",
+  "detail": "/api/runs/run_20261027131053_uu27?detail=1"
+ }
+}

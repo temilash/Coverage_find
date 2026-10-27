@@ -73,3 +73,37 @@ def query(sql: str) -> list[dict]:
         cur = _connect().execute(translate(sql))
         cols = [d[0] for d in cur.description]
         return [{c: _value(v) for c, v in zip(cols, row)} for row in cur.fetchall()]
+
+
+# ------------------------------------------------------------------ where sample mode has data
+
+POINT_REACH_KM = 10.0  # a point's evidence reaches 10 km (sites, line of sight), so all of that must be extracted
+
+
+def areas() -> dict[str, list[float]]:
+    """The extract boxes, {name: [west, south, east, north]} (sample places and example zones)."""
+    try:
+        return json.loads((EXTRACTS / "extract.json").read_text())["boxes"]
+    except (OSError, ValueError, KeyError):
+        return {}
+
+
+def covers(lat: float, lon: float) -> str | None:
+    """The extract box holding everything within POINT_REACH_KM of the point, or None (no full evidence there)."""
+    import math
+
+    dlat = POINT_REACH_KM / 111.0
+    dlon = POINT_REACH_KM / (111.32 * math.cos(math.radians(lat)))
+    for name, (w, s, e, n) in areas().items():
+        if w <= lon - dlon and lon + dlon <= e and s <= lat - dlat and lat + dlat <= n:
+            return name
+    return None
+
+
+def coverage_message() -> str:
+    """What sample mode can diagnose, for a refused request."""
+    boxes = ", ".join(f"{name.replace('_', ' ')} (lat {(s + n) / 2:.3f}, lon {(w + e) / 2:.3f})"
+                      for name, (w, s, e, n) in areas().items())
+    return ("Sample mode only has data around the example places and zones: " + boxes
+            + ". Points must lie well inside one of these areas (their 10 km neighbourhood is needed for mast sites "
+            "and line of sight). Elsewhere, run the full app with Zetaris (python run.py).")

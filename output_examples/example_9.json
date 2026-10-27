@@ -1,0 +1,11 @@
+{
+ "request": {
+  "lat": 51.75,
+  "lon": -1.25
+ },
+ "http_status": 404,
+ "response": {
+  "status": "error",
+  "error": "sample mode has no recorded run for this point; recorded points: Central London (WC2N 5DU) (51.507211, -0.128269), Great Langdale, Cumbria (54.445, -3.105), Near Rhayader, Powys (52.3, -3.51), Remote cell near Bettws, Powys (no tests, no site within 10 km: insufficient data) (52.399095, -3.186185), Sutton St Edmund, Lincolnshire (52.700117, 0.024085). Sample mode only has data around the example places and zones: great langdale (lat 54.445, lon -3.105), central london (lat 51.507, lon -0.128), near rhayader (lat 52.300, lon -3.510), sutton st edmund (lat 52.700, lon 0.024), remote cell near bettws (lat 52.399, lon -3.186), zone Z00072 (lat 54.710, lon -2.601), zone Z00603 (lat 54.427, lon -3.117), zone O00044 (lat 52.557, lon -0.040), zone O00309 (lat 52.278, lon -3.415), zone O00332 (lat 54.371, lon -2.833), zone O01498 (lat 52.417, lon -3.209). Points must lie well inside one of these areas (their 10 km neighbourhood is needed for mast sites and line of sight). Elsewhere, run the full app with Zetaris (python run.py)."
+ }
+}

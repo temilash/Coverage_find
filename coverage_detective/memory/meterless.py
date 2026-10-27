@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import logging
 import math
+import threading
 import time
 from datetime import datetime, timezone
 from itertools import count
@@ -28,6 +29,12 @@ from coverage_detective.config import env
 log = logging.getLogger("coverage_detective.memory")
 TIMEOUT_S = 5.0
 STRENGTH_CONFIDENCE = {"strong": 0.9, "moderate": 0.7, "weak": 0.4}
+_reader = threading.local()  # which agent is reading the case file (set by the coordinator), for the trace
+
+
+def reading_as(agent: str | None) -> None:
+    """Credit this thread's next case-file reads to `agent` (None: the coordinator)."""
+    _reader.agent = agent
 
 
 def _now() -> str:
@@ -43,6 +50,17 @@ class Meterless:
         self.base_url = (base_url or env("MEMORY_URL", "http://127.0.0.1:8100")).rstrip("/")
         self.mode = "unknown"  # service | fallback
         self._fallback: InMemoryStore | None = None
+        self.reads: dict[str, list[dict]] = {}  # run_id -> case-file reads (who, what, how many), for the trace
+
+    def _read(self, run_id: str, what: str, rows: list) -> list:
+        """Record a read; repeated reads of the same thing by the same agent are counted, not repeated."""
+        log_ = self.reads.setdefault(run_id, [])
+        who = getattr(_reader, "agent", None) or "coordinator"
+        if log_ and log_[-1]["agent"] == who and log_[-1]["read"] == what:
+            log_[-1].update(times=log_[-1]["times"] + 1, count=len(rows))
+        elif len(log_) < 2000:
+            log_.append({"at": _now(), "agent": who, "read": what, "count": len(rows), "times": 1})
+        return rows
 
     # ------------------------------------------------------------ transport
 
@@ -104,7 +122,7 @@ class Meterless:
         return self._call("POST", f"/runs/{run_id}/evidence", {**item, "evidence_id": item.get("evidence_id") or item["id"], "by": by})
 
     def evidence(self, run_id: str) -> list[dict]:
-        return self._call("GET", f"/runs/{run_id}/evidence") or []
+        return self._read(run_id, "hmem:evidence", self._call("GET", f"/runs/{run_id}/evidence") or [])
 
     def add_belief(self, run_id: str, cause: str, confidence: float, explanation: str, supporting: list[str],
                    contradicting: list[str], round: int, by: str = "diagnostician", belief_id: str | None = None) -> dict:
@@ -118,13 +136,13 @@ class Meterless:
                           {"confidence": confidence, "reason": reason, "by": by, "round": round, **fields})
 
     def beliefs(self, run_id: str) -> list[dict]:
-        return self._call("GET", f"/runs/{run_id}/beliefs") or []
+        return self._read(run_id, "hmem:beliefs", self._call("GET", f"/runs/{run_id}/beliefs") or [])
 
     def add_critique(self, run_id: str, critique: dict, round: int, by: str = "critic") -> dict:
         return self._call("POST", f"/runs/{run_id}/critiques", {**critique, "round": round, "by": by})
 
     def critiques(self, run_id: str) -> list[dict]:
-        return self._call("GET", f"/runs/{run_id}/critiques") or []
+        return self._read(run_id, "hmem:critiques", self._call("GET", f"/runs/{run_id}/critiques") or [])
 
     def add_note(self, run_id: str, type: str, summary: str, by: str, **payload) -> dict:
         return self._call("POST", f"/runs/{run_id}/notes", {"type": type, "summary": summary, "by": by, **payload})
@@ -140,7 +158,8 @@ class Meterless:
 
     def diagnoses_near(self, lat: float, lon: float, km: float = 10.0, exclude_run: str | None = None) -> list[dict]:
         params = {"lat": lat, "lon": lon, "km": km, **({"exclude_run": exclude_run} if exclude_run else {})}
-        return self._call("GET", "/diagnoses/near", params=params) or []
+        found = self._call("GET", "/diagnoses/near", params=params) or []
+        return self._read(exclude_run, "hmem:diagnoses_near", found) if exclude_run else found
 
     # ------------------------------------------------------------ World Model
 
@@ -164,7 +183,9 @@ class Meterless:
         return self._call("GET", f"/world/entities/{quote(entity_id, safe='')}")
 
     def world_for_run(self, run_id: str) -> dict:
-        return self._call("GET", f"/runs/{run_id}/world") or {"entities": [], "relationships": []}
+        world = self._call("GET", f"/runs/{run_id}/world") or {"entities": [], "relationships": []}
+        self._read(run_id, "world:run", world.get("entities") or [])
+        return world
 
 
 # ---------------------------------------------------------------------------- fallback
@@ -304,18 +325,22 @@ class InMemoryStore:
             e = self.entities.setdefault(eid, {"id": eid, "type": body["type"], "name": body.get("name"), "attrs": {}})
             e["attrs"].update(body.get("attrs") or {})
             e["run_id"] = body.get("run_id")
+            e["source"] = {"kind": "agent", "by": body.get("by"), "at": _now(), "runId": body.get("run_id")}
             return e
         if path == "/world/relationships" and method == "POST":
-            rel = {"id": f"rel_{len(self.relationships) + 1}", **body}
+            rel = {"id": f"rel_{len(self.relationships) + 1}", **body,
+                   "source": {"kind": "agent", "by": body.get("by"), "at": _now(), "runId": body.get("run_id")}}
             self.relationships.append(rel)
             return rel
         if path == "/world/events" and method == "POST":
             eid = f"event:cd:{body['kind']}:{body.get('run_id')}:{len(self.entities)}"
             self.entities[eid] = {"id": eid, "type": "event", "name": body["kind"], "attrs": {"kind": body["kind"], **body.get("attrs", {})},
-                                  "run_id": body.get("run_id")}
+                                  "run_id": body.get("run_id"),
+                                  "source": {"kind": "agent", "by": body.get("by"), "at": _now(), "runId": body.get("run_id")}}
             if body.get("subject"):
                 self.relationships.append({"id": f"rel_{len(self.relationships) + 1}", "from": eid, "type": "concerns",
-                                           "to": body["subject"], "run_id": body.get("run_id")})
+                                           "to": body["subject"], "run_id": body.get("run_id"),
+                                           "source": self.entities[eid]["source"]})
             return self.entities[eid]
         if parts[0] == "world" and parts[1] == "entities" and method == "GET":
             from urllib.parse import unquote

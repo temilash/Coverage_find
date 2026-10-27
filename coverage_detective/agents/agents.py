@@ -52,8 +52,11 @@ def ask(case: Case, agent: str, round: int, messages: list[dict], purpose: str |
     try:
         if sess and sess.mode == "replay":
             r = sess.reply(sess.next_key(agent, round), kw.get("schema"))
+        elif sess and sess.mode == "rules":  # sample mode at a point with no recording: fixed rules, no model
+            from coverage_detective.agents import rules
+            r = rules.reply(case, agent, round, kw.get("schema"), bool(kw.get("tools")))
         else:
-            r = llm.chat(messages, **kw)
+            r = llm.chat(messages, scope=case.run_id, **kw)
             if sess:
                 sess.save(sess.next_key(agent, round), r)
     except ReplayMissing as e:
@@ -70,12 +73,19 @@ def ask(case: Case, agent: str, round: int, messages: list[dict], purpose: str |
     if step:
         case.progress.done(step, f"{r.model.split('/')[-1]}, {r.duration_ms / 1000:.1f}s"
                            + (f", {len(r.retries)} retries" if r.retries else "") + (", model switched" if r.fallback else ""))
-    case.memory.add_note(case.run_id, "llm_call", f"{agent} via {r.model.split('/')[-1]} in {r.duration_ms / 1000:.1f}s"
+    if r.provider_fallback:
+        case.memory.add_note(case.run_id, "provider_fallback", f"{agent}: Nightshift did not answer ({r.provider_fallback}); "
+                             f"{r.provider} answered", by="coordinator", round=round, agent=agent, provider=r.provider,
+                             reason=r.provider_fallback)
+    answered = r.model_answered or r.model
+    case.memory.add_note(case.run_id, "llm_call", f"{agent} via {r.provider or 'model'} ({answered.split('/')[-1]}) in "
+                         f"{r.duration_ms / 1000:.1f}s"
                          + (f"; {len(r.retries)} retr{'y' if len(r.retries) == 1 else 'ies'}" if r.retries else "")
                          + (f"; {r.fallback}" if r.fallback else ""),
                          by=agent, round=round, model=r.model, duration_ms=r.duration_ms, tokens=r.usage,
                          attempts=r.attempts, retries=r.retries, fallback=r.fallback,
-                         thinking=bool(kw.get("reasoning")), purpose=purpose)
+                         thinking=bool(kw.get("reasoning")), purpose=purpose, provider=r.provider,
+                         model_requested=r.model, model_answered=answered, receipt=r.receipt or None)
     return r
 
 

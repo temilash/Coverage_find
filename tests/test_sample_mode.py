@@ -43,6 +43,7 @@ def sample(monkeypatch, tmp_path):
     monkeypatch.setenv("SAMPLE_MODE", "1")
     monkeypatch.delenv("RECORD_EXAMPLES", raising=False)
     monkeypatch.setattr(C, "RUNS_DIR", tmp_path)
+    monkeypatch.setattr(C.trace_log, "LOGS", tmp_path / "logs")
     from coverage_detective.data import terrain
     monkeypatch.setattr(terrain, "_dem", None)  # the committed DEM crops, not data/raw/dem
     monkeypatch.setattr(terrain, "DEM_DIR", tmp_path / "no_raw_dem")
@@ -122,3 +123,98 @@ def test_insufficient_data_example_says_so():
     text = " ".join([d["headline"], d.get("explanation") or "", *d.get("limitations", []),
                      *(a["text"] for a in d.get("actions", []))]).lower()
     assert "operators could not be identified" in text and "no coverage" not in text.replace("not the same as no coverage", "")
+
+
+# ------------------------------------------------------------------ away from the examples
+
+
+def test_sample_mode_refuses_a_point_outside_the_extracts_with_the_areas_it_covers(sample):
+    for path, body in [("/api/diagnose", {"lat": 51.75, "lon": -1.25}), ("/api/evidence", {"lat": 51.75, "lon": -1.25})]:
+        r = sample.post(path, json=body)
+        assert r.status_code == 404 and "Sample mode only has data around" in r.json()["detail"]
+        assert "great langdale" in r.json()["detail"]
+
+
+def test_a_point_inside_the_extracts_with_no_recording_runs_rules_only(sample):
+    r = sample.post("/api/diagnose", json={"lat": 52.31, "lon": -3.52})  # 1.4 km from Near Rhayader's recorded point
+    assert r.status_code == 200 and r.json()["sample_mode"] == "rules only"
+    run = wait(sample, r.json()["run_id"])
+    res = run["result"]
+    assert run["status"] == "complete" and res["rules_only"] is True and not res.get("replayed")
+    assert res["hypotheses"] and all(h["supporting"] for h in res["hypotheses"])
+    ids = {e["evidence_id"] for e in run["evidence"]}
+    assert {"speed_cell", "nearest_site", "los_ee"} <= ids  # the real tools ran on the extracts
+    calls = [c for rd in run["trace"]["rounds"] for c in rd["llm_calls"]]
+    assert calls and {c["provider"] for c in calls} == {"rules"}
+    assert any("coverage checker" in a["text"] for a in res["actions"])
+    letter = sample.post(f"/api/runs/{res['run_id']}/letter", json={"recipient": "operator"})
+    assert letter.status_code == 200 and "rules only" in letter.json()["body_markdown"]
+
+
+@needs_examples
+def test_a_recorded_example_replays_at_its_recorded_point_only(sample):
+    ex = EXAMPLES["near_rhayader"]
+    r = sample.post("/api/diagnose", json={"lat": ex["lat"] + 0.0005, "lon": ex["lon"]})  # ~56 m away
+    assert r.json()["sample_mode"] == "recorded" and r.json()["location"] == {"lat": ex["lat"], "lon": ex["lon"]}
+    assert 40 < r.json()["moved_to_recorded_point_m"] < 70
+    assert wait(sample, r.json()["run_id"])["result"]["replayed"] is True
+    r = sample.post("/api/diagnose", json={"lat": ex["lat"] - 0.004, "lon": ex["lon"] + 0.013})  # ~1 km: not replayed
+    assert r.json()["sample_mode"] == "rules only"
+    assert wait(sample, r.json()["run_id"])["result"]["rules_only"] is True
+
+
+def test_a_saved_postcode_far_from_the_point_is_not_reported(sample):
+    from coverage_detective.sources import geocode
+    assert geocode.reverse(54.47, -3.07).data["found"] is False  # Great Langdale's saved postcode is 3 km away
+    near = geocode.reverse(54.445, -3.105).data
+    assert near["found"] and near["distance_m"] < 2000
+
+
+@needs_examples
+def test_each_run_writes_a_jsonl_agent_trace_with_handoffs_queries_and_models(sample, tmp_path, capsys):
+    ex = EXAMPLES["near_rhayader"]
+    run = wait(sample, sample.post("/api/diagnose", json={"lat": ex["lat"], "lon": ex["lon"]}).json()["run_id"])
+    path = tmp_path / "logs" / f"{run['run_id']}.jsonl"
+    rows = [json.loads(x) for x in path.read_text().splitlines()]
+    assert all(set(r) == set(C.trace_log.FIELDS) for r in rows) and all(r["timestamp"] for r in rows)
+    actions = [r["action"] for r in rows]
+    assert {"investigator", "diagnostician", "critic", "advisor", "guard"} <= {r["agent_name"] for r in rows}
+    assert any(r["action"] == "critique_needs_evidence" and r["target_agent"] == "investigator" for r in rows)
+    assert actions.count("round_start") == 2 and actions[-1] == "run_end"
+    assert any(a.startswith("zetaris_query") for a in actions) and "hmem_read" in actions and "world_write_relationship" in actions
+    calls = [r for r in rows if r["action"].startswith("model_call")]
+    assert calls and all(r["provider"] == "recorded" and "nemotron" in r["model_answered"] for r in calls)
+    assert path.read_text() in capsys.readouterr().out  # also on stdout
+
+
+# ------------------------------------------------------------------ POST /run
+
+
+@needs_examples
+def test_run_waits_and_returns_the_diagnosis_as_json(sample):
+    ex = EXAMPLES["great_langdale"]
+    r = sample.post("/run", json={"lat": ex["lat"], "lon": ex["lon"]})
+    assert r.status_code == 200, r.text
+    out = r.json()
+    assert out["status"] == "complete" and out["mode"] == "recorded replies (sample mode)"
+    assert out["headline"] and out["causes"][0]["evidence_ids"] and out["trace"] == f"logs/{out['run_id']}.jsonl"
+    assert any(m["agent"] == "critic" and "nemotron" in m["model_answered"] for m in out["models"])
+    zone = sample.post("/run", json={"zone": "Z00072"}).json()
+    assert zone["status"] == "complete" and zone["fix_plan"] and zone["headline"] != out["headline"]
+
+
+def test_run_rules_only_refusals_and_bad_input_are_clear_json(sample):
+    rules = sample.post("/run", json={"lat": 52.31, "lon": -3.52}).json()
+    assert rules["mode"] == "rules only, no model (sample mode)" and rules["causes"]
+    far = sample.post("/run", json={"lat": 51.75, "lon": -1.25})
+    assert far.status_code == 404 and far.json()["status"] == "error" and "Sample mode only has data" in far.json()["error"]
+    assert sample.post("/run", json={"zone": "Z99999"}).json()["status"] == "error"
+    bad = sample.post("/run", json={"lat": 54.4, "place": "LA22 9JY"})
+    assert bad.status_code == 422 and "exactly one of" in bad.text
+    assert sample.post("/run", json={"lat": 10, "lon": 0}).status_code == 422  # outside the UK
+
+
+def test_run_answers_still_running_instead_of_hanging(sample, monkeypatch):
+    monkeypatch.setattr(API, "_start", lambda run_id, fn, **kw: None)  # a run that never finishes
+    r = sample.post("/run", json={"lat": 52.31, "lon": -3.52, "timeout_s": 5})
+    assert r.status_code == 202 and r.json()["status"] == "running" and r.json()["poll"].startswith("/api/runs/")

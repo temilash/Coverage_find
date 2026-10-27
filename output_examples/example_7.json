@@ -1,0 +1,104 @@
+{
+ "request": {
+  "zone": "O00332"
+ },
+ "http_status": 200,
+ "response": {
+  "run_id": "run_20261027131110_fjvs",
+  "status": "complete",
+  "mode": "recorded replies (sample mode)",
+  "scope": "zone",
+  "headline": "Busy-network capacity strain is the likely cause [capacity_strain].",
+  "location": {
+   "lat": 54.375364919423696,
+   "lon": -2.8830685116360866,
+   "label": "Windermere"
+  },
+  "causes": [
+   {
+    "cause": "capacity_strain",
+    "confidence": 0.75,
+    "status": "active",
+    "evidence_ids": [
+     "zone_overview",
+     "fix_rule"
+    ],
+    "contradicting_ids": [],
+    "explanation": "The zone shows a busy-network capacity signal across 59% of its people with sites nearby [zone_overview][fix_rule], and speeds fell 35% from the oldest to the latest quarter [zone_overview]."
+   },
+   {
+    "cause": "insufficient_data",
+    "confidence": 0.3,
+    "status": "active",
+    "evidence_ids": [
+     "zone_overview"
+    ],
+    "contradicting_ids": [],
+    "explanation": "Operators are only described as somewhere nearby rather than confirmed at the point, and mast heights are assumed, so the evidence cannot fully separate capacity from other local causes [zone_overview]."
+   }
+  ],
+  "ruled_out": [],
+  "actions": [],
+  "best_network": null,
+  "fix_plan": {
+   "fix_type": "capacity_upgrade",
+   "candidate": null,
+   "why": "The zone is an improvement opportunity, not a gap: sites are nearby (4.0 operators on average within 5 km [zone_overview]) but 59% of people are in cells with a busy-network capacity signal [fix_rule][zone_overview], speeds fell 35% from oldest to latest quarter [zone_overview], and measured cells average 26% below their reference median [zone_overview]. The fix rule therefore selects capacity upgrade [fix_rule].",
+   "assumptions": [
+    "25 m mast",
+    "line of sight to cell centres, not a radio model",
+    "no planning or land checks"
+   ],
+   "cited_evidence": [
+    "zone_overview",
+    "fix_rule"
+   ],
+   "review": {
+    "verdict": "approve",
+    "reason": "The plan correctly labels the zone as an improvement opportunity (not a gap), cites the capacity-strain evidence (59% in busy cells, 35% speed decline, 26% below reference median) from [zone_overview] and [fix_rule], matches the fix_rule's capacity_upgrade recommendation, states clear assumptions, and does not quote candidate reach numbers or claim 'no service'.",
+    "issues": []
+   },
+   "revisions": 0
+  },
+  "rounds": 1,
+  "elapsed_s": 1.6,
+  "models": [
+   {
+    "agent": "investigator",
+    "provider": "recorded",
+    "model_answered": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "calls": 1
+   },
+   {
+    "agent": "diagnostician",
+    "provider": "recorded",
+    "model_answered": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "calls": 1
+   },
+   {
+    "agent": "critic",
+    "provider": "recorded",
+    "model_answered": "nvidia/nemotron-3-ultra-550b-a55b",
+    "calls": 2
+   },
+   {
+    "agent": "fix_planner",
+    "provider": "recorded",
+    "model_answered": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "calls": 1
+   },
+   {
+    "agent": "advisor",
+    "provider": "recorded",
+    "model_answered": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "calls": 1
+   }
+  ],
+  "limitations": [
+   "Sites are approximate; antenna heights assumed; Ofcom figures are area-level."
+  ],
+  "notes": [],
+  "trace": "logs/run_20261027131110_fjvs.jsonl",
+  "detail": "/api/runs/run_20261027131110_fjvs?detail=1"
+ }
+}

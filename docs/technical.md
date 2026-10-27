@@ -7,7 +7,7 @@ Setup details, the data pipeline and each page's behaviour. The project overview
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
-cp .env.example .env   # fill in Zetaris, OpenCelliD and (optionally) Ofcom settings
+cp .env.example .env   # fill in Zetaris, Nightshift (token, models), OpenCelliD and (optionally) Ofcom settings
 ```
 
 Put the two input files in place:
@@ -59,10 +59,14 @@ Not written for this project, used unchanged:
 | Meterless H-MEM reference engine (`vendor/meterless/hmem/`) | [Meterless/Meterless](https://github.com/Meterless/Meterless) `engines/hmem/reference` | Apache 2.0 | agents' shared memory: evidence, beliefs, critiques, trust ledger (audit trail) |
 | Meterless World Model reference engine (`vendor/meterless/world-model/`) | same repo, `engines/world-model/reference` | Apache 2.0 | places, zones, sites, operators, warnings, relationships, events |
 | Zetaris Lightning (local Docker stack) | Zetaris | sponsor licence | federated SQL over every dataset |
+| Meterless Nightshift (local app, not in this repository) | Meterless | sponsor terms | the AI provider: routes the agents' model calls to NVIDIA Nemotron, with receipts |
+| NVIDIA Nemotron 3.5 Super and 3 Ultra (API, not in this repository) | NVIDIA | NVIDIA API terms | the agents' models (through Nightshift) |
+| Open-source Python and Node libraries (`requirements.txt`, `meterless_service/package.json`) | PyPI / npm | their own licences ([THIRD_PARTY.md](../THIRD_PARTY.md)) | data processing, API, map, service |
 | Map and UI libraries: MapLibre GL, deck.gl, h3-js, OpenFreeMap tiles | npm / CDN | BSD-3 / MIT / Apache 2.0 / ODbL | the web pages |
 
-The vendored engines' own tests: `cd vendor/meterless/hmem && npm install && npm test` (and
-`world-model`). The upstream commit is recorded in `vendor/meterless/README.md`.
+The vendored engines' own tests run with the rest in `scripts/test_meterless.sh` (below). The upstream commit
+is recorded in `vendor/meterless/README.md`. Public datasets were all downloaded during the hackathon (23-25 Oct
+2026, dates in `data/manifest.json`); the project's first commit is 25 Oct 2026.
 
 ## Meterless service (agent memory)
 
@@ -80,8 +84,63 @@ the web app and waits for its health check. It persists to `data/meterless/` (gi
 - Python client: `coverage_detective/memory/meterless.py` (5 s timeout, one retry). If the
   service is down it logs loudly and uses an in-memory store with the same interface.
 
-Tests: `cd meterless_service && npm test`, and
-`tests/test_memory.py` for the fallback.
+Reads are recorded too: the client notes which agent read what from the case file (set per agent by the
+coordinator), for the run's trace.
+
+Tests, all in one command:
+
+```bash
+scripts/test_meterless.sh   # H-MEM engine 10/10, World Model engine 10/10, the service 4/4, the Python client 2/2
+```
+
+## Model provider: Meterless Nightshift
+
+`coverage_detective/agents/llm.py`. Every model call goes to Nightshift first:
+
+- `POST {METERLESS_BASE_URL}/chat/completions` (default `http://127.0.0.1:8088/v1`), OpenAI-compatible.
+- Headers: `Authorization: Bearer <token>` (from `METERLESS_RUNTIME_TOKEN`, else the file named by
+  `METERLESS_RUNTIME_TOKEN_FILE`, Nightshift's `<state dir>/proxy-token`; read at call time, never stored,
+  logged or printed), `meterless-app: coverage-detective`, and `meterless-scope: coverage-detective-<run_id>`
+  (`METERLESS_FRESH_SCOPE=1`: a new scope per call). Timeout 180 s (a model load can take minutes).
+- Models pinned: `LLM_MODEL` (Nemotron 3.5 Super: investigator, diagnostician, advisor, letters, fix planner) and
+  `LLM_MODEL_REASONING` (Nemotron 3 Ultra, thinking on: the critic). `meterless/auto` and ids without a `/`
+  are refused.
+- From the answer's top-level `meterless` object: `routed_model` (the answering model; else the response's
+  `model`), `receipt_id`, `winning_route.provider/kind`, `usage.latency_ms`, and `receipt_envelope`, whose
+  Ed25519 signature over the body (compact JSON, sorted keys) is checked (`signature_valid`). A missing object
+  is recorded as "no Meterless receipt in the answer". Committed traces keep the ids, not the envelope.
+- `STRICT_MODEL=1` rejects an answer whose routed model is not Nemotron.
+- Nightshift unreachable, 401 ("unauthorized: check METERLESS_RUNTIME_TOKEN") or 5xx after the retries: NVIDIA
+  direct answers (`LLM_API_KEY`, `LLM_BASE_URL`), recorded as a `provider_fallback` note with the reason. A
+  4xx such as an unregistered app name is not retried elsewhere ("is the meterless-app name registered in
+  Nightshift?").
+
+Each `llm_call` note carries provider, model_requested, model_answered and the receipt; the trace, `/run`'s
+`models` and the UI's "Technical details" show them. These details were implemented from two working
+Nightshift 1.2.3 integrations; check them against your install with
+`.venv/bin/python scripts/nightshift_probe.py --schema` (one plain request, then the two structured-output
+styles the agents use: strict `json_schema`, and the schema in the prompt).
+
+## POST /run, traces and sample mode
+
+- `POST /run` (`coverage_detective/api/agents.py`): `{"lat", "lon"}`, `{"place"}` or `{"zone"}`, plus optional
+  `audience` and `timeout_s` (default 600). It starts the run through the same code as `POST /api/diagnose` /
+  `POST /api/council/zones/{id}/diagnose`, polls the run store, and returns the result as JSON; a 202 with the
+  poll URL if the run is still going at the timeout; a JSON error otherwise.
+- Traces (`coverage_detective/agents/trace_log.py`): `logs/run_<run_id>.jsonl`, also on stdout, built at the
+  end of each run from the Meterless audit, notes, critiques, tool calls' Zetaris queries, World Model writes
+  and recorded reads (fields listed in the README).
+- Sample mode (`python run.py --sample` or `SAMPLE_MODE=true`): DuckDB over `sample_data/zetaris/` in place of
+  Zetaris, saved live responses, and for the model: recorded replies within 100 m of an example
+  (`agents/replay.py`, run at the recorded point), fixed rules elsewhere inside the extracts (`agents/rules.py`),
+  and a refusal listing the covered areas outside them (`data/sample_db.covers`).
+
+## Docker
+
+`Dockerfile`: Python 3.12 slim with Node 20's binary, `pip install -r requirements.txt` and `npm ci` for the
+Meterless service at build time, `SAMPLE_MODE=true` by default, port 8000 (`run.py --host 0.0.0.0`).
+`.dockerignore` keeps `.env`, raw and processed data, `.venv` and `node_modules` out of the image. Full-mode
+flags (host.docker.internal for Zetaris and Nightshift, the mounted `.env` and data) are in the README.
 
 ## Data sources
 

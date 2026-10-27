@@ -7,9 +7,12 @@
     GET  /api/outreach/recipients?district=                -> the council and the four networks, with their routes
     POST /api/runs/{run_id}/email {to, sent_by}            -> the email for that recipient (subject, text, html, mailto)
     POST /api/council/summary {scope, weights}             -> priority summary for the scope (Markdown)
+    POST /run {lat, lon | place | zone, audience}          -> waits for the run; the answer as JSON (programmatic use)
 
 In sample mode (python run.py --sample) every agent reply comes from the example recorded for that place,
-zone or area (agents/replay.py); a request with no recorded example is refused with a clear message.
+zone or area (agents/replay.py). A point inside the sample extracts with no recording runs with fixed rules
+in place of the model (agents/rules.py, labelled "rules only"); anything else is refused with a clear message
+naming the areas sample mode covers.
 
 Runs take minutes, so they run in a thread (at most MAX_RUNNING at once; later ones wait as
 "queued") and the page polls GET /api/runs/{id}: the progress file has one step per agent call
@@ -20,9 +23,11 @@ from __future__ import annotations
 
 import json
 import threading
+import time
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, model_validator
 
 from coverage_detective import evidence as ev
@@ -32,6 +37,8 @@ from coverage_detective.agents import coordinator as C
 from coverage_detective.agents.llm import LLMError, llm
 from coverage_detective.agents.tools import Case
 from coverage_detective.agents import replay as R
+from coverage_detective.agents import rules
+from coverage_detective.data import sample_db
 from coverage_detective.config import UK_BBOX, sample_mode
 from coverage_detective.memory.meterless import memory
 
@@ -88,7 +95,7 @@ def _need_llm() -> None:
     if R.replaying():  # recorded replies, no key needed
         return
     if not llm.configured:
-        raise HTTPException(503, "The agents need LLM_API_KEY and LLM_MODEL in .env (or run with --sample).")
+        raise HTTPException(503, f"The agents cannot call a model: {llm.problem} (or run with --sample).")
 
 
 def _queued(run_id: str, scope: str, label: str) -> None:
@@ -99,14 +106,17 @@ def _queued(run_id: str, scope: str, label: str) -> None:
          "steps": [], "result": None, "elapsed_s": 0}))
 
 
-def _replay(kind: str, **where) -> "R.Session | None":
-    """Sample mode: the recorded example for this request (or a clear 404)."""
+def _replay(kind: str, **where) -> "R.Session | rules.Session | None":
+    """Sample mode: the recorded example for this request; at a point inside the extracts with no recording,
+    rules only (no model); elsewhere a clear 404 naming what sample mode covers."""
     if not R.replaying():
         return None
     try:
         return R.Session("replay", R.find(kind, **where))
     except R.ReplayMissing as e:
-        raise HTTPException(404, str(e)) from e
+        if kind == "point" and sample_db.covers(where["lat"], where["lon"]):
+            return rules.Session()
+        raise HTTPException(404, f"{e}. " + (sample_db.coverage_message() if kind == "point" else "")) from e
 
 
 def _start(run_id: str, fn, **kw) -> None:
@@ -134,14 +144,20 @@ def diagnose(req: DiagnoseRequest) -> dict:
     except LookupError as e:
         raise HTTPException(404, str(e) + " (sample mode: search works for the example places only, e.g. Great Langdale, WC2N 5DU, Rhayader, Sutton St Edmund)" if sample_mode() else "") from e
     label = point.get("label") if point.get("kind") != "point" else (
-        point.get("nearest_postcode") and f"near {point['nearest_postcode']}") or req.query or ""
+        point.get("nearest_postcode") and f"near {point['nearest_postcode']}") or req.query or point.get("label") or ""
     sess = _replay("point", lat=point["lat"], lon=point["lon"])
-    run_id = memory.create_run("point", query=req.query or f"{point['lat']:.5f},{point['lon']:.5f}", label=label,
-                               location={"lat": point["lat"], "lon": point["lon"]})
+    query, lat, lon, moved = req.query, point["lat"], point["lon"], None
+    if isinstance(sess, R.Session):  # recorded replies fit the evidence at the recorded point only: run there
+        ex = R.example(sess.example_id)
+        moved = round(R._km(lat, lon, ex["lat"], ex["lon"]) * 1000)
+        query, lat, lon = None, ex["lat"], ex["lon"]
+    run_id = memory.create_run("point", query=query or f"{lat:.5f},{lon:.5f}", label=label, location={"lat": lat, "lon": lon})
     _queued(run_id, "point", label)
-    _start(run_id, C.diagnose_point, query=req.query, lat=point["lat"] if not req.query else None,
-           lon=point["lon"] if not req.query else None, audience=req.audience, replay=sess)
-    return {"run_id": run_id, "status": "queued", "label": label, "location": {"lat": point["lat"], "lon": point["lon"]}}
+    _start(run_id, C.diagnose_point, query=query, lat=lat if not query else None, lon=lon if not query else None,
+           audience=req.audience, replay=sess)
+    return {"run_id": run_id, "status": "queued", "label": label, "location": {"lat": lat, "lon": lon},
+            **({"sample_mode": "recorded", "example_id": sess.example_id, "moved_to_recorded_point_m": moved}
+               if isinstance(sess, R.Session) else {"sample_mode": "rules only"} if sess else {})}
 
 
 @router.post("/council/zones/{zone_id}/diagnose")
@@ -178,12 +194,15 @@ def _rounds(notes: list[dict], critiques: list[dict], beliefs: list[dict], evide
                                "summary": n.get("summary")})
         elif t in ("llm_call", "llm_error"):
             c["llm_calls"].append({"agent": n.get("by"), "model": (n.get("model") or "").split("/")[-1],
+                                   "provider": n.get("provider"), "model_answered": n.get("model_answered"),
+                                   "receipt_id": (n.get("receipt") or {}).get("receipt_id"),
+                                   "signature_valid": (n.get("receipt") or {}).get("signature_valid"),
                                    "duration_ms": n.get("duration_ms"), "retries": len(n.get("retries") or []),
                                    "fallback": n.get("fallback"), "error": t == "llm_error", "purpose": n.get("purpose"),
                                    "summary": n.get("summary")})
         elif t == "guard":
             c["guard"].append({"agent": n.get("agent"), "kind": n.get("guard_kind"), "summary": n.get("summary")})
-        elif t in ("coordinator", "fallback", "agent_error", "round"):
+        elif t in ("coordinator", "fallback", "provider_fallback", "agent_error", "round"):
             c["coordinator"].append({"type": t, "summary": n.get("summary")})
     for e in evidence:
         card(e.get("round"))["evidence"].append(e.get("evidence_id"))
@@ -263,6 +282,8 @@ def letter(run_id: str, req: LetterRequest) -> dict:
         sess = R.Session("record" if R.recording() else "replay", result["example_id"])
         sess.variant = req.recipient  # one recorded letter per recipient
         case.cache["replay"] = sess
+    elif sample_mode() and result.get("rules_only"):
+        case.cache["replay"] = rules.Session()
     try:
         out = A.write_letter(case, req.recipient, result)
     except R.ReplayMissing as e:
@@ -300,6 +321,8 @@ def email(run_id: str, req: EmailRequest) -> dict:
             sess = R.Session("record" if R.recording() else "replay", result["example_id"])
             sess.variant = "council" if contact.kind == "council" else "operator"
             case.cache["replay"] = sess
+        elif sample_mode() and result.get("rules_only"):
+            case.cache["replay"] = rules.Session()
         try:
             wire = A.write_letter(case, "council" if contact.kind == "council" else "operator", result,
                                   addressee=contact.name)
@@ -374,3 +397,85 @@ def priority_summary(req: SummaryRequest) -> dict:
             "body_markdown": body, "guard": guard,
             # kept for older callers: the gap section's fields
             "zones": gap.get("zones", []), "zone_rows": gap.get("zone_rows", []), "diagnosed": gap.get("diagnosed", [])}
+
+
+# ------------------------------------------------------------------ POST /run: one call, one answer
+
+run_router = APIRouter(tags=["run"])
+RUN_TIMEOUT_S = 600
+
+
+class RunRequest(BaseModel):
+    """One of: lat + lon, place (UK postcode or place name), or zone (e.g. Z00072)."""
+    lat: float | None = Field(None, ge=UK_BBOX["min_lat"], le=UK_BBOX["max_lat"])
+    lon: float | None = Field(None, ge=UK_BBOX["min_lon"], le=UK_BBOX["max_lon"])
+    place: str | None = Field(None, min_length=2, max_length=100, description="UK postcode or place name")
+    zone: str | None = Field(None, pattern=r"^[ZO]\d{5}$", description="gap zone (Z…) or improvement opportunity (O…)")
+    audience: Literal["resident", "council officer", "operator"] = "resident"
+    timeout_s: int = Field(RUN_TIMEOUT_S, ge=5, le=1800, description="how long to wait before answering 'still running'")
+
+    @model_validator(mode="after")
+    def one_target(self):
+        given = [self.lat is not None or self.lon is not None, bool(self.place), bool(self.zone)]
+        if sum(given) != 1 or (given[0] and (self.lat is None or self.lon is None)):
+            raise ValueError('give exactly one of: "lat" and "lon", "place", or "zone"')
+        return self
+
+
+def _error(status: int, message, **extra) -> JSONResponse:
+    return JSONResponse(status_code=status, content={"status": "error", "error": message, **extra})
+
+
+def _models(run_id: str) -> list[dict]:
+    """Which provider and model answered each agent call (from the run's notes)."""
+    full = C.RUNS_DIR / f"{run_id}.full.json"
+    notes = json.loads(full.read_text()).get("notes", []) if full.exists() else []
+    seen = {}
+    for n in notes:
+        if n.get("type") == "llm_call":
+            k = (n.get("by"), n.get("provider"), n.get("model_answered") or n.get("model"))
+            seen[k] = seen.get(k, 0) + 1
+    return [{"agent": a, "provider": p, "model_answered": m, "calls": c} for (a, p, m), c in seen.items()]
+
+
+@run_router.post("/run")
+def run_sync(req: RunRequest):
+    """Start a diagnosis (point, place or zone), wait for it, and return the answer as JSON.
+
+    curl -s -X POST localhost:8000/run -H 'content-type: application/json' -d '{"lat": 54.445, "lon": -3.105}'
+    """
+    try:
+        started = (diagnose_zone(req.zone) if req.zone else
+                   diagnose(DiagnoseRequest(query=req.place, lat=req.lat, lon=req.lon, audience=req.audience)))
+    except HTTPException as e:
+        return _error(e.status_code, e.detail)
+    except Exception as e:  # noqa: BLE001 - a clear JSON error, never a stack trace
+        return _error(500, f"could not start the run: {type(e).__name__}: {str(e)[:200]}")
+    run_id = started["run_id"]
+    path = C.RUNS_DIR / f"{run_id}.json"
+    deadline = time.monotonic() + req.timeout_s
+    state: dict = {}
+    while time.monotonic() < deadline:
+        state = json.loads(path.read_text()) if path.exists() else {}
+        if state.get("status") not in (None, "queued", "running"):
+            break
+        time.sleep(0.5)
+    else:
+        return JSONResponse(status_code=202, content={
+            "status": "running", "run_id": run_id, "message": f"still running after {req.timeout_s} s",
+            "poll": f"/api/runs/{run_id}", "trace": f"logs/{run_id}.jsonl (written when the run ends)"})
+    res = state.get("result") or {}
+    mode = ("recorded replies (sample mode)" if res.get("replayed") else "rules only, no model (sample mode)"
+            if res.get("rules_only") else "live agents")
+    return {"run_id": run_id, "status": state.get("status"), "mode": mode, "scope": res.get("scope"),
+            "headline": res.get("headline"), "location": res.get("location"),
+            "causes": [{"cause": h.get("cause"), "confidence": h.get("confidence"), "status": h.get("status"),
+                        "evidence_ids": h.get("supporting") or [], "contradicting_ids": h.get("contradicting") or [],
+                        "explanation": h.get("explanation")} for h in res.get("hypotheses") or []],
+            "ruled_out": res.get("ruled_out") or [], "actions": res.get("actions") or [],
+            "best_network": (res.get("best_network") or {}).get("summary"), "fix_plan": res.get("fix_plan"),
+            "rounds": res.get("rounds"), "elapsed_s": res.get("elapsed_s"), "models": _models(run_id),
+            "limitations": res.get("limitations") or [], "notes": res.get("notes") or [],
+            **({"moved_to_recorded_point_m": started["moved_to_recorded_point_m"]}
+               if started.get("moved_to_recorded_point_m") else {}),
+            "trace": f"logs/{run_id}.jsonl", "detail": f"/api/runs/{run_id}?detail=1"}

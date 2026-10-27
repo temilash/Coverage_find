@@ -29,7 +29,7 @@ from coverage_detective.config import ROOT, env, sample_mode
 EXAMPLES = ROOT / "examples"
 INDEX = EXAMPLES / "index.json"
 PROMPTS = Path(__file__).parent / "prompts"
-NEAR_KM = 1.0  # a sample-mode point request uses the example recorded within this distance
+NEAR_KM = 0.1  # a sample-mode point request within this distance replays that example, run at its recorded point
 _lock = threading.Lock()
 
 
@@ -95,14 +95,20 @@ class Session:
         rec = self.data["replies"].get(k)
         if rec is None:
             raise ReplayMissing(f"no recorded reply for this step: example {self.example_id}, {k}")
+        # provider / model_answered / receipt say who answered when the reply was recorded (absent in older recordings)
         return LLMResult(model="recorded", content=rec.get("content"), tool_calls=rec.get("tool_calls") or [],
                          parsed=schema.model_validate(rec["parsed"]) if schema and rec.get("parsed") is not None else None,
-                         usage={}, duration_ms=0)
+                         usage={}, duration_ms=0, provider="recorded",
+                         model_answered=rec.get("model_answered") or rec.get("model"),
+                         receipt={"recorded_provider": rec.get("provider"), **(rec.get("receipt") or {})})
 
     def save(self, k: str, r: LLMResult) -> None:
         self.data["replies"][k] = {"model": r.model, "parsed": r.parsed.model_dump() if r.parsed else None,
                                    "tool_calls": r.tool_calls, "content": None if r.parsed else r.content,
-                                   "duration_ms": r.duration_ms}
+                                   "duration_ms": r.duration_ms, "provider": r.provider, "model_answered": r.model_answered,
+                                   "receipt": {k: v for k, v in (r.receipt or {}).items()
+                                               if k in ("receipt_id", "route", "signer", "signature_valid", "note")},
+                                   "provider_fallback": r.provider_fallback}
         with _lock:
             p = _path(self.example_id)
             p.parent.mkdir(parents=True, exist_ok=True)
@@ -121,6 +127,10 @@ def _km(a_lat, a_lon, b_lat, b_lon) -> float:
     return 6371.0 * math.hypot(x, math.radians(b_lat - a_lat))
 
 
+def example(example_id: str) -> dict:
+    return next(e for e in index() if e["example_id"] == example_id)
+
+
 def find(kind: str, lat: float | None = None, lon: float | None = None, zone_id: str | None = None,
          scope: str | None = None) -> str:
     """The example that answers a sample-mode request, or ReplayMissing with what is available."""
@@ -132,5 +142,5 @@ def find(kind: str, lat: float | None = None, lon: float | None = None, zone_id:
             return e["example_id"]
         if kind == "point" and lat is not None and _km(lat, lon, e["lat"], e["lon"]) <= NEAR_KM:
             return e["example_id"]
-    names = ", ".join(e["label"] for e in ex) or "none"
+    names = ", ".join(e["label"] + (f" ({e['lat']}, {e['lon']})" if kind == "point" else "") for e in ex) or "none"
     raise ReplayMissing(f"sample mode has no recorded run for this {kind}; recorded {kind}s: {names}")
