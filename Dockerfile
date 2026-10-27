@@ -4,7 +4,7 @@
 #   docker run --rm -p 8000:8000 coverage-detective                      # sample mode: no keys, Zetaris or Nightshift
 #
 # Full mode (Zetaris and Nightshift on the host; see README "Docker"):
-#   docker run --rm -p 8000:8000 --add-host=host.docker.internal:host-gateway --env-file .env \
+#   docker run --rm -p 8000:8000 --add-host=host.docker.internal:host-gateway -v "$PWD/.env:/app/.env:ro" \
 #     -e SAMPLE_MODE=false -e ZETARIS_URL=http://host.docker.internal:3000 \
 #     -e METERLESS_BASE_URL=http://host.docker.internal:8088/v1 -v "$PWD/data:/app/data" coverage-detective
 #
