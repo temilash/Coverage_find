@@ -43,6 +43,7 @@ def sample(monkeypatch, tmp_path):
     monkeypatch.setenv("SAMPLE_MODE", "1")
     monkeypatch.delenv("RECORD_EXAMPLES", raising=False)
     monkeypatch.setattr(C, "RUNS_DIR", tmp_path)
+    monkeypatch.setattr(C.trace_log, "LOGS", tmp_path / "logs")
     from coverage_detective.data import terrain
     monkeypatch.setattr(terrain, "_dem", None)  # the committed DEM crops, not data/raw/dem
     monkeypatch.setattr(terrain, "DEM_DIR", tmp_path / "no_raw_dem")
@@ -156,8 +157,10 @@ def test_a_recorded_example_replays_at_its_recorded_point_only(sample):
     r = sample.post("/api/diagnose", json={"lat": ex["lat"] + 0.0005, "lon": ex["lon"]})  # ~56 m away
     assert r.json()["sample_mode"] == "recorded" and r.json()["location"] == {"lat": ex["lat"], "lon": ex["lon"]}
     assert 40 < r.json()["moved_to_recorded_point_m"] < 70
+    assert wait(sample, r.json()["run_id"])["result"]["replayed"] is True
     r = sample.post("/api/diagnose", json={"lat": ex["lat"] - 0.004, "lon": ex["lon"] + 0.013})  # ~1 km: not replayed
     assert r.json()["sample_mode"] == "rules only"
+    assert wait(sample, r.json()["run_id"])["result"]["rules_only"] is True
 
 
 def test_a_saved_postcode_far_from_the_point_is_not_reported(sample):
@@ -165,3 +168,20 @@ def test_a_saved_postcode_far_from_the_point_is_not_reported(sample):
     assert geocode.reverse(54.47, -3.07).data["found"] is False  # Great Langdale's saved postcode is 3 km away
     near = geocode.reverse(54.445, -3.105).data
     assert near["found"] and near["distance_m"] < 2000
+
+
+@needs_examples
+def test_each_run_writes_a_jsonl_agent_trace_with_handoffs_queries_and_models(sample, tmp_path, capsys):
+    ex = EXAMPLES["near_rhayader"]
+    run = wait(sample, sample.post("/api/diagnose", json={"lat": ex["lat"], "lon": ex["lon"]}).json()["run_id"])
+    path = tmp_path / "logs" / f"{run['run_id']}.jsonl"
+    rows = [json.loads(x) for x in path.read_text().splitlines()]
+    assert all(set(r) == set(C.trace_log.FIELDS) for r in rows) and all(r["timestamp"] for r in rows)
+    actions = [r["action"] for r in rows]
+    assert {"investigator", "diagnostician", "critic", "advisor", "guard"} <= {r["agent_name"] for r in rows}
+    assert any(r["action"] == "critique_needs_evidence" and r["target_agent"] == "investigator" for r in rows)
+    assert actions.count("round_start") == 2 and actions[-1] == "run_end"
+    assert any(a.startswith("zetaris_query") for a in actions) and "hmem_read" in actions and "world_write_relationship" in actions
+    calls = [r for r in rows if r["action"].startswith("model_call")]
+    assert calls and all(r["provider"] == "recorded" and "nemotron" in r["model_answered"] for r in calls)
+    assert path.read_text() in capsys.readouterr().out  # also on stdout

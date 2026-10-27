@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 import threading
 import time
 from datetime import datetime, timezone
@@ -24,10 +25,11 @@ from pathlib import Path
 
 from coverage_detective import evidence as ev
 from coverage_detective.agents import agents as A
+from coverage_detective.agents import trace_log
 from coverage_detective.agents.llm import LLMError
 from coverage_detective.agents.tools import OPERATORS, Case, run_tool
 from coverage_detective.config import ROOT
-from coverage_detective.memory.meterless import Meterless, memory as default_memory
+from coverage_detective.memory.meterless import Meterless, memory as default_memory, reading_as
 
 RUNS_DIR = ROOT / "data" / "runs"
 MAX_ROUNDS = 3
@@ -96,11 +98,14 @@ class Progress:
 def _attempt(case: Case, agent: str, fn, *args, **kw):
     """Run an agent; one retry; None if it fails twice (the run becomes partial)."""
     for attempt in (1, 2):
+        reading_as(agent)
         try:
             return fn(case, *args, **kw)
         except (LLMError, ValueError, KeyError, TypeError) as e:
             case.memory.add_note(case.run_id, "agent_error", f"{agent} failed (attempt {attempt}): {type(e).__name__}: "
                                  f"{str(e)[:200]}", by="coordinator", agent=agent, attempt=attempt)
+        finally:
+            reading_as(None)
     return None
 
 
@@ -408,13 +413,20 @@ def wording_check(result: dict) -> dict:
 
 
 def export(run_id: str, memory: Meterless = default_memory) -> Path:
-    """Everything about a run in one file: result, audit trail, evidence, notes, critiques, World Model."""
+    """Everything about a run in one file: result, audit trail, evidence, notes, critiques, World Model, reads.
+    Also writes the run's JSONL agent trace (agents/trace_log.py)."""
     run = memory.get_run(run_id) or {}
     full = {"run": run, "result": run.get("result"), "audit": memory.audit(run_id), "evidence": memory.evidence(run_id),
             "beliefs": memory.beliefs(run_id), "critiques": memory.critiques(run_id), "notes": memory.notes(run_id),
             "world": memory.world_for_run(run_id), "memory_mode": memory.mode}
+    full["reads"] = memory.reads.pop(run_id, [])  # who read the case file, recorded by the client
+    RUNS_DIR.mkdir(parents=True, exist_ok=True)
     path = RUNS_DIR / f"{run_id}.full.json"
     tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(full, indent=1, default=str))
     tmp.replace(path)  # atomic: readers see the old file or the whole new one
+    try:
+        trace_log.write(full)  # logs/run_<run_id>.jsonl, and stdout
+    except Exception as e:  # noqa: BLE001 - the trace file must never fail a run
+        print(f"!! agent trace for {run_id} not written: {type(e).__name__}: {e}", file=sys.stderr)
     return path
