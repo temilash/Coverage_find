@@ -7,6 +7,7 @@
     GET  /api/outreach/recipients?district=                -> the council and the four networks, with their routes
     POST /api/runs/{run_id}/email {to, sent_by}            -> the email for that recipient (subject, text, html, mailto)
     POST /api/council/summary {scope, weights}             -> priority summary for the scope (Markdown)
+    POST /run {lat, lon | place | zone, audience}          -> waits for the run; the answer as JSON (programmatic use)
 
 In sample mode (python run.py --sample) every agent reply comes from the example recorded for that place,
 zone or area (agents/replay.py). A point inside the sample extracts with no recording runs with fixed rules
@@ -22,9 +23,11 @@ from __future__ import annotations
 
 import json
 import threading
+import time
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, model_validator
 
 from coverage_detective import evidence as ev
@@ -394,3 +397,85 @@ def priority_summary(req: SummaryRequest) -> dict:
             "body_markdown": body, "guard": guard,
             # kept for older callers: the gap section's fields
             "zones": gap.get("zones", []), "zone_rows": gap.get("zone_rows", []), "diagnosed": gap.get("diagnosed", [])}
+
+
+# ------------------------------------------------------------------ POST /run: one call, one answer
+
+run_router = APIRouter(tags=["run"])
+RUN_TIMEOUT_S = 600
+
+
+class RunRequest(BaseModel):
+    """One of: lat + lon, place (UK postcode or place name), or zone (e.g. Z00072)."""
+    lat: float | None = Field(None, ge=UK_BBOX["min_lat"], le=UK_BBOX["max_lat"])
+    lon: float | None = Field(None, ge=UK_BBOX["min_lon"], le=UK_BBOX["max_lon"])
+    place: str | None = Field(None, min_length=2, max_length=100, description="UK postcode or place name")
+    zone: str | None = Field(None, pattern=r"^[ZO]\d{5}$", description="gap zone (Z…) or improvement opportunity (O…)")
+    audience: Literal["resident", "council officer", "operator"] = "resident"
+    timeout_s: int = Field(RUN_TIMEOUT_S, ge=5, le=1800, description="how long to wait before answering 'still running'")
+
+    @model_validator(mode="after")
+    def one_target(self):
+        given = [self.lat is not None or self.lon is not None, bool(self.place), bool(self.zone)]
+        if sum(given) != 1 or (given[0] and (self.lat is None or self.lon is None)):
+            raise ValueError('give exactly one of: "lat" and "lon", "place", or "zone"')
+        return self
+
+
+def _error(status: int, message, **extra) -> JSONResponse:
+    return JSONResponse(status_code=status, content={"status": "error", "error": message, **extra})
+
+
+def _models(run_id: str) -> list[dict]:
+    """Which provider and model answered each agent call (from the run's notes)."""
+    full = C.RUNS_DIR / f"{run_id}.full.json"
+    notes = json.loads(full.read_text()).get("notes", []) if full.exists() else []
+    seen = {}
+    for n in notes:
+        if n.get("type") == "llm_call":
+            k = (n.get("by"), n.get("provider"), n.get("model_answered") or n.get("model"))
+            seen[k] = seen.get(k, 0) + 1
+    return [{"agent": a, "provider": p, "model_answered": m, "calls": c} for (a, p, m), c in seen.items()]
+
+
+@run_router.post("/run")
+def run_sync(req: RunRequest):
+    """Start a diagnosis (point, place or zone), wait for it, and return the answer as JSON.
+
+    curl -s -X POST localhost:8000/run -H 'content-type: application/json' -d '{"lat": 54.445, "lon": -3.105}'
+    """
+    try:
+        started = (diagnose_zone(req.zone) if req.zone else
+                   diagnose(DiagnoseRequest(query=req.place, lat=req.lat, lon=req.lon, audience=req.audience)))
+    except HTTPException as e:
+        return _error(e.status_code, e.detail)
+    except Exception as e:  # noqa: BLE001 - a clear JSON error, never a stack trace
+        return _error(500, f"could not start the run: {type(e).__name__}: {str(e)[:200]}")
+    run_id = started["run_id"]
+    path = C.RUNS_DIR / f"{run_id}.json"
+    deadline = time.monotonic() + req.timeout_s
+    state: dict = {}
+    while time.monotonic() < deadline:
+        state = json.loads(path.read_text()) if path.exists() else {}
+        if state.get("status") not in (None, "queued", "running"):
+            break
+        time.sleep(0.5)
+    else:
+        return JSONResponse(status_code=202, content={
+            "status": "running", "run_id": run_id, "message": f"still running after {req.timeout_s} s",
+            "poll": f"/api/runs/{run_id}", "trace": f"logs/{run_id}.jsonl (written when the run ends)"})
+    res = state.get("result") or {}
+    mode = ("recorded replies (sample mode)" if res.get("replayed") else "rules only, no model (sample mode)"
+            if res.get("rules_only") else "live agents")
+    return {"run_id": run_id, "status": state.get("status"), "mode": mode, "scope": res.get("scope"),
+            "headline": res.get("headline"), "location": res.get("location"),
+            "causes": [{"cause": h.get("cause"), "confidence": h.get("confidence"), "status": h.get("status"),
+                        "evidence_ids": h.get("supporting") or [], "contradicting_ids": h.get("contradicting") or [],
+                        "explanation": h.get("explanation")} for h in res.get("hypotheses") or []],
+            "ruled_out": res.get("ruled_out") or [], "actions": res.get("actions") or [],
+            "best_network": (res.get("best_network") or {}).get("summary"), "fix_plan": res.get("fix_plan"),
+            "rounds": res.get("rounds"), "elapsed_s": res.get("elapsed_s"), "models": _models(run_id),
+            "limitations": res.get("limitations") or [], "notes": res.get("notes") or [],
+            **({"moved_to_recorded_point_m": started["moved_to_recorded_point_m"]}
+               if started.get("moved_to_recorded_point_m") else {}),
+            "trace": f"logs/{run_id}.jsonl", "detail": f"/api/runs/{run_id}?detail=1"}

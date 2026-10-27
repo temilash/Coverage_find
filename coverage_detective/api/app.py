@@ -16,6 +16,7 @@ Routes:
   POST /api/evidence           evidence bundle for {"query": postcode or place} or {"lat", "lon"}
   POST /api/diagnose           start an agent diagnosis -> run_id (api/agents.py; also zone runs,
   GET  /api/runs/{run_id}      letters and the council priority summary)
+  POST /run                    one call: {lat, lon} | {place} | {zone} -> waits, returns the diagnosis as JSON
   /                            the data explorer (web/index.html)
   /signal                      My signal: evidence for one exact point (web/signal.html)
   /council                     Council view: ranked gap zones (web/council.html; API in api/council.py)
@@ -38,7 +39,7 @@ from fastapi.staticfiles import StaticFiles
 
 from coverage_detective.config import H3_RES, PROCESSED, ROOT, SAMPLES, sample_mode
 from coverage_detective import evidence as evidence_bundle
-from coverage_detective.api.agents import router as agents_router
+from coverage_detective.api.agents import router as agents_router, run_router
 from coverage_detective.api.council import router as council_router
 from coverage_detective.config import UK_BBOX
 from coverage_detective.data import manifest, sample_db, terrain
@@ -56,6 +57,7 @@ MAX_TILE_BBOX_DEG2 = 0.6  # tiles only when zoomed in
 app = FastAPI(title="Coverage Detective data explorer")
 app.include_router(council_router)
 app.include_router(agents_router)
+app.include_router(run_router)
 
 
 # --- static data held in memory ------------------------------------------------------------

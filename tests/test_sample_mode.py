@@ -185,3 +185,36 @@ def test_each_run_writes_a_jsonl_agent_trace_with_handoffs_queries_and_models(sa
     calls = [r for r in rows if r["action"].startswith("model_call")]
     assert calls and all(r["provider"] == "recorded" and "nemotron" in r["model_answered"] for r in calls)
     assert path.read_text() in capsys.readouterr().out  # also on stdout
+
+
+# ------------------------------------------------------------------ POST /run
+
+
+@needs_examples
+def test_run_waits_and_returns_the_diagnosis_as_json(sample):
+    ex = EXAMPLES["great_langdale"]
+    r = sample.post("/run", json={"lat": ex["lat"], "lon": ex["lon"]})
+    assert r.status_code == 200, r.text
+    out = r.json()
+    assert out["status"] == "complete" and out["mode"] == "recorded replies (sample mode)"
+    assert out["headline"] and out["causes"][0]["evidence_ids"] and out["trace"] == f"logs/{out['run_id']}.jsonl"
+    assert any(m["agent"] == "critic" and "nemotron" in m["model_answered"] for m in out["models"])
+    zone = sample.post("/run", json={"zone": "Z00072"}).json()
+    assert zone["status"] == "complete" and zone["fix_plan"] and zone["headline"] != out["headline"]
+
+
+def test_run_rules_only_refusals_and_bad_input_are_clear_json(sample):
+    rules = sample.post("/run", json={"lat": 52.31, "lon": -3.52}).json()
+    assert rules["mode"] == "rules only, no model (sample mode)" and rules["causes"]
+    far = sample.post("/run", json={"lat": 51.75, "lon": -1.25})
+    assert far.status_code == 404 and far.json()["status"] == "error" and "Sample mode only has data" in far.json()["error"]
+    assert sample.post("/run", json={"zone": "Z99999"}).json()["status"] == "error"
+    bad = sample.post("/run", json={"lat": 54.4, "place": "LA22 9JY"})
+    assert bad.status_code == 422 and "exactly one of" in bad.text
+    assert sample.post("/run", json={"lat": 10, "lon": 0}).status_code == 422  # outside the UK
+
+
+def test_run_answers_still_running_instead_of_hanging(sample, monkeypatch):
+    monkeypatch.setattr(API, "_start", lambda run_id, fn, **kw: None)  # a run that never finishes
+    r = sample.post("/run", json={"lat": 52.31, "lon": -3.52, "timeout_s": 5})
+    assert r.status_code == 202 and r.json()["status"] == "running" and r.json()["poll"].startswith("/api/runs/")
