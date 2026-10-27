@@ -408,12 +408,13 @@ def advise(case: Case, audience: str = "resident") -> S.AdvisorOutput:
 # ------------------------------------------------------------------ letter writer
 
 
-def write_letter(case: Case, recipient: str, diagnosis: dict) -> S.Letter:
+def write_letter(case: Case, recipient: str, diagnosis: dict, addressee: str | None = None) -> S.Letter:
+    """addressee: who the letter is to, by name ("Vodafone", "Cornwall Council"); defaults to the kind."""
     ev = evidence_map(case)
     cited = set(diagnosis.get("cited_evidence") or []) | {i for h in diagnosis.get("hypotheses", [])
                                                          for i in (h.get("supporting") or [])}
-    system = prompt("letter_writer", recipient={"operator": "the mobile operator", "council": "the local council",
-                                                "mp": "the local MP"}[recipient])
+    system = prompt("letter_writer", recipient=addressee or {"operator": "the mobile operator",
+                                                             "council": "the local council", "mp": "the local MP"}[recipient])
     user = (f"Location: {diagnosis['location'].get('label')}.\nHeadline: {diagnosis['headline']}\n"
             f"Explanation: {diagnosis.get('explanation')}\nLikely causes:\n"
             + "\n".join(f"- {h['cause']} confidence {h['confidence']:.2f}" for h in diagnosis.get("hypotheses", [])

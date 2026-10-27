@@ -15,6 +15,7 @@ Raw files live in `data/raw/` and built files in `data/processed/`; both are git
 | ONS Local Authority Districts | December 2024, UK BGC | Open Government Licence v3.0 | `raw/boundary/lad_2024.geojson` | `ofcom_area_r7.parquet` |
 | Ofcom Wireless Telegraphy Register (WTR) | downloaded 25 Oct 2026 (Last-Modified 25 Oct 2026 08:45 GMT) | Ofcom copyright; free re-use (see below) | `raw/ofcom_wtr/WTR.csv` | `wtr_points.parquet`, `masts_sites.parquet`, `masts_r7.parquet` |
 | UK network codes (Wikipedia) | revision 1378731553, 5 Oct 2026 | CC BY-SA 4.0 | — | `reference/mcc_mnc_uk.csv` (committed) |
+| Council and operator complaint contacts (outreach) | checked 26 Oct 2026 | Publisher's own site (see `source_url` in each row) | — | `reference/council_contacts.csv`, `reference/operator_contacts.csv` (committed) |
 
 ## Manifest
 

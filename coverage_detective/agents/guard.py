@@ -73,7 +73,8 @@ def weak_reason(item: dict) -> str | None:
 
 
 def evidence_numbers(items: list[dict]) -> set[float]:
-    """Every number in the cited evidence: in the finding text and in its values."""
+    """Every number in the cited evidence: in the finding text, in its values, and in the dates it
+    carries (a letter may quote "data 2021, as of 2026-10-25" without inventing anything)."""
     vals: set[float] = set()
 
     def walk(x):
@@ -87,12 +88,17 @@ def evidence_numbers(items: list[dict]) -> set[float]:
         elif isinstance(x, (list, tuple)):
             for v in x:
                 walk(v)
+        elif isinstance(x, str):
+            for v, _, _ in numbers_in(x):
+                vals.add(v)
 
     for it in items:
         for v, _, _ in numbers_in(it.get("finding", "")):
             vals.add(v)
         walk(it.get("value"))
         walk(it.get("sample_size"))
+        for key in ("data_period", "as_of"):
+            walk(str(it.get(key) or ""))
     return vals
 
 
@@ -163,7 +169,10 @@ class Guard:
         if bad:
             self.record(Intervention("unknown_citation", f"{where}: removed [{'], ['.join(bad)}] from the text",
                                      {"where": where, "removed": bad}))
-        return re.sub(r"\s{2,}", " ", text).strip()
+        # Only runs of spaces and tabs: a newline is the letter's structure, not noise.
+        text = re.sub(r"[ \t]{2,}", " ", text)
+        text = re.sub(r" +([.,;:!?])", r"\1", text)
+        return re.sub(r"\(\s*\)", "", text).strip()
 
     def context_only(self, ids: list[str], where: str) -> list[str]:
         """Remove context-only items (earlier diagnoses) from a belief's evidence."""
@@ -203,7 +212,7 @@ class Guard:
                     self.record(Intervention("number_rewritten", f"{where}: rewrote a sentence with an unsupported number",
                                              {"where": where, "field": key, "before": s, "after": new}))
                 else:
-                    out[key] = re.sub(r"\s{2,}", " ", out[key].replace(s, "")).strip()
+                    out[key] = re.sub(r"[ \t]{2,}", " ", out[key].replace(s, "")).strip()
                     nums = [w for v, d, w in numbers_in(s) if not number_ok(v, d, allowed)]
                     self.record(Intervention("sentence_removed", f"{where}: removed a sentence with numbers not in the "
                                              f"cited evidence ({', '.join(nums)})",
