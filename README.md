@@ -96,17 +96,18 @@ weak-only beliefs are capped. More: [docs/agents.md](docs/agents.md).
 
 Details, timings and test results: [docs/sponsors.md](docs/sponsors.md).
 
-## Validation vs Ofcom
+## Explaining the Gap: Coverage Detective vs Ofcom
 
-We manually compared our diagnosis against the official Ofcom mobile coverage checker for three sample locations:
+Ofcom's checker provides an outdoor, area-level prediction based on modeled data. However, residents frequently find their real-world experience differs. Our tool uses actual measured speeds (Ookla) and exact-point physics (30m DEM terrain) to explain *why* this gap exists.
 
-| Location | Ofcom Checker Prediction | Coverage Detective Diagnosis | Why the difference? |
-|---|---|---|---|
-| CO9 1TP (Gosfield) | "Good outdoor coverage" | Insufficient data (4.6 Mbps, 3 tests) | Ofcom predicts outdoor signal; our Ookla data shows actual measured speed is poor. |
-| Great Langdale | "Good outdoor coverage" | Terrain blocking (ridge 288m) | Ofcom uses area-level prediction; our DEM line-of-sight shows the specific ridge blocking the mast. |
-| Central London | "Good coverage" | No strong cause (fast speed) | Ofcom is correct here; our data confirms high speeds. |
+| Location | Ofcom Prediction | Coverage Detective (Real Data) | The Physics (Why they differ) |
+| :--- | :--- | :--- | :--- |
+| **CO9 1TP** | Good outdoor coverage | Insufficient data (4.6 Mbps, 3 tests) | Ofcom predicts outdoor signal, but real speed tests show poor performance. |
+| **LA22 9JU** (Great Langdale) | Good outdoor coverage (EE) | **Blocked for all networks** (EE blocked by 135m) | Ofcom's area-level model misses the specific valley floor. Our DEM line-of-sight catches the ridge blocking the mast. |
+| **LA22** (Ambleside) | Good coverage | **Clear line-of-sight for all 4 networks.** | Here, Ofcom is correct, and our physics engine confirms it. |
+| **LA22** (Grasmere) | Good outdoor coverage | **Best on EE only** (O2 blocked by 73m). | A general "good" rating hides that O2 struggles here. Our engine finds the specific operator weakness. |
 
-This small manual check confirms our hypothesis: Ofcom predicts area-level outdoor coverage, while Coverage Detective explains exact-point measured performance and physical obstructions.
+*We don't just match Ofcom's predictions; we use measured data to explain the exact physical and real-world reasons why a resident's experience might differ from the official map.*
 
 ## Testing
 
@@ -128,8 +129,8 @@ $ .venv/bin/python -m pytest -q
 - **Crowd-sourced mast sites are incomplete and approximate**, so "no site found" is weak evidence; operators
   are often inferred, not confirmed.
 - **Ofcom figures are area-level** (constituency / council) predictions, not coverage at your address; use
-  Ofcom's own [checker](https://www.ofcom.org.uk/mobile-coverage-checker) for that. We have compared only
-  three sample places with the checker by hand (see Validation vs Ofcom).
+  Ofcom's own [checker](https://www.ofcom.org.uk/mobile-coverage-checker) for that. We have only manually compared a small sample of answers with the checker's (see
+  'Explaining the Gap' above). A systematic comparison remains future work.
 - **Line of sight is an estimate**: a surface model (trees and buildings partly included), antenna heights
   mostly assumed (25 m), no radio propagation model. "Blocked" means weaker, not none.
 - **The example replies were recorded through NVIDIA's hosted API directly** (27 Oct 2026), not Nightshift,

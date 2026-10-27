@@ -139,7 +139,7 @@ scripts/screenshots.py, council_screenshots.py  README screenshots -> docs/scree
 scripts/nightshift_probe.py   one request through Nightshift (routed model, receipt, signature)
 scripts/test_meterless.sh     Meterless Engine tests (H-MEM, World Model, service, client: 26/26)
 scripts/record_examples.py, save_output_examples.py   examples/ (live model), output_examples/ (from /run)
-tests/                  pytest (166 tests; offline: samples, mocked Zetaris / DEM / LLM)
+tests/                  pytest (168 tests; offline: samples, mocked Zetaris / DEM / LLM)
 input_examples/, output_examples/   POST /run bodies and the answers they produced (the app never reads them)
 Dockerfile, .dockerignore   Python 3.12 + Node 20, SAMPLE_MODE=true by default, port 8000
 docs/SUBMISSION.md      HackOS submission text
