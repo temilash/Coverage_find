@@ -11,7 +11,6 @@ const GAP_FACTORS = {
   persistence: { label: "Persistence", color: "#7C3AED" },
   trend: { label: "Worsening trend", color: "#0D9488" },
   operator_choice: { label: "Few operators", color: "#CA8A04" },
-  need: { label: "Need (deprivation, rural)", color: "#64748B" },
 };
 const OPP_FACTORS = {
   people: { label: "People affected", color: "#1D4ED8" },
@@ -19,7 +18,7 @@ const OPP_FACTORS = {
   trend: { label: "Worsening trend", color: "#7C3AED" },
   operator_choice: { label: "Operator choice", color: "#CA8A04" },
 };
-const DEFAULT_WEIGHTS = { people: 0.35, severity: 0.25, persistence: 0.15, trend: 0.10, operator_choice: 0.15, need: 0 };
+const DEFAULT_WEIGHTS = { people: 0.35, severity: 0.25, persistence: 0.15, trend: 0.10, operator_choice: 0.15 };
 const DEFAULT_OPP_WEIGHTS = { people: 0.35, shortfall: 0.30, trend: 0.15, operator_choice: 0.20 };
 const GAP_SCALE = { breaks: [40, 55, 70, 85], colors: ["#FEF3C7", "#FDBA74", "#F97316", "#C2410C", "#7C2D12"] };
 const OPP_SCALE = { breaks: [40, 55, 70, 85], colors: ["#CCFBF1", "#5EEAD4", "#14B8A6", "#0F766E", "#134E4A"] };
@@ -329,13 +328,10 @@ function renderSliders() {
   const opp = state.wKind === "opportunity";
   const factors = opp ? OPP_FACTORS : GAP_FACTORS, w = opp ? state.oppWeights : state.weights;
   document.querySelectorAll("#weights-seg [data-w]").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.w === state.wKind)));
-  $("sliders").innerHTML = Object.entries(factors).map(([k, f]) => {
-    const disabled = k === "need";
-    return `<label class="slider ${disabled ? "disabled" : ""}"><span class="f-dot" style="background:${f.color}"></span>
+  $("sliders").innerHTML = Object.entries(factors).map(([k, f]) => `<label class="slider"><span class="f-dot" style="background:${f.color}"></span>
       <span class="f-name">${f.label}</span>
-      <input type="range" min="0" max="1" step="0.05" value="${w[k]}" data-k="${k}" ${disabled ? "disabled" : ""} aria-label="${f.label} weight">
-      <span class="f-val" id="w-${k}">${disabled ? "not built" : Math.round(w[k] * 100)}</span></label>`;
-  }).join("");
+      <input type="range" min="0" max="1" step="0.05" value="${w[k]}" data-k="${k}" aria-label="${f.label} weight">
+      <span class="f-val" id="w-${k}">${Math.round(w[k] * 100)}</span></label>`).join("");
   $("sliders").querySelectorAll("input").forEach((el) => el.addEventListener("input", () => {
     w[el.dataset.k] = +el.value;
     $(`w-${el.dataset.k}`).textContent = Math.round(+el.value * 100);
@@ -344,11 +340,11 @@ function renderSliders() {
   }));
   $("weights-note").textContent = opp
     ? "Opportunity score: the same transparent method, for areas that are not poorly served but have a measurable weakness. Weights are rescaled to 100%."
-    : "Weights are rescaled to add up to 100%. Data confidence (Ookla tests) is shown beside each zone, not scored. Need joins the score once that data is built.";
+    : "Weights are rescaled to add up to 100%. Data confidence (Ookla tests) is shown beside each zone, not scored.";
   syncCsv();
 }
 
-const weightParam = () => Object.entries(state.weights).filter(([k]) => k !== "need").map(([k, v]) => `${k}:${v}`).join(",");
+const weightParam = () => Object.entries(state.weights).map(([k, v]) => `${k}:${v}`).join(",");
 const oppWeightParam = () => Object.entries(state.oppWeights).map(([k, v]) => `${k}:${v}`).join(",");
 function syncCsv() {
   const opp = state.wKind === "opportunity";
