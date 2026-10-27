@@ -4,43 +4,43 @@
    "database": "CD_CELLS",
    "table": "cells_r7",
    "file": "cells_r7.parquet",
-   "rows": 2245
+   "rows": 3475
   },
   {
    "database": "CD_OOKLA_MOBILE",
    "table": "ookla_mobile_r7",
    "file": "ookla_mobile_r7.parquet",
-   "rows": 885
+   "rows": 1585
   },
   {
    "database": "CD_OOKLA_MOBILE_HISTORY",
    "table": "ookla_mobile_history_r7",
    "file": "ookla_mobile_history_r7.parquet",
-   "rows": 3417
+   "rows": 6071
   },
   {
    "database": "CD_OOKLA_MOBILE_TILES",
    "table": "ookla_mobile_tiles",
    "file": "ookla_mobile_tiles.parquet",
-   "rows": 20891
+   "rows": 32694
   },
   {
    "database": "CD_MASTS_SITES",
    "table": "masts_sites",
    "file": "masts_sites.parquet",
-   "rows": 6869
+   "rows": 9103
   },
   {
    "database": "CD_MASTS",
    "table": "masts_r7",
    "file": "masts_r7.parquet",
-   "rows": 2245
+   "rows": 3475
   },
   {
    "database": "CD_OFCOM_AREA",
    "table": "ofcom_area_r7",
    "file": "ofcom_area_r7.parquet",
-   "rows": 2245
+   "rows": 3475
   },
   {
    "database": "CD_OFCOM_NATIONS",
@@ -52,40 +52,46 @@
    "database": "CD_TERRAIN",
    "table": "terrain_r7",
    "file": "terrain_r7.parquet",
-   "rows": 2245
+   "rows": 3475
   },
   {
    "database": "CD_LOS",
    "table": "los_r7",
    "file": "los_r7.parquet",
-   "rows": 2243
+   "rows": 3473
   },
   {
    "database": "CD_GAP_ZONES",
    "table": "gap_zones",
    "file": "gap_zones.parquet",
-   "rows": 2
+   "rows": 3
   },
   {
    "database": "CD_GAP_ZONE_CELLS",
    "table": "gap_zone_cells",
    "file": "gap_zone_cells.parquet",
-   "rows": 10
+   "rows": 26
   },
   {
    "database": "CD_OPP_ZONES",
    "table": "opportunity_zones",
    "file": "opportunity_zones.parquet",
-   "rows": 4
+   "rows": 6
   },
   {
    "database": "CD_OPP_ZONE_CELLS",
    "table": "opportunity_zone_cells",
    "file": "opportunity_zone_cells.parquet",
-   "rows": 114
+   "rows": 224
   }
  ],
  "boxes": {
+  "co9_1tp": [
+   0.418,
+   51.8275,
+   0.7677,
+   52.0438
+  ],
   "great_langdale": [
    -3.2904,
    54.3369,
@@ -116,6 +122,12 @@
    -3.0095,
    52.5072
   ],
+  "zone_Z00023": [
+   -3.0088,
+   52.2529,
+   -2.4034,
+   52.6509
+  ],
   "zone_Z00072": [
    -2.9198,
    54.5541,
@@ -127,6 +139,12 @@
    54.2738,
    -2.8643,
    54.581
+  ],
+  "zone_O00004": [
+   -2.9745,
+   52.0028,
+   -1.9815,
+   52.5839
   ],
   "zone_O00044": [
    -0.4135,
@@ -146,6 +164,12 @@
    -2.4476,
    54.5357
   ],
+  "zone_O01089": [
+   0.356,
+   51.767,
+   0.8426,
+   52.0729
+  ],
   "zone_O01498": [
    -3.4779,
    52.255,
@@ -154,24 +178,31 @@
   ]
  },
  "zones": [
+  "O00004",
   "O00044",
   "O00309",
   "O00332",
+  "O01089",
   "O01498",
+  "Z00023",
   "Z00072",
   "Z00603"
  ],
  "dem_bytes": {
+  "co9_1tp": 299330,
   "great_langdale": 464073,
   "central_london": 352908,
   "near_rhayader": 393591,
   "sutton_st_edmund": 180047,
   "remote_cell_near_bettws": 389917,
+  "zone_Z00023": 1129816,
   "zone_Z00072": 863367,
   "zone_Z00603": 862455,
+  "zone_O00004": 2596122,
   "zone_O00044": 1161960,
   "zone_O00309": 1358110,
   "zone_O00332": 1321885,
+  "zone_O01089": 570034,
   "zone_O01498": 873243
  }
 }

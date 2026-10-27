@@ -32,7 +32,7 @@ RETRY_BACKOFF_S = 0.5
 USER_AGENT = "CoverageDetective/0.1 (hackathon; github.com/temilash/Coverage_find)"
 
 # Slugs for the sample places, in SAMPLE_LOCATIONS order.
-SAMPLE_SLUGS = ["great_langdale", "london_wc2n_5du", "rhayader", "sutton_st_edmund", "remote_powys"]
+SAMPLE_SLUGS = ["co9_1tp", "great_langdale", "london_wc2n_5du", "rhayader", "sutton_st_edmund", "remote_powys"]
 
 # Set by scripts/download/live_samples.py: skip the cache and save every live response as
 # the sample named by the call's `sample` slug.
@@ -73,7 +73,7 @@ def km(a_lat: float, a_lon: float, b_lat: float, b_lon: float) -> float:
 def nearest_sample(lat: float | None, lon: float | None) -> str:
     """Slug of the sample place nearest to a point (London when no point is given)."""
     if lat is None or lon is None:
-        return SAMPLE_SLUGS[1]
+        return "london_wc2n_5du"
     dists = [math.hypot(lat - la, (lon - lo) * math.cos(math.radians(lat))) for _, la, lo in SAMPLE_LOCATIONS]
     return SAMPLE_SLUGS[dists.index(min(dists))]
 

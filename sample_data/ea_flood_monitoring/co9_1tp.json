@@ -1,0 +1,54 @@
+{
+ "url": "https://environment.data.gov.uk/flood-monitoring/id/floods?lat=51.9356&long=0.5928&dist=10",
+ "fetched_at": "2026-10-27T14:55:22+00:00",
+ "http_status": 200,
+ "body": {
+  "@context": "http://environment.data.gov.uk/flood-monitoring/meta/context.jsonld",
+  "meta": {
+   "publisher": "Environment Agency",
+   "licence": "http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/",
+   "documentation": "http://environment.data.gov.uk/flood-monitoring/doc/reference",
+   "version": "0.9",
+   "comment": "Status: Beta service",
+   "hasFormat": [
+    "http://environment.data.gov.uk/flood-monitoring/id/floods.csv?lat=51.9356&long=0.5928&dist=10",
+    "http://environment.data.gov.uk/flood-monitoring/id/floods.rdf?lat=51.9356&long=0.5928&dist=10",
+    "http://environment.data.gov.uk/flood-monitoring/id/floods.ttl?lat=51.9356&long=0.5928&dist=10",
+    "http://environment.data.gov.uk/flood-monitoring/id/floods.html?lat=51.9356&long=0.5928&dist=10"
+   ]
+  },
+  "items": [
+   {
+    "@id": "http://environment.data.gov.uk/flood-monitoring/id/floods/051WACDV4C",
+    "description": "The Essex coast from Clacton to and including, St Peters Flat and the Colne and Blackwater estuaries",
+    "eaAreaName": "East Anglia",
+    "eaRegionName": "No longer used",
+    "floodArea": {
+     "@id": "http://environment.data.gov.uk/flood-monitoring/id/floodAreas/051WACDV4C",
+     "county": "Essex",
+     "envelope": {
+      "lowerCorner": {
+       "lx": 583682.939700951,
+       "ly": 200612.47971363
+      },
+      "upperCorner": {
+       "ux": 616996.424629055,
+       "uy": 225340.566213952
+      }
+     },
+     "notation": "051WACDV4C",
+     "polygon": "http://environment.data.gov.uk/flood-monitoring/id/floodAreas/051WACDV4C/polygon",
+     "riverOrSea": "North Sea"
+    },
+    "floodAreaID": "051WACDV4C",
+    "isTidal": true,
+    "message": "High tides over the next two days may lead to flooding. \nFlooding is possible from 11:45pm Tuesday 27th October to 1:45am Wednesday 28th October \nClacton Promenade, Lee-over-Sands and Brightlingsea sea front may see some wave overtopping spray. The Strood at Mersea Island, Coast Road and car parks on the front at West Mersea, and the Hythe and Promenade at Maldon may flood. The detailed forecast is for a peak level at Clacton of 2.96mAODN at 00:45am, on Wednesday 28th October, which is 0.38m above tide tables, Wind Force 5, Westerly. The high tide tomorrow afternoon is expected to be as high, with a peak level at Clacton of 2.94mAODN at 12:30pm, on Wednesday 28th October, which is 0.35m above tide tables, Wind Force 5, South Westerly. \nWe are closely monitoring the situation . \nAvoid coastal roads, footpaths and carparks, which may be flooded.   \nThis message will be updated by 11:00AM on Wednesday 28 October or as the situation changes.\n",
+    "severity": "Flood alert",
+    "severityLevel": 3,
+    "timeMessageChanged": "2026-10-27T14:35:00",
+    "timeRaised": "2026-10-27T14:35:37",
+    "timeSeverityChanged": "2026-10-27T14:35:00"
+   }
+  ]
+ }
+}

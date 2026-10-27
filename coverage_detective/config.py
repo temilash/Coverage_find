@@ -37,6 +37,7 @@ def sample_mode() -> bool:
 # Sample locations used by every check: (name, lat, lon). London is postcode WC2N 5DU
 # (Trafalgar Square), coordinates from postcodes.io.
 SAMPLE_LOCATIONS = [
+    ("CO9 1TP, Gosfield, Essex", 51.935645, 0.592832),  # postcodes.io; the first sample everywhere
     ("Great Langdale, Cumbria", 54.445, -3.105),
     ("Central London (WC2N 5DU)", 51.507211, -0.128269),
     ("Near Rhayader, Powys", 52.30, -3.51),
