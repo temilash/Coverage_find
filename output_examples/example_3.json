@@ -1,0 +1,109 @@
+{
+ "request": {
+  "lat": 51.507211,
+  "lon": -0.128269
+ },
+ "http_status": 200,
+ "response": {
+  "run_id": "run_20261027131059_dap4",
+  "status": "complete",
+  "mode": "recorded replies (sample mode)",
+  "scope": "point",
+  "headline": "No strong cause was found; the service measures well here [insufficient_data].",
+  "location": {
+   "label": "51.50721, -0.12827",
+   "lat": 51.507211,
+   "lon": -0.128269,
+   "postcode": "WC2N 5DU",
+   "nearest_postcode": "WC2N 5DU",
+   "admin_district": "Westminster",
+   "region": "London",
+   "country": "England",
+   "cell_id": "87195da49ffffff"
+  },
+  "causes": [
+   {
+    "cause": "insufficient_data",
+    "confidence": 0.9,
+    "status": "active",
+    "evidence_ids": [
+     "speed_cell",
+     "speed_1km",
+     "speed_neighbours",
+     "nearest_site",
+     "operators_5km",
+     "los_ee",
+     "los_o2",
+     "los_vodafone",
+     "los_three",
+     "network_comparison",
+     "ofcom_area",
+     "weather",
+     "met_office_warnings"
+    ],
+    "contradicting_ids": [],
+    "explanation": "Measured speeds are strong at the point and nearby [speed_cell][speed_1km][speed_neighbours], multiple operators have sites within 5 km [operators_5km], and clear lines of sight exist to EE, O2 and Vodafone sites about 0.1 km away [los_ee][los_o2][los_vodafone][network_comparison]. No severe weather warning is active [met_office_warnings], so no persistent or current cause can be supported."
+   }
+  ],
+  "ruled_out": [],
+  "actions": [
+   {
+    "text": "Try the best network: Vodafone is likely best here [network_comparison].",
+    "audience": "resident"
+   },
+   {
+    "text": "Use Wi-Fi calling indoors if available.",
+    "audience": "resident"
+   },
+   {
+    "text": "Check the address on Ofcom's mobile coverage checker: https://www.ofcom.org.uk/mobile-coverage-checker",
+    "audience": "resident"
+   },
+   {
+    "text": "Emergency calls work on any available network.",
+    "audience": "resident"
+   }
+  ],
+  "best_network": "Vodafone is likely best here, with a clear line of sight to a site 0.1 km east confirmed by Ofcom's licence register. EE and O2 also have clear lines to sites 0.1 km away; EE and O2 operators are inferred from crowd-sourced data rather than confirmed by Ofcom's licence register [network_comparison][los_ee][los_o2][los_vodafone]. Three has a site 190 m south with a small terrain margin, so its signal is likely weakened, not necessarily lost [los_three].",
+  "fix_plan": null,
+  "rounds": 1,
+  "elapsed_s": 1.9,
+  "models": [
+   {
+    "agent": "investigator",
+    "provider": "recorded",
+    "model_answered": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "calls": 1
+   },
+   {
+    "agent": "diagnostician",
+    "provider": "recorded",
+    "model_answered": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "calls": 1
+   },
+   {
+    "agent": "critic",
+    "provider": "recorded",
+    "model_answered": "nvidia/nemotron-3-ultra-550b-a55b",
+    "calls": 1
+   },
+   {
+    "agent": "advisor",
+    "provider": "recorded",
+    "model_answered": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "calls": 1
+   }
+  ],
+  "limitations": [
+   "Sites are approximate; antenna heights assumed where not confirmed; Ofcom figures are area-level.",
+   "Causes are inferred from public data, not confirmed: operators' network data is not public.",
+   "Ookla speeds are quarterly aggregates with no time-of-day detail; congestion can only be inferred.",
+   "No address-level Ofcom coverage; Ofcom figures are for the whole constituency and are predictions.",
+   "Mast sites are approximate (crowd-sourced OpenCelliD, OpenStreetMap, Ofcom's licence register) and incomplete, so 'no sites found' is weak evidence.",
+   "Line of sight uses a surface model (trees and buildings included) and mostly assumed antenna heights; blocked means a weaker signal, not no signal."
+  ],
+  "notes": [],
+  "trace": "logs/run_20261027131059_dap4.jsonl",
+  "detail": "/api/runs/run_20261027131059_dap4?detail=1"
+ }
+}

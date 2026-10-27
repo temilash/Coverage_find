@@ -1,0 +1,121 @@
+{
+ "request": {
+  "lat": 52.31,
+  "lon": -3.52,
+  "audience": "council officer"
+ },
+ "http_status": 200,
+ "response": {
+  "run_id": "run_20261027131112_ho0u",
+  "status": "complete",
+  "mode": "rules only, no model (sample mode)",
+  "scope": "point",
+  "headline": "Terrain between this point and the nearest mast sites is the likely cause [terrain_blocking].",
+  "location": {
+   "label": "52.31000, -3.52000",
+   "lat": 52.31,
+   "lon": -3.52,
+   "postcode": "LD6 5AD",
+   "nearest_postcode": "LD6 5AD",
+   "admin_district": "Powys",
+   "region": null,
+   "country": "Wales",
+   "cell_id": "87195e3a3ffffff"
+  },
+  "causes": [
+   {
+    "cause": "terrain_blocking",
+    "confidence": 0.7,
+    "status": "active",
+    "evidence_ids": [
+     "los_ee",
+     "los_three",
+     "los_vodafone"
+    ],
+    "contradicting_ids": [],
+    "explanation": "Rules only: terrain rises above the line from this point to the nearest site of EE, Three and Vodafone [los_ee][los_three][los_vodafone]."
+   },
+   {
+    "cause": "insufficient_data",
+    "confidence": 0.5,
+    "status": "active",
+    "evidence_ids": [
+     "speed_cell",
+     "speed_1km"
+    ],
+    "contradicting_ids": [],
+    "explanation": "Rules only: too few speed tests were recorded here to measure the service [speed_cell][speed_1km]."
+   },
+   {
+    "cause": "single_operator",
+    "confidence": 0.4,
+    "status": "active",
+    "evidence_ids": [
+     "operators_5km"
+    ],
+    "contradicting_ids": [],
+    "explanation": "Rules only: few operators have approximate mast sites within reach [operators_5km]."
+   }
+  ],
+  "ruled_out": [
+   {
+    "cause": "weather",
+    "reason": "The forecast shows no severe weather here [weather].",
+    "evidence": [
+     "weather"
+    ]
+   }
+  ],
+  "actions": [
+   {
+    "text": "Check your address on Ofcom's mobile coverage checker: https://www.ofcom.org.uk/mobile-coverage-checker",
+    "audience": "resident"
+   },
+   {
+    "text": "Emergency calls work on any available network.",
+    "audience": "resident"
+   }
+  ],
+  "best_network": "No operator has a clear line of sight to an identified site from here. Least obstructed: Vodafone, a site 1.0 km east (confirmed by Ofcom's licence register), with terrain 17 m above the line. No site identified in our data for O2.",
+  "fix_plan": null,
+  "rounds": 1,
+  "elapsed_s": 2.1,
+  "models": [
+   {
+    "agent": "investigator",
+    "provider": "rules",
+    "model_answered": "rules (no model)",
+    "calls": 1
+   },
+   {
+    "agent": "diagnostician",
+    "provider": "rules",
+    "model_answered": "rules (no model)",
+    "calls": 1
+   },
+   {
+    "agent": "critic",
+    "provider": "rules",
+    "model_answered": "rules (no model)",
+    "calls": 1
+   },
+   {
+    "agent": "advisor",
+    "provider": "rules",
+    "model_answered": "rules (no model)",
+    "calls": 1
+   }
+  ],
+  "limitations": [
+   "Rules only, no model (sample mode): causes were ranked by fixed rules from the evidence, without a language model.",
+   "Causes are inferred from public data, not confirmed: operators' network data is not public.",
+   "Ookla speeds are quarterly aggregates with no time-of-day detail; congestion can only be inferred.",
+   "No address-level Ofcom coverage; Ofcom figures are for the whole constituency and are predictions.",
+   "Mast sites are approximate (crowd-sourced OpenCelliD, OpenStreetMap, Ofcom's licence register) and incomplete, so 'no sites found' is weak evidence.",
+   "Line of sight uses a surface model (trees and buildings included) and mostly assumed antenna heights; blocked means a weaker signal, not no signal."
+  ],
+  "notes": [],
+  "trace": "logs/run_20261027131112_ho0u.jsonl",
+  "detail": "/api/runs/run_20261027131112_ho0u?detail=1"
+ }
+}

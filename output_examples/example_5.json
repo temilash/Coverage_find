@@ -1,0 +1,121 @@
+{
+ "request": {
+  "lat": 52.399095,
+  "lon": -3.186185
+ },
+ "http_status": 200,
+ "response": {
+  "run_id": "run_20261027131104_ts30",
+  "status": "complete",
+  "mode": "recorded replies (sample mode)",
+  "scope": "point",
+  "headline": "Not enough data to say why: there are no measured speeds at this point or within 1 km and no mast sites in our data within 10 km, so operators could not be identified.",
+  "location": {
+   "label": "52.39910, -3.18619",
+   "lat": 52.399095,
+   "lon": -3.186185,
+   "postcode": "LD7 1YD",
+   "nearest_postcode": "LD7 1YD",
+   "admin_district": "Powys",
+   "region": null,
+   "country": "Wales",
+   "cell_id": "87195ea8dffffff"
+  },
+  "causes": [
+   {
+    "cause": "distance_to_mast",
+    "confidence": 0.5,
+    "status": "active",
+    "evidence_ids": [
+     "nearest_site",
+     "no_site_ee",
+     "no_site_o2",
+     "no_site_three",
+     "no_site_vodafone",
+     "network_comparison"
+    ],
+    "contradicting_ids": [],
+    "explanation": "No mast sites were found within 10 km for any operator [nearest_site][no_site_ee][no_site_o2][no_site_three][no_site_vodafone][network_comparison], but the site data are incomplete so distance remains uncertain."
+   },
+   {
+    "cause": "insufficient_data",
+    "confidence": 0.5,
+    "status": "active",
+    "evidence_ids": [
+     "speed_1km",
+     "speed_cell",
+     "nearest_site"
+    ],
+    "contradicting_ids": [],
+    "explanation": "There are no speed tests at the point or in the cell [speed_1km][speed_cell] and no confirmed mast sites nearby [nearest_site], so the evidence cannot separate distance from other causes."
+   }
+  ],
+  "ruled_out": [],
+  "actions": [
+   {
+    "text": "Try the best network once identified; EE is listed first in our comparison but confidence is low because no site was identified within 10 km [network_comparison][no_site_ee].",
+    "audience": "resident"
+   },
+   {
+    "text": "Use Wi-Fi calling indoors if your phone and network support it.",
+    "audience": "resident"
+   },
+   {
+    "text": "Check this address on Ofcom's mobile coverage checker: https://www.ofcom.org.uk/mobile-coverage-checker",
+    "audience": "resident"
+   },
+   {
+    "text": "Emergency calls work on any available network.",
+    "audience": "resident"
+   }
+  ],
+  "best_network": "No operator site was identified within 10 km in our data [network_comparison].",
+  "fix_plan": null,
+  "rounds": 1,
+  "elapsed_s": 1.8,
+  "models": [
+   {
+    "agent": "investigator",
+    "provider": "recorded",
+    "model_answered": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "calls": 1
+   },
+   {
+    "agent": "diagnostician",
+    "provider": "recorded",
+    "model_answered": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "calls": 1
+   },
+   {
+    "agent": "critic",
+    "provider": "recorded",
+    "model_answered": "nvidia/nemotron-3-ultra-550b-a55b",
+    "calls": 1
+   },
+   {
+    "agent": "critic",
+    "provider": "recorded",
+    "model_answered": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "calls": 2
+   },
+   {
+    "agent": "advisor",
+    "provider": "recorded",
+    "model_answered": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "calls": 1
+   }
+  ],
+  "limitations": [
+   "Operators could not be identified: no approximate mast sites were found within 10 km in our data. This is not the same as no coverage: crowd-sourced site data is incomplete; check the address on Ofcom's mobile coverage checker.",
+   "Mast site locations are approximate and incomplete; Ofcom coverage figures are area-level, not exact for this address.",
+   "Causes are inferred from public data, not confirmed: operators' network data is not public.",
+   "Ookla speeds are quarterly aggregates with no time-of-day detail; congestion can only be inferred.",
+   "No address-level Ofcom coverage; Ofcom figures are for the whole constituency and are predictions.",
+   "Mast sites are approximate (crowd-sourced OpenCelliD, OpenStreetMap, Ofcom's licence register) and incomplete, so 'no sites found' is weak evidence.",
+   "Line of sight uses a surface model (trees and buildings included) and mostly assumed antenna heights; blocked means a weaker signal, not no signal."
+  ],
+  "notes": [],
+  "trace": "logs/run_20261027131104_ts30.jsonl",
+  "detail": "/api/runs/run_20261027131104_ts30?detail=1"
+ }
+}
