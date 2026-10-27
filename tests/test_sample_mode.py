@@ -101,6 +101,15 @@ def test_letters_summary_and_unrecorded_requests(sample):
     for recipient in ex["letters"]:
         letter = sample.post(f"/api/runs/{run['run_id']}/letter", json={"recipient": recipient}).json()
         assert letter["recipient"] == recipient and "Evidence and sources" in letter["body_markdown"]
+    for to, address in (("council", "complaints@westmorlandandfurness.gov.uk"),
+                        ("EE", "customer.complaints@ee.co.uk")):
+        mail = sample.post(f"/api/runs/{run['run_id']}/email", json={"to": to, "sent_by": "D. Abraham"})
+        assert mail.status_code == 200, mail.text
+        body = mail.json()
+        assert body["to"] == address and body["mailto"].startswith(f"mailto:{address}")
+        assert "Reported by D. Abraham" in body["body_text"] and "Diagnosis reference" in body["body_text"]
+    form_only = sample.post(f"/api/runs/{run['run_id']}/email", json={"to": "Three"}).json()
+    assert form_only["to"] == "" and form_only["channel"] == "form" and form_only["routes"][0]["kind"] == "form"
     summary = sample.post("/api/council/summary", json={"scope": "uk"})
     assert summary.status_code == 200 and summary.json()["sections"]
     missing = sample.post("/api/diagnose", json={"lat": 51.0, "lon": -2.0})

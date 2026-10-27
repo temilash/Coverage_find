@@ -86,3 +86,17 @@ def test_bad_sentence_rewritten_once_then_removed():
     out = g.check_numbers(fields, {"los_vodafone"}, "advisor", lambda s, c: {"Speeds average 22 Mbps.": "Still 22 Mbps."})
     assert "22" not in out["explanation"] and [i.kind for i in log] == ["sentence_removed"]
     assert log[0].details["numbers"] == ["22"]
+
+
+def test_the_letters_structure_survives_bracket_stripping():
+    g, _ = guard()
+    md = "# Heading\n\nFirst paragraph [makes_no_sense].\n\n- a bullet\n- another bullet"
+    assert g.strip_unknown_brackets(md, "letter") == "# Heading\n\nFirst paragraph.\n\n- a bullet\n- another bullet"
+
+
+def test_a_date_from_a_cited_evidence_item_counts_as_a_supported_number():
+    dated = {"los_vodafone": {**EV["los_vodafone"], "data_period": "Copernicus DEM GLO-30 (2021 release)",
+                              "as_of": "2026-10-25"}}
+    allowed = evidence_numbers(list(dated.values()))
+    assert bad_sentences("- Terrain rises 288 m (Copernicus DEM; data 2021, as of 2026-10-25).", allowed) == []
+    assert bad_sentences("- Terrain rises 288 m (Copernicus DEM; data 2014, as of 2027-01-01).", allowed) != []

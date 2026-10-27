@@ -19,7 +19,7 @@ No keys, no Docker, no network: sample mode replays recorded agent runs over sma
 Then click:
 
 1. **Great Langdale**: `/signal?lat=54.445&lon=-3.105` → **Diagnose with agents**. Hills block every network;
-   open **Evidence** to see each item and the SQL behind it, and draft an evidence letter.
+   open **Evidence** to see each item and the SQL behind it, then send the diagnosis to the council or to the network.
 2. **Near Rhayader**: `/signal?lat=52.30&lon=-3.51` → Diagnose → **How the agents decided**: the critic
    challenges a belief, asks for a check, and a second round runs.
 3. **Council view** → `/council?zone=Z00072` (**Ousby**) → Diagnose zone: the recommended new site, the
@@ -43,11 +43,29 @@ new masts have spreadsheets, not reasons.
 | My signal (`/signal`) | Council view (`/council`) | Explore (`/`) |
 |---|---|---|
 | ![](docs/screenshots/hero_my_signal.png) | ![](docs/screenshots/council/03_lake_district_gaps_and_opportunities.png) | ![](docs/screenshots/explore.png) |
-| One exact spot: likely causes ranked with confidence, what was ruled out, the likely best network, what to do, an editable evidence letter. | **Gap zones** (poorly served people) and **improvement opportunities** (not poorly served, but a measurable weakness), ranked by a transparent score with adjustable weights; a fix view with candidate mast sites; agent diagnoses and a priority summary for any area. | The data itself, cell by cell: speeds, mast sites, operators, terrain and line of sight, Ofcom figures. |
+| One exact spot: likely causes ranked with confidence, what was ruled out, the likely best network, what to do, and an email to the council or to a network with the evidence attached. | **Gap zones** (poorly served people) and **improvement opportunities** (not poorly served, but a measurable weakness), ranked by a transparent score with adjustable weights; a fix view with candidate mast sites; agent diagnoses and a priority summary for any area. | The data itself, cell by cell: speeds, mast sites, operators, terrain and line of sight, Ofcom figures. |
 
 | How the agents decided | The fix view | Every claim has its evidence |
 |---|---|---|
 | ![](docs/screenshots/my_signal_how_agents_decided.png) | ![](docs/screenshots/council/06_ousby_fix_with_candidate.png) | ![](docs/screenshots/my_signal_evidence.png) |
+
+## Sending the diagnosis
+
+A finished diagnosis becomes an email to the resident's council, found from the point's local authority, or to
+one of the four networks. **Write the email** asks the letter writer for a draft to that recipient by name, the
+guard checks it, and code adds the address, the subject, a signature with the postcode, coordinates and the
+diagnosis reference, and the `mailto` link. **Open in email app** hands the message to the resident's own mail
+client, and the app never sends anything itself. **Copy message** and **Download .md** cover the rest.
+
+The addresses come from `data/reference/council_contacts.csv` (21 councils) and `operator_contacts.csv`. Each row
+records the page that published the address and the date someone checked it, and
+`scripts/check_outreach.py` re-checks the rows. EE and O2 publish complaints email addresses; Three and Vodafone
+publish a complaints form and a postal address only, so those get the form, the address and Copy, and the panel
+says there is no email rather than inventing one. A council missing from the table gets gov.uk's council finder,
+never a guessed address.
+
+![The email to the council](docs/screenshots/signal_agents_great_langdale_email_council.png)
+![No published address: the complaints form and the postal address](docs/screenshots/signal_agents_great_langdale_email_operator_form.png)
 
 ## How it works
 
@@ -183,6 +201,9 @@ on every page must be kept. Details: [THIRD_PARTY.md](THIRD_PARTY.md). Our code:
   Ofcom's own [checker](https://www.ofcom.org.uk/mobile-coverage-checker) for that.
 - **Line of sight is an estimate**: a surface model (trees and buildings partly included), antenna heights
   mostly assumed (25 m), no radio propagation model. "Blocked" means weaker, not none.
+- **A contact address can go stale.** The table records where each address came from and when it was checked;
+  run `scripts/check_outreach.py --to all` before a release. A long letter does not fit in a `mailto` link, so a
+  cut message keeps the letter's start and the sign-off and leaves the full text to Copy.
 - **Sample mode is a slice**: rankings are within the sample only (e.g. "#4 of 4"), only the example places and
   zones can be diagnosed, and Explore shows cell details but not the UK-wide map layers (15 MB, built from the
   full data).
