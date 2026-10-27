@@ -5,9 +5,11 @@ and the live model, and every agent reply is saved so `python run.py --sample` c
     python scripts/record_examples.py zone_ousby   # just some
 
 Writes examples/<example_id>/ (diagnosis.json, trace.json, evidence.json, world.json, progress.json,
-llm_replies.json) and examples/index.json (what each example answers, and the hash of the prompts used).
-Uses its own Meterless store (port 8102, data/meterless_record/, emptied first) so examples see only
-each other, in the order below. Needs LLM_API_KEY in .env.
+llm_replies.json, agent_trace.jsonl) and examples/index.json (what each example answers, which provider and
+models answered, and the hash of the prompts used). Uses its own Meterless store (port 8102,
+data/meterless_record/, emptied first) so examples see only each other, in the order below. Needs the
+model settings in .env (Meterless Nightshift: METERLESS_RUNTIME_TOKEN or _FILE, LLM_MODEL, LLM_MODEL_REASONING);
+it says so after each example if any call was answered other than through Nightshift.
 """
 
 from __future__ import annotations
@@ -52,11 +54,27 @@ def export(example_id: str, run_id: str) -> None:
     dump("evidence", full["evidence"])
     dump("world", full["world"])
     shutil.copy(C.RUNS_DIR / f"{run_id}.json", out / "progress.json")
+    trace = C.trace_log.LOGS / f"{run_id}.jsonl"
+    if trace.exists():
+        shutil.copy(trace, out / "agent_trace.jsonl")
+
+
+def providers(run_id: str) -> dict:
+    """{provider: calls} and the models that answered, from the run's llm_call notes."""
+    notes = json.loads((C.RUNS_DIR / f"{run_id}.full.json").read_text())["notes"]
+    calls = [n for n in notes if n.get("type") == "llm_call"]
+    by = {}
+    for n in calls:
+        by[n.get("provider") or "unknown"] = by.get(n.get("provider") or "unknown", 0) + 1
+    return {"providers": by, "models_answered": sorted({n.get("model_answered") or n.get("model") for n in calls})}
 
 
 def main() -> None:
     from run import start_memory
+    from coverage_detective.agents.llm import llm
 
+    if llm.problem:
+        sys.exit(f"cannot record: {llm.problem}")
     names = sys.argv[1:] or [e[0] for e in EXAMPLES] + [s[0] for s in SUMMARIES]
     if not sys.argv[1:]:
         shutil.rmtree(ROOT / "data" / "meterless_record", ignore_errors=True)
@@ -72,10 +90,14 @@ def main() -> None:
         export(example_id, r["run_id"])
         for recipient in LETTERS.get(example_id, []):
             API.letter(r["run_id"], API.LetterRequest(recipient=recipient))
+        used = providers(r["run_id"])
         index[example_id] = {"example_id": example_id, "kind": kind, "label": label, **where, "run_id": r["run_id"],
                              "status": r["status"], "headline": r["headline"], "elapsed_s": r["elapsed_s"],
-                             "letters": LETTERS.get(example_id, [])}
-        print(f"{example_id}: {r['status']} in {time.time() - t:.0f}s, {len(sess.data['replies'])} replies: {r['headline'][:110]}")
+                             "letters": LETTERS.get(example_id, []), **used}
+        print(f"{example_id}: {r['status']} in {time.time() - t:.0f}s, {len(sess.data['replies'])} replies, "
+              f"{used['providers']}: {r['headline'][:110]}")
+        if set(used["providers"]) != {"nightshift"}:
+            print(f"   WARNING: not every call went through Nightshift: {used['providers']}")
     for example_id, scope, label in SUMMARIES:
         if example_id not in names:
             continue

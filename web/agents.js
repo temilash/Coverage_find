@@ -395,7 +395,7 @@ const AG = (() => {
     const b = document.createElement("div");
     b.className = "sample-banner";
     b.textContent = "Sample mode: data from small committed extracts (DuckDB in place of Zetaris), saved live responses and "
-      + "recorded agent replies. Only the example places and zones can be diagnosed.";
+      + "recorded agent replies for the examples. Other points near them run with fixed rules instead of the model.";
     document.body.prepend(b);
   }).catch(() => {});
 
