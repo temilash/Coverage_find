@@ -3,6 +3,7 @@ and the live model, and every agent reply is saved so `python run.py --sample` c
 
     python scripts/record_examples.py              # all examples (about 20 minutes)
     python scripts/record_examples.py zone_ousby   # just some
+    python scripts/record_examples.py --emails-only co9_1tp   # only the emails, for the run already recorded
 
 Writes examples/<example_id>/ (diagnosis.json, trace.json, evidence.json, world.json, progress.json,
 llm_replies.json, agent_trace.jsonl) and examples/index.json (what each example answers, which provider and
@@ -73,14 +74,31 @@ def providers(run_id: str) -> dict:
     return {"providers": by, "models_answered": sorted({n.get("model_answered") or n.get("model") for n in calls})}
 
 
+def record_emails(names: list[str]) -> None:
+    """Re-record only the emails of examples whose run is already recorded (same run, same Meterless store)."""
+    for example_id in names:
+        run_id = R.example(example_id)["run_id"]
+        path = R.EXAMPLES / example_id / "llm_replies.json"
+        data = json.loads(path.read_text())
+        data["replies"] = {k: v for k, v in data["replies"].items() if not k.startswith("letter_writer:email ")}
+        path.write_text(json.dumps(data, indent=1))
+        for to in EMAILS.get(example_id, []):
+            mail = API.email(run_id, API.EmailRequest(to=to))
+            print(f"{example_id}: email to {mail['contact']['name']}: {mail['subject']} | guard: {mail['guard']}")
+
+
 def main() -> None:
     from run import start_memory
     from coverage_detective.agents.llm import llm
 
     if llm.problem:
         sys.exit(f"cannot record: {llm.problem}")
-    names = sys.argv[1:] or [e[0] for e in EXAMPLES] + [s[0] for s in SUMMARIES]
-    if not sys.argv[1:]:
+    args = [a for a in sys.argv[1:] if a != "--emails-only"]
+    if "--emails-only" in sys.argv:
+        start_memory()
+        return record_emails(args or list(EMAILS))
+    names = args or [e[0] for e in EXAMPLES] + [s[0] for s in SUMMARIES]
+    if not args:
         shutil.rmtree(ROOT / "data" / "meterless_record", ignore_errors=True)
     start_memory()
     index = {e["example_id"]: e for e in R.index()}

@@ -344,19 +344,26 @@ def fill_placeholders(md: str, sent_by: str, where: str) -> str:
     text = md.replace("[Your name]", sent_by or "A local resident")
     for placeholder in ("[Your address]", "[Your postcode]"):
         text = text.replace(placeholder, where)
+    for doubled in (f"{where}, {where}", f"{where} ({where})"):  # "[Your address], <postcode>" once filled
+        text = text.replace(doubled, where)
     return text
 
 
 # ------------------------------------------------------------------ the message
 
 
-def tidy_subject(subject: str, place: dict) -> str:
-    """A subject names the place a reader knows: swap a bare coordinate pair for the postcode."""
+def name_place(text: str, place: dict) -> str:
+    """Swap a bare coordinate pair for the postcode a reader knows ("[Your address] (lat, lon)" -> the address)."""
     lat, lon, postcode = place.get("lat"), place.get("lon"), place.get("postcode")
     if postcode and isinstance(lat, (int, float)) and isinstance(lon, (int, float)):
         for coords in (f"{lat:.5f}, {lon:.5f}", f"{lat}, {lon}", f"{lat:.5f},{lon:.5f}"):
-            subject = subject.replace(coords, postcode)
-    return subject
+            text = text.replace(f"[Your address] ({coords})", "[Your address]").replace(coords, postcode)
+    return text
+
+
+def tidy_subject(subject: str, place: dict) -> str:
+    """A subject names the place a reader knows: swap a bare coordinate pair for the postcode."""
+    return name_place(subject, place)
 
 
 def slug(s: str) -> str:

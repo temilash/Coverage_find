@@ -26,6 +26,7 @@ from coverage_detective.agents.llm import LLMError, LLMResult, llm
 from coverage_detective.agents.replay import ReplayMissing
 from coverage_detective.agents.tools import (OPERATORS, POINT_TOOLS, ZONE_TOOLS, Case, network_comparison, run_tool,
                                              tool_specs)
+from coverage_detective.outreach import name_place
 
 PROMPTS = Path(__file__).parent / "prompts"
 MAX_CALLS_PER_ROUND = 8
@@ -437,6 +438,10 @@ def write_letter(case: Case, recipient: str, diagnosis: dict, addressee: str | N
     guard = make_guard(case, "letter_writer", 0)
     letter.cited_evidence = guard.known(letter.cited_evidence, "letter")
     body = guard.strip_unknown_brackets(letter.body_markdown, "letter")
+    # The point's coordinates are not evidence numbers: name the place by its postcode before the number check,
+    # so an opening line that gives the location is not removed.
+    loc = diagnosis.get("location") or {}
+    body = name_place(body, {**loc, "postcode": loc.get("postcode") or loc.get("nearest_postcode")})
     letter.body_markdown = guard.check_numbers({"body": body}, cited | set(letter.cited_evidence) | cited_in_text(body),
                                                "letter", rewriter(case, "letter_writer", 0, system, False))["body"]
     # Sources are listed by code from the evidence, so they are never missing or invented.
