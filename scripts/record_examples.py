@@ -3,6 +3,7 @@ and the live model, and every agent reply is saved so `python run.py --sample` c
 
     python scripts/record_examples.py              # all examples (about 20 minutes)
     python scripts/record_examples.py zone_ousby   # just some
+    python scripts/record_examples.py --emails-only co9_1tp   # only the emails, for the run already recorded
 
 Writes examples/<example_id>/ (diagnosis.json, trace.json, evidence.json, world.json, progress.json,
 llm_replies.json, agent_trace.jsonl) and examples/index.json (what each example answers, which provider and
@@ -31,6 +32,7 @@ from coverage_detective.agents import replay as R  # noqa: E402
 from coverage_detective.api import agents as API  # noqa: E402
 
 EXAMPLES = [  # example_id, kind, where, label
+    ("co9_1tp", "point", {"lat": 51.935645, "lon": 0.592832}, "CO9 1TP, Gosfield, Essex"),
     ("great_langdale", "point", {"lat": 54.445, "lon": -3.105}, "Great Langdale, Cumbria"),
     ("central_london", "point", {"lat": 51.507211, "lon": -0.128269}, "Central London (WC2N 5DU)"),
     ("near_rhayader", "point", {"lat": 52.30, "lon": -3.51}, "Near Rhayader, Powys"),
@@ -39,8 +41,11 @@ EXAMPLES = [  # example_id, kind, where, label
      "Remote cell near Bettws, Powys (no tests, no site within 10 km: insufficient data)"),
     ("zone_ousby", "zone", {"zone_id": "Z00072"}, "Ousby gap zone (Westmorland and Furness)"),
     ("opportunity_windermere", "zone", {"zone_id": "O00332"}, "Windermere improvement opportunity"),
+    ("zone_broadstone", "zone", {"zone_id": "Z00023"}, "Broadstone gap zone (Shropshire)"),
+    ("opportunity_ludlow", "zone", {"zone_id": "O00004"}, "Ludlow improvement opportunity"),
 ]
 LETTERS = {"great_langdale": ["operator", "council", "mp"]}
+EMAILS = {"co9_1tp": ["council", "EE", "O2", "Three", "Vodafone"]}  # POST /api/runs/{id}/email, one per recipient
 SUMMARIES = [("summary_uk", "uk", "the sample area"), ("summary_westmorland", "la:E06000064", "Westmorland and Furness")]
 
 
@@ -69,14 +74,31 @@ def providers(run_id: str) -> dict:
     return {"providers": by, "models_answered": sorted({n.get("model_answered") or n.get("model") for n in calls})}
 
 
+def record_emails(names: list[str]) -> None:
+    """Re-record only the emails of examples whose run is already recorded (same run, same Meterless store)."""
+    for example_id in names:
+        run_id = R.example(example_id)["run_id"]
+        path = R.EXAMPLES / example_id / "llm_replies.json"
+        data = json.loads(path.read_text())
+        data["replies"] = {k: v for k, v in data["replies"].items() if not k.startswith("letter_writer:email ")}
+        path.write_text(json.dumps(data, indent=1))
+        for to in EMAILS.get(example_id, []):
+            mail = API.email(run_id, API.EmailRequest(to=to))
+            print(f"{example_id}: email to {mail['contact']['name']}: {mail['subject']} | guard: {mail['guard']}")
+
+
 def main() -> None:
     from run import start_memory
     from coverage_detective.agents.llm import llm
 
     if llm.problem:
         sys.exit(f"cannot record: {llm.problem}")
-    names = sys.argv[1:] or [e[0] for e in EXAMPLES] + [s[0] for s in SUMMARIES]
-    if not sys.argv[1:]:
+    args = [a for a in sys.argv[1:] if a != "--emails-only"]
+    if "--emails-only" in sys.argv:
+        start_memory()
+        return record_emails(args or list(EMAILS))
+    names = args or [e[0] for e in EXAMPLES] + [s[0] for s in SUMMARIES]
+    if not args:
         shutil.rmtree(ROOT / "data" / "meterless_record", ignore_errors=True)
     start_memory()
     index = {e["example_id"]: e for e in R.index()}
@@ -90,10 +112,13 @@ def main() -> None:
         export(example_id, r["run_id"])
         for recipient in LETTERS.get(example_id, []):
             API.letter(r["run_id"], API.LetterRequest(recipient=recipient))
+        for to in EMAILS.get(example_id, []):
+            mail = API.email(r["run_id"], API.EmailRequest(to=to))
+            print(f"   email to {mail['contact']['name']}: {mail['subject']}")
         used = providers(r["run_id"])
         index[example_id] = {"example_id": example_id, "kind": kind, "label": label, **where, "run_id": r["run_id"],
                              "status": r["status"], "headline": r["headline"], "elapsed_s": r["elapsed_s"],
-                             "letters": LETTERS.get(example_id, []), **used}
+                             "letters": LETTERS.get(example_id, []), "emails": EMAILS.get(example_id, []), **used}
         print(f"{example_id}: {r['status']} in {time.time() - t:.0f}s, {len(sess.data['replies'])} replies, "
               f"{used['providers']}: {r['headline'][:110]}")
         if set(used["providers"]) != {"nightshift"}:

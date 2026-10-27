@@ -85,6 +85,10 @@ class Session:
 
     variant: str | None = None  # e.g. a letter's recipient, so each recipient has its own recorded letter
 
+    def has(self, agent: str, variant: str) -> bool:
+        """Whether replies were recorded for this agent and variant (any round)."""
+        return any(k.startswith(f"{agent}:{variant}|") for k in self.data["replies"])
+
     def next_key(self, agent: str, round: int) -> str:
         agent = f"{agent}:{self.variant}" if self.variant else agent
         n = self.counts.get((agent, round), 0) + 1

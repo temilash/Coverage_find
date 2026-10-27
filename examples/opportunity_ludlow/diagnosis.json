@@ -1,0 +1,379 @@
+{
+ "headline": "No single cause dominates this zone; a capacity strain across many people is the most likely contributor [capacity_strain][zone_overview].",
+ "explanation": "The zone is an improvement opportunity, not poorly served, with 82,067 people across 108 cells [zone_overview]. Speeds fell 55% from the oldest to the latest quarter [zone_overview], and 22,126 people are in busy cells with a capacity-strain signal [capacity_strain]. Operator scarcity is not universal because the zone average is 2.7 operators nearby [zone_overview]. The rule-based fix is to gather measurements first because no single weakness dominates [fix_rule].",
+ "cited_evidence": [
+  "capacity_strain",
+  "single_operator",
+  "insufficient_data",
+  "zone_overview",
+  "fix_rule"
+ ],
+ "hypotheses": [
+  {
+   "id": "single_operator",
+   "cause": "single_operator",
+   "confidence": 0.45,
+   "status": "active",
+   "supporting": [
+    "zone_overview"
+   ],
+   "contradicting": [],
+   "explanation": "7,108 people are in cells where only 1-2 operators are identified within 5 km [zone_overview], yet the zone average is 2.7 operators nearby, so operator scarcity is not universal [zone_overview].",
+   "history": [
+    {
+     "at": "2026-10-27T15:25:37.588Z",
+     "by": "diagnostician",
+     "confidence": 0.45,
+     "previous": null,
+     "reason": "proposed",
+     "round": 1
+    }
+   ]
+  },
+  {
+   "id": "capacity_strain",
+   "cause": "capacity_strain",
+   "confidence": 0.4,
+   "status": "active",
+   "supporting": [
+    "zone_overview"
+   ],
+   "contradicting": [],
+   "explanation": "The zone carries a capacity-strain signal across 22,126 people and speeds fell 55% from the oldest to the latest quarter [zone_overview], but the rule-based fix notes no single weakness dominates and the evidence is zone-level rather than cell-specific [fix_rule].",
+   "history": [
+    {
+     "at": "2026-10-27T15:25:37.565Z",
+     "by": "diagnostician",
+     "confidence": 0.55,
+     "previous": null,
+     "reason": "proposed",
+     "round": 1
+    },
+    {
+     "at": "2026-10-27T15:26:41.159Z",
+     "by": "critic",
+     "confidence": 0.4,
+     "previous": 0.55,
+     "reason": "critic: The capacity-strain signal is zone-level (22,126 people) and the fix_rule states no single weakness dominates the zone's cells. The 55% speed drop over quarters could have multiple causes (terrain, interference, backhaul). Confidence 0.55 is above 0.5 but rests on zone-level evidence that is not cell-specific and is contradicted by the fix_rule's assessment.",
+     "round": 1
+    }
+   ]
+  },
+  {
+   "id": "insufficient_data",
+   "cause": "insufficient_data",
+   "confidence": 0.4,
+   "status": "active",
+   "supporting": [
+    "fix_rule"
+   ],
+   "contradicting": [],
+   "explanation": "No single weakness dominates the zone's cells and the rule-based fix is to gather measurements first [fix_rule], so the evidence cannot separate the likely causes at this point.",
+   "history": [
+    {
+     "at": "2026-10-27T15:25:37.609Z",
+     "by": "diagnostician",
+     "confidence": 0.4,
+     "previous": null,
+     "reason": "proposed",
+     "round": 1
+    }
+   ]
+  }
+ ],
+ "fix_plan": {
+  "fix_type": "gather_data",
+  "candidate": null,
+  "why": "The rule-based fix is to gather measurements first because no single weakness dominates the zone's cells [fix_rule]; the zone-level signals (capacity strain across 22,126 people, speeds down 55%, 19,216 below half the local reference median, 40,407 with 30%+ speed falls, 7,108 with only 1-2 operators nearby) cannot yet be separated into cell-specific causes [zone_overview].",
+  "assumptions": [
+   "25 m mast",
+   "line of sight to cell centres, not a radio model",
+   "no planning or land checks",
+   "measurements are needed before choosing add_operators, capacity_upgrade, or new_site"
+  ],
+  "cited_evidence": [
+   "fix_rule",
+   "zone_overview"
+  ],
+  "review": {
+   "verdict": "approve",
+   "reason": "The plan correctly treats this as an improvement opportunity (not a gap), cites the zone's specific weaknesses from [zone_overview] (capacity strain, speed drops, below-median speeds, limited operators), matches the fix_type 'gather_data' to the rule [fix_rule] which states no single weakness dominates, states assumptions, and does not claim 'no service' or 'no coverage'. Data confidence is high (653 tests) per [zone_overview], so no weak-data flag is needed.",
+   "issues": []
+  },
+  "revisions": 0
+ },
+ "limitations": [
+  "Sites are approximate; antenna heights assumed; Ofcom figures are area-level; evidence is zone-level rather than cell-specific [fix_rule][zone_overview]."
+ ],
+ "rounds": 1,
+ "status": "complete",
+ "run_id": "run_20261027152522_tilw",
+ "scope": "zone",
+ "query": "O00004",
+ "zone": {
+  "zone_type": "opportunity",
+  "rank": 4,
+  "zone_id": "O00004",
+  "name": "Ludlow",
+  "place_type": "town",
+  "nation": "England",
+  "council": "Wyre Forest",
+  "council_code": "E07000239",
+  "councils": [
+   {
+    "code": "E07000239",
+    "name": "Wyre Forest"
+   },
+   {
+    "code": "E06000051",
+    "name": "Shropshire"
+   },
+   {
+    "code": "E07000235",
+    "name": "Malvern Hills"
+   },
+   {
+    "code": "E06000019",
+    "name": "Herefordshire, County of"
+   },
+   {
+    "code": "E07000238",
+    "name": "Wychavon"
+   }
+  ],
+  "people": 82067,
+  "cells": 108,
+  "centroid": {
+   "lat": 52.3605731853917,
+   "lon": -2.390944697470946
+  },
+  "median_speed_mbps": 20.6485,
+  "download_mbps": 55.54949617151608,
+  "tests": 653,
+  "confidence": "high",
+  "trend_pct": -55.18167659780195,
+  "quarters_with_data": 4,
+  "operators_mean": 2.66,
+  "operators_nearby": [
+   "EE",
+   "O2",
+   "Three",
+   "Vodafone"
+  ],
+  "score": 49,
+  "breakdown": {
+   "people": {
+    "raw": 82066.51631820202,
+    "normalised": 1,
+    "weight": 0.35,
+    "contribution": 35,
+    "no_data": false
+   },
+   "shortfall": {
+    "raw": 21.56742228355119,
+    "normalised": 0,
+    "weight": 0.3,
+    "contribution": 0,
+    "no_data": false
+   },
+   "trend": {
+    "raw": 55.18167659780195,
+    "normalised": 0.4,
+    "weight": 0.15,
+    "contribution": 6,
+    "no_data": false
+   },
+   "operator_choice": {
+    "raw": 1.3404584111289428,
+    "normalised": 0.4,
+    "weight": 0.2,
+    "contribution": 8,
+    "no_data": false
+   }
+  },
+  "links": {
+   "explore": "/?zone=O00004&lat=52.36057&lon=-2.39094&zoom=10.5",
+   "signal": "/signal?lat=52.36057&lon=-2.39094"
+  },
+  "people_by_reason": {
+   "slow": 19216,
+   "falling": 40407,
+   "few_operators": 7108,
+   "capacity": 22126
+  },
+  "reasons": [
+   "slow",
+   "falling",
+   "few_operators",
+   "capacity"
+  ],
+  "shortfall_pct": 21.56742228355119,
+  "ref_mbps": 51.556737858390385,
+  "uk_median_mbps": 102.66179704301075,
+  "limited_data": false,
+  "cell_ids": [
+   "871958996ffffff",
+   "871958d20ffffff",
+   "871958d24ffffff",
+   "871958d25ffffff",
+   "871958d26ffffff",
+   "871958d29ffffff",
+   "871958d34ffffff",
+   "871958d35ffffff",
+   "871958d64ffffff",
+   "871958d65ffffff",
+   "871958d74ffffff",
+   "87195c601ffffff",
+   "87195c602ffffff",
+   "87195c603ffffff",
+   "87195c604ffffff",
+   "87195c606ffffff",
+   "87195c608ffffff",
+   "87195c60affffff",
+   "87195c60bffffff",
+   "87195c60cffffff",
+   "87195c60effffff",
+   "87195c610ffffff",
+   "87195c611ffffff",
+   "87195c612ffffff",
+   "87195c613ffffff",
+   "87195c614ffffff",
+   "87195c615ffffff",
+   "87195c616ffffff",
+   "87195c618ffffff",
+   "87195c619ffffff",
+   "87195c61cffffff",
+   "87195c61dffffff",
+   "87195c623ffffff",
+   "87195c62cffffff",
+   "87195c62effffff",
+   "87195c631ffffff",
+   "87195c642ffffff",
+   "87195c644ffffff",
+   "87195c646ffffff",
+   "87195c650ffffff",
+   "87195c651ffffff",
+   "87195c652ffffff",
+   "87195c653ffffff",
+   "87195c655ffffff",
+   "87195c656ffffff",
+   "87195c65cffffff",
+   "87195c65dffffff",
+   "87195c680ffffff",
+   "87195c681ffffff",
+   "87195c682ffffff",
+   "87195c684ffffff",
+   "87195c685ffffff",
+   "87195c686ffffff",
+   "87195c68cffffff",
+   "87195c690ffffff",
+   "87195c691ffffff",
+   "87195c695ffffff",
+   "87195c698ffffff",
+   "87195c699ffffff",
+   "87195c69affffff",
+   "87195c69bffffff",
+   "87195c69cffffff",
+   "87195c69effffff",
+   "87195c6a0ffffff",
+   "87195c6a2ffffff",
+   "87195c6a3ffffff",
+   "87195c6a4ffffff",
+   "87195c6a6ffffff",
+   "87195c6abffffff",
+   "87195c6b3ffffff",
+   "87195c6c0ffffff",
+   "87195c6c2ffffff",
+   "87195c6c4ffffff",
+   "87195c6c6ffffff",
+   "87195c6c8ffffff",
+   "87195c6c9ffffff",
+   "87195c6caffffff",
+   "87195c6cbffffff",
+   "87195c6d0ffffff",
+   "87195c6d4ffffff",
+   "87195c6d5ffffff",
+   "87195c6d6ffffff",
+   "87195c6daffffff",
+   "87195c6dbffffff",
+   "87195c6dcffffff",
+   "87195c6ddffffff",
+   "87195c6deffffff",
+   "87195c6e0ffffff",
+   "87195c6e1ffffff",
+   "87195c6e3ffffff",
+   "87195c6e4ffffff",
+   "87195c6e5ffffff",
+   "87195c6e6ffffff",
+   "87195c6eeffffff",
+   "87195c6f0ffffff",
+   "87195c6f1ffffff",
+   "87195c6f2ffffff",
+   "87195c6f3ffffff",
+   "87195c6f5ffffff",
+   "87195c6f6ffffff",
+   "87195c750ffffff",
+   "87195c753ffffff",
+   "87195c755ffffff",
+   "87195c75effffff",
+   "87195c78affffff",
+   "87195c78bffffff",
+   "87195c799ffffff",
+   "87195ea6dffffff"
+  ]
+ },
+ "zone_type": "opportunity",
+ "location": {
+  "lat": 52.3605731853917,
+  "lon": -2.390944697470946,
+  "label": "Ludlow"
+ },
+ "critiques": [
+  {
+   "round": 1,
+   "target": "capacity_strain",
+   "verdict": "downgrade",
+   "reason": "The capacity-strain signal is zone-level (22,126 people) and the fix_rule states no single weakness dominates the zone's cells. The 55% speed drop over quarters could have multiple causes (terrain, interference, backhaul). Confidence 0.55 is above 0.5 but rests on zone-level evidence that is not cell-specific and is contradicted by the fix_rule's assessment.",
+   "requested_checks": [],
+   "issues": null,
+   "suggested_confidence": 0.4
+  },
+  {
+   "round": 1,
+   "target": "single_operator",
+   "verdict": "approve",
+   "reason": "7,108 people are in cells where only 1-2 operators are identified within 5 km, while the zone average is 2.7 operators nearby. This indicates localized operator scarcity, consistent with the evidence.",
+   "requested_checks": [],
+   "issues": null,
+   "suggested_confidence": null
+  },
+  {
+   "round": 1,
+   "target": "insufficient_data",
+   "verdict": "approve",
+   "reason": "The rule-based fix explicitly states no single weakness dominates and recommends gathering measurements first, confirming the evidence cannot separate the likely causes at this point.",
+   "requested_checks": [],
+   "issues": null,
+   "suggested_confidence": null
+  },
+  {
+   "round": 1,
+   "target": "fix_plan",
+   "verdict": "approve",
+   "reason": "The plan correctly treats this as an improvement opportunity (not a gap), cites the zone's specific weaknesses from [zone_overview] (capacity strain, speed drops, below-median speeds, limited operators), matches the fix_type 'gather_data' to the rule [fix_rule] which states no single weakness dominates, states assumptions, and does not claim 'no service' or 'no coverage'. Data confidence is high (653 tests) per [zone_overview], so no weak-data flag is needed.",
+   "requested_checks": [],
+   "issues": [],
+   "suggested_confidence": null
+  }
+ ],
+ "wording_check": {
+  "applies": true,
+  "ok": true,
+  "mentions_opportunity": true,
+  "forbidden": []
+ },
+ "elapsed_s": 119.6,
+ "example_id": "opportunity_ludlow",
+ "replayed": false,
+ "rules_only": false
+}

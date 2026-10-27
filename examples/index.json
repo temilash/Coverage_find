@@ -1,6 +1,6 @@
 {
  "prompts_sha": "1a1d151a4ca89c985ff0ea147701646b5733dd5e35f2ee8ac7f688c48f27cc35",
- "recorded": "2026-10-27 00:26",
+ "recorded": "2026-10-27 15:27",
  "examples": [
   {
    "example_id": "central_london",
@@ -13,6 +13,31 @@
    "headline": "No strong cause was found; the service measures well here [insufficient_data].",
    "elapsed_s": 49.0,
    "letters": []
+  },
+  {
+   "example_id": "co9_1tp",
+   "kind": "point",
+   "label": "CO9 1TP, Gosfield, Essex",
+   "lat": 51.935645,
+   "lon": 0.592832,
+   "run_id": "run_20261027151247_a5c3",
+   "status": "complete",
+   "headline": "The service measures poorly here, but no single cause reaches a strong level [insufficient_data].",
+   "elapsed_s": 415.7,
+   "letters": [],
+   "emails": [
+    "council",
+    "EE",
+    "O2",
+    "Three",
+    "Vodafone"
+   ],
+   "providers": {
+    "nvidia_direct": 7
+   },
+   "models_answered": [
+    "private/nvidia/nemotron-3.5-super-120b-a12b"
+   ]
   },
   {
    "example_id": "great_langdale",
@@ -41,6 +66,25 @@
    "headline": "Terrain blocking EE and Three signals is the likely cause [terrain_blocking][los_ee][los_three].",
    "elapsed_s": 180.2,
    "letters": []
+  },
+  {
+   "example_id": "opportunity_ludlow",
+   "kind": "zone",
+   "label": "Ludlow improvement opportunity",
+   "zone_id": "O00004",
+   "run_id": "run_20261027152522_tilw",
+   "status": "complete",
+   "headline": "No single cause dominates this zone; a capacity strain across many people is the most likely contributor [capacity_strain][zone_overview].",
+   "elapsed_s": 119.6,
+   "letters": [],
+   "emails": [],
+   "providers": {
+    "nvidia_direct": 6
+   },
+   "models_answered": [
+    "nvidia/nemotron-3-ultra-550b-a55b",
+    "private/nvidia/nemotron-3.5-super-120b-a12b"
+   ]
   },
   {
    "example_id": "opportunity_windermere",
@@ -96,6 +140,25 @@
    "headline": "Distance to the nearest mast is the likely cause [distance_to_mast].",
    "elapsed_s": 72.4,
    "letters": []
+  },
+  {
+   "example_id": "zone_broadstone",
+   "kind": "zone",
+   "label": "Broadstone gap zone (Shropshire)",
+   "zone_id": "Z00023",
+   "run_id": "run_20261027152103_atl8",
+   "status": "complete",
+   "headline": "Terrain blocking the line to every nearby mast is the likely cause [terrain_blocking].",
+   "elapsed_s": 256.0,
+   "letters": [],
+   "emails": [],
+   "providers": {
+    "nvidia_direct": 7
+   },
+   "models_answered": [
+    "nvidia/nemotron-3-ultra-550b-a55b",
+    "private/nvidia/nemotron-3.5-super-120b-a12b"
+   ]
   },
   {
    "example_id": "zone_ousby",

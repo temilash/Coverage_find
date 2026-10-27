@@ -51,7 +51,7 @@ confidence history; every claim opens to its evidence item and the Zetaris SQL b
 JSONL trace (agents, handoffs, Zetaris queries, memory reads and writes, guard interventions, the model that
 answered each call). "Not enough data to say why" is a valid answer, and "no site in our data" is never shown
 as "no coverage". `POST /run` gives the same answer as JSON for scripts. Sample mode runs the whole pipeline
-with no keys or services (recorded model replies for seven examples, fixed rules elsewhere, clearly labelled).
+with no keys or services (recorded model replies for ten examples, fixed rules elsewhere, clearly labelled).
 
 ## Sponsor technology
 
@@ -74,14 +74,16 @@ World Model graph in the Evidence tab and the fix view's candidate sites. Tests:
 runs the H-MEM suite (10/10), the World Model suite (10/10), our service over both (4/4) and the Python client
 (2/2): 26/26 passed.
 
-**Meterless Nightshift (the primary AI provider).** Every agent's model call goes to Nightshift's local
+**Meterless Nightshift (the first-choice AI provider in the code).** Every agent's model call goes to Nightshift's local
 OpenAI-compatible endpoint with Nightshift's runtime token, the `meterless-app: coverage-detective` header and
 a fresh `meterless-scope` per run. The NVIDIA key is connected in Nightshift's Providers tab, not in our code.
 Model ids are pinned to Nemotron (`meterless/auto` is refused), and from each answer we record the model that
 actually answered (`routed_model`), the receipt id, the route and the latency, and verify the receipt's Ed25519
 signature. These appear on each model call in the trace and in the UI's "Technical details"; an optional strict
 mode rejects any non-Nemotron answer. NVIDIA's API directly is used only if Nightshift is unreachable, and is
-labelled as a fallback.
+labelled as a fallback. Nightshift runs on macOS, Windows and ARM64 only and our machine is Linux x86_64, so our
+runs used NVIDIA's hosted API directly, labelled as such on every call; the Meterless organisers confirmed this
+is acceptable for the provider requirement, since the H-MEM and World Model engines are active in the project.
 
 **NVIDIA Nemotron (the models).** Nemotron 3.5 Super runs the investigator (tool calling), diagnostician,
 advisor, letter writer and fix planner, with strict JSON-schema output; Nemotron 3 Ultra with thinking runs the

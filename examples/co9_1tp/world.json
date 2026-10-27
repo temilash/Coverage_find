@@ -1,0 +1,902 @@
+{
+ "entities": [
+  {
+   "type": "place",
+   "id": "place:cd:51.93565,0.59283",
+   "attrs": {
+    "lat": 51.935645,
+    "lon": 0.592832,
+    "cell_id": "87194e032ffffff",
+    "postcode": "CO9 1TP",
+    "district": "Braintree",
+    "country": "England"
+   },
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:12:47.224Z",
+    "runId": "run_20261027151247_a5c3"
+   },
+   "createdAt": "2026-10-27T15:12:47.224Z",
+   "updatedAt": "2026-10-27T15:12:47.224Z",
+   "name": "51.93565, 0.59283",
+   "aliases": [
+    "51.93565, 0.59283"
+   ],
+   "state": "active"
+  },
+  {
+   "type": "area",
+   "id": "area:cd:Braintree",
+   "attrs": {
+    "kind": "local authority"
+   },
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:12:47.253Z",
+    "runId": "run_20261027151247_a5c3"
+   },
+   "createdAt": "2026-10-27T15:12:47.253Z",
+   "updatedAt": "2026-10-27T15:12:47.253Z",
+   "name": "Braintree",
+   "aliases": [
+    "Braintree"
+   ],
+   "state": "active"
+  },
+  {
+   "type": "site",
+   "id": "site:cd:S090784",
+   "attrs": {
+    "operators": [
+     "EE",
+     "Three"
+    ],
+    "operators_confirmed": [
+     "EE",
+     "Three"
+    ]
+   },
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:19:37.784Z",
+    "runId": "run_20261027151247_a5c3"
+   },
+   "createdAt": "2026-10-27T15:19:37.640Z",
+   "updatedAt": "2026-10-27T15:19:37.784Z",
+   "aliases": [],
+   "state": "active"
+  },
+  {
+   "type": "operator",
+   "id": "operator:cd:EE",
+   "attrs": {},
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:19:37.658Z",
+    "runId": "run_20261027151247_a5c3"
+   },
+   "createdAt": "2026-10-27T00:10:36.299Z",
+   "updatedAt": "2026-10-27T15:19:37.658Z",
+   "name": "EE",
+   "aliases": [
+    "EE"
+   ],
+   "state": "active"
+  },
+  {
+   "type": "site",
+   "id": "site:cd:S093623",
+   "attrs": {
+    "operators": [
+     "O2"
+    ],
+    "operators_confirmed": [
+     "O2"
+    ]
+   },
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:19:37.712Z",
+    "runId": "run_20261027151247_a5c3"
+   },
+   "createdAt": "2026-10-27T15:19:37.712Z",
+   "updatedAt": "2026-10-27T15:19:37.712Z",
+   "aliases": [],
+   "state": "active"
+  },
+  {
+   "type": "operator",
+   "id": "operator:cd:O2",
+   "attrs": {},
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:19:37.728Z",
+    "runId": "run_20261027151247_a5c3"
+   },
+   "createdAt": "2026-10-27T00:10:36.383Z",
+   "updatedAt": "2026-10-27T15:19:37.728Z",
+   "name": "O2",
+   "aliases": [
+    "O2"
+   ],
+   "state": "active"
+  },
+  {
+   "type": "operator",
+   "id": "operator:cd:Three",
+   "attrs": {},
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:19:37.812Z",
+    "runId": "run_20261027151247_a5c3"
+   },
+   "createdAt": "2026-10-27T00:10:36.449Z",
+   "updatedAt": "2026-10-27T15:19:37.812Z",
+   "name": "Three",
+   "aliases": [
+    "Three"
+   ],
+   "state": "active"
+  },
+  {
+   "type": "site",
+   "id": "site:cd:S040099",
+   "attrs": {
+    "operators": [
+     "Vodafone"
+    ],
+    "operators_confirmed": []
+   },
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:19:37.873Z",
+    "runId": "run_20261027151247_a5c3"
+   },
+   "createdAt": "2026-10-27T15:19:37.873Z",
+   "updatedAt": "2026-10-27T15:19:37.873Z",
+   "aliases": [],
+   "state": "active"
+  },
+  {
+   "type": "operator",
+   "id": "operator:cd:Vodafone",
+   "attrs": {},
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:19:37.892Z",
+    "runId": "run_20261027151247_a5c3"
+   },
+   "createdAt": "2026-10-27T00:10:36.515Z",
+   "updatedAt": "2026-10-27T15:19:37.892Z",
+   "name": "Vodafone",
+   "aliases": [
+    "Vodafone"
+   ],
+   "state": "active"
+  },
+  {
+   "type": "event",
+   "id": "event:cd:diagnosis_completed:run_20261027151247_a5c3:place:cd:51.93565,0.59283:1793114382844",
+   "attrs": {
+    "kind": "diagnosis_completed",
+    "headline": "The service measures poorly here, but no single cause reaches a strong level [insufficient_data].",
+    "status": "complete",
+    "top_cause": "insufficient_data",
+    "run_id": "run_20261027151247_a5c3",
+    "at": "2026-10-27T15:19:42.844Z"
+   },
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:19:42.844Z",
+    "runId": "run_20261027151247_a5c3"
+   },
+   "createdAt": "2026-10-27T15:19:42.844Z",
+   "updatedAt": "2026-10-27T15:19:42.844Z",
+   "name": "diagnosis_completed",
+   "aliases": [
+    "diagnosis_completed"
+   ],
+   "state": "active"
+  },
+  {
+   "type": "site",
+   "id": "site:cd:S065491",
+   "attrs": {
+    "operators": [
+     "EE",
+     "Three"
+    ],
+    "operators_confirmed": []
+   },
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T00:23:25.192Z",
+    "runId": "run_20261027002210_kkcc"
+   },
+   "createdAt": "2026-10-27T00:10:36.282Z",
+   "updatedAt": "2026-10-27T00:23:25.192Z",
+   "aliases": [],
+   "state": "active"
+  },
+  {
+   "type": "site",
+   "id": "site:cd:S077170",
+   "attrs": {
+    "operators": [
+     "O2"
+    ],
+    "operators_confirmed": []
+   },
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T00:23:25.125Z",
+    "runId": "run_20261027002210_kkcc"
+   },
+   "createdAt": "2026-10-27T00:10:36.364Z",
+   "updatedAt": "2026-10-27T00:23:25.125Z",
+   "aliases": [],
+   "state": "active"
+  },
+  {
+   "type": "site",
+   "id": "site:cd:S075142",
+   "attrs": {
+    "operators": [
+     "Vodafone"
+    ],
+    "operators_confirmed": []
+   },
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T00:23:25.254Z",
+    "runId": "run_20261027002210_kkcc"
+   },
+   "createdAt": "2026-10-27T00:10:36.499Z",
+   "updatedAt": "2026-10-27T00:23:25.254Z",
+   "aliases": [],
+   "state": "active"
+  },
+  {
+   "type": "site",
+   "id": "site:cd:S031161",
+   "attrs": {
+    "operators": [
+     "EE",
+     "O2",
+     "Vodafone"
+    ],
+    "operators_confirmed": [
+     "Vodafone"
+    ]
+   },
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T00:11:42.422Z",
+    "runId": "run_20261027001059_oawd"
+   },
+   "createdAt": "2026-10-27T00:11:42.212Z",
+   "updatedAt": "2026-10-27T00:11:42.422Z",
+   "aliases": [],
+   "state": "active"
+  },
+  {
+   "type": "site",
+   "id": "site:cd:S006617",
+   "attrs": {
+    "operators": [
+     "EE",
+     "O2",
+     "Three",
+     "Vodafone"
+    ],
+    "operators_confirmed": []
+   },
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T00:11:42.358Z",
+    "runId": "run_20261027001059_oawd"
+   },
+   "createdAt": "2026-10-27T00:11:42.358Z",
+   "updatedAt": "2026-10-27T00:11:42.358Z",
+   "aliases": [],
+   "state": "active"
+  },
+  {
+   "type": "site",
+   "id": "site:cd:S004298",
+   "attrs": {
+    "operators": [
+     "EE",
+     "Three"
+    ],
+    "operators_confirmed": [
+     "EE",
+     "Three"
+    ]
+   },
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T00:14:42.040Z",
+    "runId": "run_20261027001148_faha"
+   },
+   "createdAt": "2026-10-27T00:14:41.971Z",
+   "updatedAt": "2026-10-27T00:14:42.040Z",
+   "aliases": [],
+   "state": "active"
+  },
+  {
+   "type": "site",
+   "id": "site:cd:S002966",
+   "attrs": {
+    "operators": [
+     "Vodafone"
+    ],
+    "operators_confirmed": [
+     "Vodafone"
+    ]
+   },
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T00:14:42.107Z",
+    "runId": "run_20261027001148_faha"
+   },
+   "createdAt": "2026-10-27T00:14:42.107Z",
+   "updatedAt": "2026-10-27T00:14:42.107Z",
+   "aliases": [],
+   "state": "active"
+  },
+  {
+   "type": "site",
+   "id": "site:cd:S000310",
+   "attrs": {
+    "operators": [
+     "EE",
+     "O2",
+     "Three"
+    ],
+    "operators_confirmed": [
+     "EE",
+     "O2",
+     "Three"
+    ]
+   },
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T00:15:56.892Z",
+    "runId": "run_20261027001448_o1q6"
+   },
+   "createdAt": "2026-10-27T00:15:56.742Z",
+   "updatedAt": "2026-10-27T00:15:56.892Z",
+   "aliases": [],
+   "state": "active"
+  },
+  {
+   "type": "site",
+   "id": "site:cd:S091576",
+   "attrs": {
+    "operators": [
+     "O2"
+    ],
+    "operators_confirmed": [
+     "O2"
+    ]
+   },
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T00:15:56.807Z",
+    "runId": "run_20261027001448_o1q6"
+   },
+   "createdAt": "2026-10-27T00:15:56.807Z",
+   "updatedAt": "2026-10-27T00:15:56.807Z",
+   "aliases": [],
+   "state": "active"
+  },
+  {
+   "type": "site",
+   "id": "site:cd:S042990",
+   "attrs": {
+    "operators": [
+     "Vodafone"
+    ],
+    "operators_confirmed": []
+   },
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T00:15:56.964Z",
+    "runId": "run_20261027001448_o1q6"
+   },
+   "createdAt": "2026-10-27T00:15:56.964Z",
+   "updatedAt": "2026-10-27T00:15:56.964Z",
+   "aliases": [],
+   "state": "active"
+  }
+ ],
+ "relationships": [
+  {
+   "id": "rel_a6cdc7cff4b8964c",
+   "from": "site:cd:S065491",
+   "type": "inferred_operator",
+   "to": "operator:cd:EE",
+   "context": "operator:cd:EE",
+   "attrs": null,
+   "validFrom": "2026-10-27T00:10:36.333Z",
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T00:10:36.333Z",
+    "runId": "run_20261027000851_ibxu"
+   },
+   "createdAt": "2026-10-27T00:10:36.333Z"
+  },
+  {
+   "id": "rel_71b73057a50b8398",
+   "from": "site:cd:S077170",
+   "type": "inferred_operator",
+   "to": "operator:cd:O2",
+   "context": "operator:cd:O2",
+   "attrs": null,
+   "validFrom": "2026-10-27T00:10:36.415Z",
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T00:10:36.415Z",
+    "runId": "run_20261027000851_ibxu"
+   },
+   "createdAt": "2026-10-27T00:10:36.415Z"
+  },
+  {
+   "id": "rel_cfe24c2e283a1396",
+   "from": "site:cd:S065491",
+   "type": "inferred_operator",
+   "to": "operator:cd:Three",
+   "context": "operator:cd:Three",
+   "attrs": null,
+   "validFrom": "2026-10-27T00:10:36.483Z",
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T00:10:36.483Z",
+    "runId": "run_20261027000851_ibxu"
+   },
+   "createdAt": "2026-10-27T00:10:36.483Z"
+  },
+  {
+   "id": "rel_188d428bfff4cee0",
+   "from": "site:cd:S075142",
+   "type": "inferred_operator",
+   "to": "operator:cd:Vodafone",
+   "context": "operator:cd:Vodafone",
+   "attrs": null,
+   "validFrom": "2026-10-27T00:10:36.555Z",
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T00:10:36.555Z",
+    "runId": "run_20261027000851_ibxu"
+   },
+   "createdAt": "2026-10-27T00:10:36.555Z"
+  },
+  {
+   "id": "rel_831ed6fb26e78646",
+   "from": "site:cd:S031161",
+   "type": "inferred_operator",
+   "to": "operator:cd:EE",
+   "context": "operator:cd:EE",
+   "attrs": null,
+   "validFrom": "2026-10-27T00:11:42.267Z",
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T00:11:42.267Z",
+    "runId": "run_20261027001059_oawd"
+   },
+   "createdAt": "2026-10-27T00:11:42.267Z"
+  },
+  {
+   "id": "rel_6b91cf7a11e9b1fb",
+   "from": "site:cd:S031161",
+   "type": "inferred_operator",
+   "to": "operator:cd:O2",
+   "context": "operator:cd:O2",
+   "attrs": null,
+   "validFrom": "2026-10-27T00:11:42.337Z",
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T00:11:42.337Z",
+    "runId": "run_20261027001059_oawd"
+   },
+   "createdAt": "2026-10-27T00:11:42.337Z"
+  },
+  {
+   "id": "rel_9ed4b102b7c0ed6f",
+   "from": "site:cd:S006617",
+   "type": "inferred_operator",
+   "to": "operator:cd:Three",
+   "context": "operator:cd:Three",
+   "attrs": null,
+   "validFrom": "2026-10-27T00:11:42.406Z",
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T00:11:42.406Z",
+    "runId": "run_20261027001059_oawd"
+   },
+   "createdAt": "2026-10-27T00:11:42.406Z"
+  },
+  {
+   "id": "rel_7a71300ad413e022",
+   "from": "site:cd:S031161",
+   "type": "operated_by",
+   "to": "operator:cd:Vodafone",
+   "context": "operator:cd:Vodafone",
+   "attrs": null,
+   "validFrom": "2026-10-27T00:11:42.472Z",
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T00:11:42.472Z",
+    "runId": "run_20261027001059_oawd"
+   },
+   "createdAt": "2026-10-27T00:11:42.472Z"
+  },
+  {
+   "id": "rel_4b27d056d9bec4fa",
+   "from": "site:cd:S004298",
+   "type": "operated_by",
+   "to": "operator:cd:EE",
+   "context": "operator:cd:EE",
+   "attrs": null,
+   "validFrom": "2026-10-27T00:14:42.025Z",
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T00:14:42.025Z",
+    "runId": "run_20261027001148_faha"
+   },
+   "createdAt": "2026-10-27T00:14:42.025Z"
+  },
+  {
+   "id": "rel_4f87ac3a4dca3fbe",
+   "from": "site:cd:S004298",
+   "type": "operated_by",
+   "to": "operator:cd:Three",
+   "context": "operator:cd:Three",
+   "attrs": null,
+   "validFrom": "2026-10-27T00:14:42.089Z",
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T00:14:42.089Z",
+    "runId": "run_20261027001148_faha"
+   },
+   "createdAt": "2026-10-27T00:14:42.089Z"
+  },
+  {
+   "id": "rel_1d5358cc418298e5",
+   "from": "site:cd:S002966",
+   "type": "operated_by",
+   "to": "operator:cd:Vodafone",
+   "context": "operator:cd:Vodafone",
+   "attrs": null,
+   "validFrom": "2026-10-27T00:14:42.164Z",
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T00:14:42.164Z",
+    "runId": "run_20261027001148_faha"
+   },
+   "createdAt": "2026-10-27T00:14:42.164Z"
+  },
+  {
+   "id": "rel_19c7890cb406759c",
+   "from": "site:cd:S000310",
+   "type": "operated_by",
+   "to": "operator:cd:EE",
+   "context": "operator:cd:EE",
+   "attrs": null,
+   "validFrom": "2026-10-27T00:15:56.794Z",
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T00:15:56.794Z",
+    "runId": "run_20261027001448_o1q6"
+   },
+   "createdAt": "2026-10-27T00:15:56.794Z"
+  },
+  {
+   "id": "rel_46d72f8b5fb383ef",
+   "from": "site:cd:S091576",
+   "type": "operated_by",
+   "to": "operator:cd:O2",
+   "context": "operator:cd:O2",
+   "attrs": null,
+   "validFrom": "2026-10-27T00:15:56.877Z",
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T00:15:56.877Z",
+    "runId": "run_20261027001448_o1q6"
+   },
+   "createdAt": "2026-10-27T00:15:56.877Z"
+  },
+  {
+   "id": "rel_88df7f2116b63781",
+   "from": "site:cd:S000310",
+   "type": "operated_by",
+   "to": "operator:cd:Three",
+   "context": "operator:cd:Three",
+   "attrs": null,
+   "validFrom": "2026-10-27T00:15:56.950Z",
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T00:15:56.950Z",
+    "runId": "run_20261027001448_o1q6"
+   },
+   "createdAt": "2026-10-27T00:15:56.950Z"
+  },
+  {
+   "id": "rel_2520e8b927194e78",
+   "from": "site:cd:S042990",
+   "type": "inferred_operator",
+   "to": "operator:cd:Vodafone",
+   "context": "operator:cd:Vodafone",
+   "attrs": null,
+   "validFrom": "2026-10-27T00:15:57.015Z",
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T00:15:57.015Z",
+    "runId": "run_20261027001448_o1q6"
+   },
+   "createdAt": "2026-10-27T00:15:57.015Z"
+  },
+  {
+   "id": "rel_350cbe8781418c28",
+   "from": "place:cd:51.93565,0.59283",
+   "type": "in_area",
+   "to": "area:cd:Braintree",
+   "attrs": null,
+   "validFrom": "2026-10-27T15:12:47.275Z",
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:12:47.275Z",
+    "runId": "run_20261027151247_a5c3"
+   },
+   "createdAt": "2026-10-27T15:12:47.275Z"
+  },
+  {
+   "id": "rel_a499697f767cd65c",
+   "from": "place:cd:51.93565,0.59283",
+   "type": "nearest_site",
+   "to": "site:cd:S090784",
+   "context": "operator:cd:EE",
+   "attrs": {
+    "operator": "EE",
+    "line_of_sight": "clear",
+    "obstruction_m": -1.9,
+    "distance_m": 990,
+    "evidence": "los_ee"
+   },
+   "validFrom": "2026-10-27T15:19:37.680Z",
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:19:37.680Z",
+    "runId": "run_20261027151247_a5c3"
+   },
+   "createdAt": "2026-10-27T15:19:37.680Z"
+  },
+  {
+   "id": "rel_8e0bda9c753d216d",
+   "from": "site:cd:S090784",
+   "type": "operated_by",
+   "to": "operator:cd:EE",
+   "context": "operator:cd:EE",
+   "attrs": null,
+   "validFrom": "2026-10-27T15:19:37.697Z",
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:19:37.697Z",
+    "runId": "run_20261027151247_a5c3"
+   },
+   "createdAt": "2026-10-27T15:19:37.697Z"
+  },
+  {
+   "id": "rel_db0522ece366a2fa",
+   "from": "place:cd:51.93565,0.59283",
+   "type": "nearest_site",
+   "to": "site:cd:S093623",
+   "context": "operator:cd:O2",
+   "attrs": {
+    "operator": "O2",
+    "line_of_sight": "blocked",
+    "obstruction_m": 11.2,
+    "distance_m": 3968,
+    "evidence": "los_o2"
+   },
+   "validFrom": "2026-10-27T15:19:37.747Z",
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:19:37.747Z",
+    "runId": "run_20261027151247_a5c3"
+   },
+   "createdAt": "2026-10-27T15:19:37.747Z"
+  },
+  {
+   "id": "rel_a418cdc0738b71a4",
+   "from": "site:cd:S093623",
+   "type": "operated_by",
+   "to": "operator:cd:O2",
+   "context": "operator:cd:O2",
+   "attrs": null,
+   "validFrom": "2026-10-27T15:19:37.768Z",
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:19:37.768Z",
+    "runId": "run_20261027151247_a5c3"
+   },
+   "createdAt": "2026-10-27T15:19:37.768Z"
+  },
+  {
+   "id": "rel_89096e51687275bd",
+   "from": "place:cd:51.93565,0.59283",
+   "type": "nearest_site",
+   "to": "site:cd:S090784",
+   "context": "operator:cd:Three",
+   "attrs": {
+    "operator": "Three",
+    "line_of_sight": "clear",
+    "obstruction_m": -1.9,
+    "distance_m": 990,
+    "evidence": "los_three"
+   },
+   "validFrom": "2026-10-27T15:19:37.832Z",
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:19:37.832Z",
+    "runId": "run_20261027151247_a5c3"
+   },
+   "createdAt": "2026-10-27T15:19:37.832Z"
+  },
+  {
+   "id": "rel_101264ae74e6c3f9",
+   "from": "site:cd:S090784",
+   "type": "operated_by",
+   "to": "operator:cd:Three",
+   "context": "operator:cd:Three",
+   "attrs": null,
+   "validFrom": "2026-10-27T15:19:37.852Z",
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:19:37.852Z",
+    "runId": "run_20261027151247_a5c3"
+   },
+   "createdAt": "2026-10-27T15:19:37.852Z"
+  },
+  {
+   "id": "rel_be71a5193c9f8e90",
+   "from": "place:cd:51.93565,0.59283",
+   "type": "nearest_site",
+   "to": "site:cd:S040099",
+   "context": "operator:cd:Vodafone",
+   "attrs": {
+    "operator": "Vodafone",
+    "line_of_sight": "blocked",
+    "obstruction_m": 22.4,
+    "distance_m": 6098,
+    "evidence": "los_vodafone"
+   },
+   "validFrom": "2026-10-27T15:19:37.916Z",
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:19:37.916Z",
+    "runId": "run_20261027151247_a5c3"
+   },
+   "createdAt": "2026-10-27T15:19:37.916Z"
+  },
+  {
+   "id": "rel_80d544ad8f626e5e",
+   "from": "site:cd:S040099",
+   "type": "inferred_operator",
+   "to": "operator:cd:Vodafone",
+   "context": "operator:cd:Vodafone",
+   "attrs": null,
+   "validFrom": "2026-10-27T15:19:37.939Z",
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:19:37.939Z",
+    "runId": "run_20261027151247_a5c3"
+   },
+   "createdAt": "2026-10-27T15:19:37.939Z"
+  },
+  {
+   "id": "rel_e0c32940c7262526",
+   "from": "event:cd:diagnosis_completed:run_20261027151247_a5c3:place:cd:51.93565,0.59283:1793114382844",
+   "type": "concerns",
+   "to": "place:cd:51.93565,0.59283",
+   "validFrom": "2026-10-27T15:19:42.847Z",
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:19:42.847Z",
+    "runId": "run_20261027151247_a5c3"
+   },
+   "createdAt": "2026-10-27T15:19:42.847Z"
+  }
+ ]
+}

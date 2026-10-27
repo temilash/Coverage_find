@@ -1,0 +1,308 @@
+{
+ "example_id": "zone_broadstone",
+ "replies": {
+  "investigator|round 1|call 1": {
+   "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+   "parsed": null,
+   "tool_calls": [
+    {
+     "id": "call-fdd0d981-3cef-4e6f-a155-ede0e481e5e1",
+     "name": "speeds_near",
+     "arguments": {
+      "operator": "EE"
+     }
+    },
+    {
+     "id": "call-e4bf3013-cf9e-4f31-9608-a7c698754a28",
+     "name": "speeds_near",
+     "arguments": {
+      "operator": "O2"
+     }
+    },
+    {
+     "id": "call-353a0c5f-fdec-4cb8-9b57-7478688e9734",
+     "name": "speeds_near",
+     "arguments": {
+      "operator": "Three"
+     }
+    },
+    {
+     "id": "call-ed4427bf-380d-4db8-bbe0-2b59d24a6d8d",
+     "name": "speeds_near",
+     "arguments": {
+      "operator": "Vodafone"
+     }
+    },
+    {
+     "id": "call-ae3091d4-e088-4161-87c2-c7bc5e48f51b",
+     "name": "sites_near",
+     "arguments": {
+      "operator": "EE"
+     }
+    },
+    {
+     "id": "call-e1cff819-55a3-4381-b1ff-47f7062686d0",
+     "name": "sites_near",
+     "arguments": {
+      "operator": "O2"
+     }
+    },
+    {
+     "id": "call-66c8fc13-e007-4ee7-b9af-dbe5183563aa",
+     "name": "sites_near",
+     "arguments": {
+      "operator": "Three"
+     }
+    },
+    {
+     "id": "call-dcdb721a-4dd6-4907-b1c8-4861e6fed6ab",
+     "name": "sites_near",
+     "arguments": {
+      "operator": "Vodafone"
+     }
+    },
+    {
+     "id": "call-79221069-96c3-4d31-89a9-926fc3d13118",
+     "name": "line_of_sight",
+     "arguments": {
+      "operator": "EE"
+     }
+    },
+    {
+     "id": "call-8a83cc52-da78-4632-b426-8c5d474d0c4b",
+     "name": "line_of_sight",
+     "arguments": {
+      "operator": "O2"
+     }
+    },
+    {
+     "id": "call-5db8f07c-0ab3-42da-b1eb-472ebcc79cd4",
+     "name": "line_of_sight",
+     "arguments": {
+      "operator": "Three"
+     }
+    },
+    {
+     "id": "call-1638617c-180c-4daf-a05c-dbeaf512bd9e",
+     "name": "line_of_sight",
+     "arguments": {
+      "operator": "Vodafone"
+     }
+    },
+    {
+     "id": "call-90708336-2cf9-49a6-9181-7c2f87ecf55b",
+     "name": "ofcom_area",
+     "arguments": {}
+    },
+    {
+     "id": "call-05ebe473-b0b3-474d-b961-2061824ef553",
+     "name": "live_conditions",
+     "arguments": {}
+    }
+   ],
+   "content": null,
+   "duration_ms": 2236,
+   "provider": "nvidia_direct",
+   "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+   "receipt": {},
+   "provider_fallback": "no Nightshift token (METERLESS_RUNTIME_TOKEN / METERLESS_RUNTIME_TOKEN_FILE)"
+  },
+  "diagnostician|round 1|call 1": {
+   "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+   "parsed": {
+    "hypotheses": [
+     {
+      "id": "terrain_blocking",
+      "cause": "terrain_blocking",
+      "confidence": 0.65,
+      "supporting_evidence": [
+       "zone_overview",
+       "cand_1",
+       "cand_2",
+       "cand_3",
+       "existing_1",
+       "existing_2",
+       "existing_3"
+      ],
+      "contradicting_evidence": [],
+      "explanation": "466 people are in cells where terrain blocks the line to every site within 5 km [zone_overview], and new high-ground masts would give clear lines to most poorly served people [cand_1][cand_2][cand_3]; mast heights are assumed, so the margin is uncertain."
+     },
+     {
+      "id": "distance_to_mast",
+      "cause": "distance_to_mast",
+      "confidence": 0.55,
+      "supporting_evidence": [
+       "zone_overview",
+       "existing_1",
+       "existing_2",
+       "existing_3"
+      ],
+      "contradicting_evidence": [],
+      "explanation": "1,140 people have no identified site within 5 km [zone_overview], while existing sites are 3.2\u20135.7 km away [existing_1][existing_2][existing_3]; operator identities for two sites are unknown, so coverage per operator is not confirmed."
+     },
+     {
+      "id": "single_operator",
+      "cause": "single_operator",
+      "confidence": 0.4,
+      "supporting_evidence": [
+       "zone_overview"
+      ],
+      "contradicting_evidence": [
+       "existing_1"
+      ],
+      "explanation": "On average only 0.5 operators have approximate sites within 5 km [zone_overview], but existing sites list EE, Three and Vodafone [existing_1], so a single-operator gap is not proven at the point."
+     },
+     {
+      "id": "insufficient_data",
+      "cause": "insufficient_data",
+      "confidence": 0.5,
+      "supporting_evidence": [
+       "zone_overview",
+       "fix_rule"
+      ],
+      "contradicting_evidence": [],
+      "explanation": "Only 5 Ookla tests with low data confidence and no per-cell measurements exist [zone_overview][fix_rule], so the evidence cannot separate terrain from distance or operator-specific gaps."
+     }
+    ],
+    "revision_reasons": []
+   },
+   "tool_calls": [],
+   "content": null,
+   "duration_ms": 5410,
+   "provider": "nvidia_direct",
+   "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+   "receipt": {},
+   "provider_fallback": "no Nightshift token (METERLESS_RUNTIME_TOKEN / METERLESS_RUNTIME_TOKEN_FILE)"
+  },
+  "critic|round 1|call 1": {
+   "model": "nvidia/nemotron-3-ultra-550b-a55b",
+   "parsed": {
+    "critiques": [
+     {
+      "hypothesis_id": "terrain_blocking",
+      "verdict": "approve",
+      "reason": "The zone overview explicitly states 466 people are in cells where terrain blocks the line to every site within 5 km. Three independent candidate sites on high ground confirm that elevated masts would provide clear lines to most poorly served people. Mast heights are assumed, but the terrain margin is documented in the zone overview itself.",
+      "requested_checks": [],
+      "suggested_confidence": null
+     },
+     {
+      "hypothesis_id": "distance_to_mast",
+      "verdict": "approve",
+      "reason": "The zone overview directly reports 1,140 people have no identified site within 5 km, and the three existing sites are 3.2\u20135.7 km away. The unknown operators for two sites is a valid caveat noted in the belief, but does not contradict the distance finding.",
+      "requested_checks": [],
+      "suggested_confidence": null
+     },
+     {
+      "hypothesis_id": "insufficient_data",
+      "verdict": "approve",
+      "reason": "Only 5 Ookla tests exist in the latest quarter with low data confidence, and the fix rule explicitly recommends measuring first. The evidence cannot separate terrain, distance, or operator-specific gaps, which the belief correctly states.",
+      "requested_checks": [],
+      "suggested_confidence": null
+     },
+     {
+      "hypothesis_id": "single_operator",
+      "verdict": "approve",
+      "reason": "The zone overview reports only 0.5 operators on average have approximate sites within 5 km, while the nearest multi-operator site (EE, Three, Vodafone) is 5.7 km away \u2014 just outside the 5 km threshold. The belief's low confidence (0.40) and statement that a single-operator gap is not proven are well calibrated to this mixed evidence.",
+      "requested_checks": [],
+      "suggested_confidence": null
+     }
+    ]
+   },
+   "tool_calls": [],
+   "content": null,
+   "duration_ms": 176730,
+   "provider": "nvidia_direct",
+   "model_answered": "nvidia/nemotron-3-ultra-550b-a55b",
+   "receipt": {},
+   "provider_fallback": "no Nightshift token (METERLESS_RUNTIME_TOKEN / METERLESS_RUNTIME_TOKEN_FILE)"
+  },
+  "critic|round 1|call 2": {
+   "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+   "parsed": {
+    "rewrites": [
+     {
+      "original": "The belief's low confidence (0.40) and statement that a single-operator gap is not proven are well calibrated to this mixed evidence.",
+      "rewritten": "The belief's low confidence and statement that a single-operator gap is not proven are well calibrated to this mixed evidence [existing_1][zone_overview]."
+     }
+    ]
+   },
+   "tool_calls": [],
+   "content": null,
+   "duration_ms": 1039,
+   "provider": "nvidia_direct",
+   "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+   "receipt": {},
+   "provider_fallback": "no Nightshift token (METERLESS_RUNTIME_TOKEN / METERLESS_RUNTIME_TOKEN_FILE)"
+  },
+  "fix_planner|round 1|call 1": {
+   "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+   "parsed": {
+    "fix_type": "gather_data",
+    "candidate": "cand_1",
+    "why": "Only 5 Ookla tests with low data confidence exist, so terrain and distance gaps cannot be separated [zone_overview][fix_rule]; [cand_1] gives the most poorly served zone residents a clear line (1374 people) once measurements confirm the need [cand_1].",
+    "assumptions": [
+     "25 m mast",
+     "line of sight to cell centres, not a radio model",
+     "no planning or land checks"
+    ],
+    "cited_evidence": [
+     "zone_overview",
+     "fix_rule",
+     "cand_1"
+    ]
+   },
+   "tool_calls": [],
+   "content": null,
+   "duration_ms": 1316,
+   "provider": "nvidia_direct",
+   "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+   "receipt": {},
+   "provider_fallback": "no Nightshift token (METERLESS_RUNTIME_TOKEN / METERLESS_RUNTIME_TOKEN_FILE)"
+  },
+  "critic|round 1|call 3": {
+   "model": "nvidia/nemotron-3-ultra-550b-a55b",
+   "parsed": {
+    "verdict": "approve",
+    "reason": "Plan correctly uses the zone's people gaining (1374) from [cand_1] not everyone reached (3485); assumptions are stated; fix_type 'gather_data' matches [fix_rule]'s 'measure first' for a gap zone with weak data; weak data (5 Ookla tests, low confidence) is flagged in why citing [zone_overview] and [fix_rule].",
+    "issues": []
+   },
+   "tool_calls": [],
+   "content": null,
+   "duration_ms": 62566,
+   "provider": "nvidia_direct",
+   "model_answered": "nvidia/nemotron-3-ultra-550b-a55b",
+   "receipt": {},
+   "provider_fallback": "no Nightshift token (METERLESS_RUNTIME_TOKEN / METERLESS_RUNTIME_TOKEN_FILE)"
+  },
+  "advisor|round 0|call 1": {
+   "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+   "parsed": {
+    "headline": "Terrain blocking the line to every nearby mast is the likely cause [terrain_blocking].",
+    "explanation": "Terrain blocking is the most likely cause: 466 people are in cells where hills block the line to every site within 5 km [zone_overview], and new high-ground masts would give clear lines to most poorly served people [cand_1][cand_2][cand_3]. Distance is also likely: 1,140 people have no identified site within 5 km, while existing sites are 3.2\u20135.7 km away [zone_overview][existing_1][existing_2][existing_3]. Operator identities for two sites are unknown, so coverage per operator is not confirmed [existing_2][existing_3]. A single-operator gap is not proven because existing sites list EE, Three and Vodafone [existing_1], even though only 0.5 operators on average have approximate sites within 5 km [zone_overview]. The evidence cannot separate terrain from distance or operator-specific gaps because only 5 Ookla tests with low data confidence exist [zone_overview][fix_rule]. Mast heights are assumed, so the margin is uncertain [terrain_blocking]. Sites are approximate; antenna heights assumed; Ofcom figures are area-level. best_network: EE, Three and Vodafone are listed at existing site S002028 [existing_1]; S002029 and S000928 operators are unknown [existing_2][existing_3]. No site identified in our data for other operators. Confidence low because evidence is weak. Actions for a resident: try the best network; Wi-Fi calling indoors; check the address on Ofcom's mobile coverage checker (https://www.ofcom.org.uk/mobile-coverage-checker); emergency calls work on any available network.",
+    "cited_evidence": [
+     "terrain_blocking",
+     "zone_overview",
+     "cand_1",
+     "cand_2",
+     "cand_3",
+     "distance_to_mast",
+     "existing_1",
+     "existing_2",
+     "existing_3",
+     "single_operator",
+     "insufficient_data",
+     "fix_rule"
+    ],
+    "limitations": "Sites are approximate; antenna heights assumed; Ofcom figures are area-level."
+   },
+   "tool_calls": [],
+   "content": null,
+   "duration_ms": 4081,
+   "provider": "nvidia_direct",
+   "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+   "receipt": {},
+   "provider_fallback": "no Nightshift token (METERLESS_RUNTIME_TOKEN / METERLESS_RUNTIME_TOKEN_FILE)"
+  }
+ },
+ "prompts_sha": "1a1d151a4ca89c985ff0ea147701646b5733dd5e35f2ee8ac7f688c48f27cc35"
+}

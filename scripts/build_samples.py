@@ -29,7 +29,7 @@ OUT = SAMPLES / "zetaris"
 DEM_OUT = SAMPLES / "dem"
 POINT_KM = 12.0
 ZONE_KM = 16.0
-EXAMPLE_ZONES = ["Z00072", "O00332"]  # Ousby (gap zone), Windermere (improvement opportunity)
+EXAMPLE_ZONES = ["Z00072", "O00332", "Z00023", "O00004"]  # Ousby, Broadstone (gap zones); Windermere, Ludlow (opportunities)
 TABLES = [  # (database, table, file, how to cut it)
     ("CD_CELLS", "cells_r7", CELLS_PATH, "cell"),
     ("CD_OOKLA_MOBILE", "ookla_mobile_r7", PROCESSED / "ookla_mobile_r7.parquet", "cell_id"),

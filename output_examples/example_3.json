@@ -1,62 +1,107 @@
 {
  "request": {
-  "lat": 51.507211,
-  "lon": -0.128269
+  "lat": 52.3,
+  "lon": -3.51
  },
  "http_status": 200,
  "response": {
-  "run_id": "run_20261027131059_dap4",
+  "run_id": "run_20261027153329_ne2a",
   "status": "complete",
   "mode": "recorded replies (sample mode)",
   "scope": "point",
-  "headline": "No strong cause was found; the service measures well here [insufficient_data].",
+  "headline": "Terrain blocking EE and Three signals is the likely cause [terrain_blocking][los_ee][los_three].",
   "location": {
-   "label": "51.50721, -0.12827",
-   "lat": 51.507211,
-   "lon": -0.128269,
-   "postcode": "WC2N 5DU",
-   "nearest_postcode": "WC2N 5DU",
-   "admin_district": "Westminster",
-   "region": "London",
-   "country": "England",
-   "cell_id": "87195da49ffffff"
+   "label": "52.30000, -3.51000",
+   "lat": 52.3,
+   "lon": -3.51,
+   "postcode": "LD6 5AD",
+   "nearest_postcode": "LD6 5AD",
+   "admin_district": "Powys",
+   "region": null,
+   "country": "Wales",
+   "cell_id": "87195e3aeffffff"
   },
   "causes": [
    {
-    "cause": "insufficient_data",
-    "confidence": 0.9,
+    "cause": "terrain_blocking",
+    "confidence": 0.5,
+    "status": "active",
+    "evidence_ids": [
+     "los_ee",
+     "los_three"
+    ],
+    "contradicting_ids": [
+     "los_vodafone"
+    ],
+    "explanation": "Terrain rises 137 m above the direct line to EE and Three sites 6.5 km away, weakening their signals [los_ee][los_three]; Vodafone's line is clear [los_vodafone], so terrain does not explain poor Vodafone reception."
+   },
+   {
+    "cause": "single_operator",
+    "confidence": 0.4,
+    "status": "active",
+    "evidence_ids": [
+     "operators_5km",
+     "los_ee",
+     "los_three"
+    ],
+    "contradicting_ids": [
+     "no_site_o2"
+    ],
+    "explanation": "Only Vodafone has confirmed mast sites within 5 km, while EE and Three sites are 6.5 km away with terrain rising 137 m above the direct line [operators_5km][los_ee][los_three]; crowd-sourced gaps mean other operators cannot be fully excluded [no_site_o2]."
+   },
+   {
+    "cause": "capacity_strain",
+    "confidence": 0.4,
+    "status": "active",
+    "evidence_ids": [
+     "speed_cell",
+     "speed_trend",
+     "usage_per_head"
+    ],
+    "contradicting_ids": [
+     "speed_neighbours"
+    ],
+    "explanation": "Speeds fell 35% over four quarters to 14.4 Mbps while test usage is high at 7.4 devices per 1,000 residents versus a UK median of 3.6 [speed_cell][speed_trend][usage_per_head], suggesting congestion may contribute, though only one quarter of data is available."
+   },
+   {
+    "cause": "distance_to_mast",
+    "confidence": 0.3,
     "status": "active",
     "evidence_ids": [
      "speed_cell",
      "speed_1km",
-     "speed_neighbours",
+     "los_vodafone"
+    ],
+    "contradicting_ids": [
      "nearest_site",
-     "operators_5km",
-     "los_ee",
-     "los_o2",
-     "los_vodafone",
-     "los_three",
-     "network_comparison",
-     "ofcom_area",
-     "weather",
-     "met_office_warnings"
+     "speed_neighbours"
+    ],
+    "explanation": "The nearest confirmed Vodafone site is 1.4 km north with a clear line of sight [los_vodafone], yet speeds are far below the UK median [speed_cell][speed_1km]; however, an unknown-operator site is only 0.5 km west [nearest_site], so distance alone is unlikely to be the primary cause."
+   },
+   {
+    "cause": "insufficient_data",
+    "confidence": 0.2,
+    "status": "active",
+    "evidence_ids": [
+     "speed_cell",
+     "operators_5km"
     ],
     "contradicting_ids": [],
-    "explanation": "Measured speeds are strong at the point and nearby [speed_cell][speed_1km][speed_neighbours], multiple operators have sites within 5 km [operators_5km], and clear lines of sight exist to EE, O2 and Vodafone sites about 0.1 km away [los_ee][los_o2][los_vodafone][network_comparison]. No severe weather warning is active [met_office_warnings], so no persistent or current cause can be supported."
+    "explanation": "Speeds are low but only one quarter of tests is available and operator coverage at the exact point cannot be confirmed from crowd-sourced site data [speed_cell][operators_5km]."
    }
   ],
   "ruled_out": [],
   "actions": [
    {
-    "text": "Try the best network: Vodafone is likely best here [network_comparison].",
+    "text": "Try Vodafone first, as it has the clearest line of sight to a nearby confirmed site [network_comparison][los_vodafone].",
     "audience": "resident"
    },
    {
-    "text": "Use Wi-Fi calling indoors if available.",
+    "text": "Use Wi-Fi calling indoors if your phone and network support it.",
     "audience": "resident"
    },
    {
-    "text": "Check the address on Ofcom's mobile coverage checker: https://www.ofcom.org.uk/mobile-coverage-checker",
+    "text": "Check your address on Ofcom's mobile coverage checker: https://www.ofcom.org.uk/mobile-coverage-checker",
     "audience": "resident"
    },
    {
@@ -64,28 +109,34 @@
     "audience": "resident"
    }
   ],
-  "best_network": "Vodafone is likely best here, with a clear line of sight to a site 0.1 km east confirmed by Ofcom's licence register. EE and O2 also have clear lines to sites 0.1 km away; EE and O2 operators are inferred from crowd-sourced data rather than confirmed by Ofcom's licence register [network_comparison][los_ee][los_o2][los_vodafone]. Three has a site 190 m south with a small terrain margin, so its signal is likely weakened, not necessarily lost [los_three].",
+  "best_network": "Vodafone is likely best here: clear line of sight to a confirmed site 1.4 km north [network_comparison][los_vodafone]. EE and Three have confirmed sites 6.5 km away but terrain blocks the line of sight [los_ee][los_three]. O2 has no site identified in our data [no_site_o2][network_comparison].",
   "fix_plan": null,
-  "rounds": 1,
-  "elapsed_s": 1.9,
+  "rounds": 2,
+  "elapsed_s": 3.2,
   "models": [
    {
     "agent": "investigator",
     "provider": "recorded",
     "model_answered": "nvidia/nemotron-3.5-super-vl-120b-a12b",
-    "calls": 1
+    "calls": 2
    },
    {
     "agent": "diagnostician",
     "provider": "recorded",
     "model_answered": "nvidia/nemotron-3.5-super-vl-120b-a12b",
-    "calls": 1
+    "calls": 2
    },
    {
     "agent": "critic",
     "provider": "recorded",
     "model_answered": "nvidia/nemotron-3-ultra-550b-a55b",
-    "calls": 1
+    "calls": 2
+   },
+   {
+    "agent": "critic",
+    "provider": "recorded",
+    "model_answered": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "calls": 3
    },
    {
     "agent": "advisor",
@@ -95,7 +146,7 @@
    }
   ],
   "limitations": [
-   "Sites are approximate; antenna heights assumed where not confirmed; Ofcom figures are area-level.",
+   "Sites are approximate; antenna heights assumed; Ofcom figures are area-level.",
    "Causes are inferred from public data, not confirmed: operators' network data is not public.",
    "Ookla speeds are quarterly aggregates with no time-of-day detail; congestion can only be inferred.",
    "No address-level Ofcom coverage; Ofcom figures are for the whole constituency and are predictions.",
@@ -103,7 +154,7 @@
    "Line of sight uses a surface model (trees and buildings included) and mostly assumed antenna heights; blocked means a weaker signal, not no signal."
   ],
   "notes": [],
-  "trace": "logs/run_20261027131059_dap4.jsonl",
-  "detail": "/api/runs/run_20261027131059_dap4?detail=1"
+  "trace": "logs/run_20261027153329_ne2a.jsonl",
+  "detail": "/api/runs/run_20261027153329_ne2a?detail=1"
  }
 }

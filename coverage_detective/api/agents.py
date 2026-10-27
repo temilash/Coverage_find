@@ -142,7 +142,7 @@ def diagnose(req: DiagnoseRequest) -> dict:
     try:
         point, _ = ev.resolve(req.query, req.lat, req.lon)
     except LookupError as e:
-        raise HTTPException(404, str(e) + " (sample mode: search works for the example places only, e.g. Great Langdale, WC2N 5DU, Rhayader, Sutton St Edmund)" if sample_mode() else "") from e
+        raise HTTPException(404, str(e) + " (sample mode: search works for the example places only, e.g. CO9 1TP, Great Langdale, WC2N 5DU, Rhayader, Sutton St Edmund)" if sample_mode() else "") from e
     label = point.get("label") if point.get("kind") != "point" else (
         point.get("nearest_postcode") and f"near {point['nearest_postcode']}") or req.query or point.get("label") or ""
     sess = _replay("point", lat=point["lat"], lon=point["lon"])
@@ -317,9 +317,11 @@ def email(run_id: str, req: EmailRequest) -> dict:
         _need_llm()
         before = len(memory.notes(run_id))
         case = Case(run_id=run_id, scope=result.get("scope", "point"), point=result.get("location") or {}, memory=memory)
-        if sample_mode() and result.get("example_id"):  # sample mode: the recorded letter for this recipient kind
+        if sample_mode() and result.get("example_id"):  # sample mode: the recorded email for this recipient
             sess = R.Session("record" if R.recording() else "replay", result["example_id"])
-            sess.variant = "council" if contact.kind == "council" else "operator"
+            kind = "council" if contact.kind == "council" else "operator"
+            named = f"email {contact.name}"  # recorded per recipient (newer examples); else one per kind
+            sess.variant = named if R.recording() or sess.has("letter_writer", named) else kind
             case.cache["replay"] = sess
         elif sample_mode() and result.get("rules_only"):
             case.cache["replay"] = rules.Session()

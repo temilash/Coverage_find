@@ -8,13 +8,13 @@ these files.
 
 How they were produced (sample mode, no Zetaris, no live calls, no model key):
 
-- **Examples 1-7** re-run the real pipeline (coordinator, tools on the DuckDB extracts, guard,
+- **Examples 1-10** re-run the real pipeline (coordinator, tools on the DuckDB extracts, guard,
   Meterless) with the model replies recorded for those examples in `examples/<name>/llm_replies.json`
   (mode "recorded replies"). Those replies were recorded on 27 Oct 2026 from NVIDIA Nemotron called
-  through NVIDIA's API directly, before the Meterless Nightshift integration; the `models` field
-  shows the Nemotron model each agent got its answer from.
-- **Example 8** is not a recorded example: the same pipeline ran with fixed rules in place of the
+  through NVIDIA's hosted API directly (Meterless Nightshift does not run on our Linux x86_64 machine);
+  the `models` field shows the Nemotron model each agent got its answer from.
+- **Example 11** is not a recorded example: the same pipeline ran with fixed rules in place of the
   model (mode "rules only, no model").
-- **Example 9** is outside the sample extracts, so sample mode refused it with the list of areas it covers.
+- **Example 12** is outside the sample extracts, so sample mode refused it with the list of areas it covers.
 
 Full runs (evidence with Zetaris SQL, World Model, round cards) are in [examples/](../examples/).

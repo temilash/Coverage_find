@@ -172,3 +172,10 @@ def test_markdown_becomes_plain_text_and_html_without_losing_the_list():
 def test_a_wrapped_paragraph_stays_one_paragraph():
     assert O.to_text("The signal is poor enough that\ncalls drop indoors.\n\nThe next point.") == (
         "The signal is poor enough that calls drop indoors.\n\nThe next point.")
+
+
+def test_the_place_is_named_once_by_its_postcode():
+    place = {"lat": 51.935645, "lon": 0.592832, "postcode": "CO9 1TP"}
+    assert O.name_place("at [Your address] (51.93565, 0.59283).", place) == "at [Your address]."
+    assert O.fill_placeholders(O.name_place("my address ([Your address], 51.93565, 0.59283)", place), "", "CO9 1TP") \
+        == "my address (CO9 1TP)"

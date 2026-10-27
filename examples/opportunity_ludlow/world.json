@@ -1,0 +1,281 @@
+{
+ "entities": [
+  {
+   "type": "zone",
+   "id": "zone:cd:O00004",
+   "attrs": {
+    "people": 82067,
+    "cells": 108,
+    "council": "Wyre Forest",
+    "nation": "England",
+    "zone_type": "opportunity",
+    "reasons": [
+     "slow",
+     "falling",
+     "few_operators",
+     "capacity"
+    ]
+   },
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:25:22.287Z",
+    "runId": "run_20261027152522_tilw"
+   },
+   "createdAt": "2026-10-27T15:25:22.287Z",
+   "updatedAt": "2026-10-27T15:25:22.287Z",
+   "name": "Ludlow",
+   "aliases": [
+    "Ludlow"
+   ],
+   "state": "active"
+  },
+  {
+   "type": "area",
+   "id": "area:cd:Wyre Forest",
+   "attrs": {
+    "kind": "local authority"
+   },
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:25:22.304Z",
+    "runId": "run_20261027152522_tilw"
+   },
+   "createdAt": "2026-10-27T15:25:22.304Z",
+   "updatedAt": "2026-10-27T15:25:22.304Z",
+   "name": "Wyre Forest",
+   "aliases": [
+    "Wyre Forest"
+   ],
+   "state": "active"
+  },
+  {
+   "type": "candidate_site",
+   "id": "candidate_site:cd:O00004:cand_1",
+   "attrs": {
+    "lat": 52.39561444166622,
+    "lon": -2.3038369400666174,
+    "ground_m": 177.7,
+    "zone_people_gaining": 47709,
+    "poor_people_gaining": 47709,
+    "people_reached": 55617
+   },
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:27:15.562Z",
+    "runId": "run_20261027152522_tilw"
+   },
+   "createdAt": "2026-10-27T15:27:15.562Z",
+   "updatedAt": "2026-10-27T15:27:15.562Z",
+   "aliases": [],
+   "state": "active"
+  },
+  {
+   "type": "candidate_site",
+   "id": "candidate_site:cd:O00004:cand_2",
+   "attrs": {
+    "lat": 52.30263923505447,
+    "lon": -2.3655455896235282,
+    "ground_m": 288.9,
+    "zone_people_gaining": 31249,
+    "poor_people_gaining": 31249,
+    "people_reached": 45461
+   },
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:27:15.594Z",
+    "runId": "run_20261027152522_tilw"
+   },
+   "createdAt": "2026-10-27T15:27:15.594Z",
+   "updatedAt": "2026-10-27T15:27:15.594Z",
+   "aliases": [],
+   "state": "active"
+  },
+  {
+   "type": "candidate_site",
+   "id": "candidate_site:cd:O00004:cand_3",
+   "attrs": {
+    "lat": 52.3983093751912,
+    "lon": -2.60136078614458,
+    "ground_m": 527.9,
+    "zone_people_gaining": 23680,
+    "poor_people_gaining": 24074,
+    "people_reached": 25013
+   },
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:27:15.629Z",
+    "runId": "run_20261027152522_tilw"
+   },
+   "createdAt": "2026-10-27T15:27:15.629Z",
+   "updatedAt": "2026-10-27T15:27:15.629Z",
+   "aliases": [],
+   "state": "active"
+  },
+  {
+   "type": "event",
+   "id": "event:cd:fix_plan_proposed:run_20261027152522_tilw:zone:cd:O00004:1793114837808",
+   "attrs": {
+    "kind": "fix_plan_proposed",
+    "fix_type": "gather_data",
+    "candidate": null,
+    "approved": true,
+    "run_id": "run_20261027152522_tilw",
+    "at": "2026-10-27T15:27:17.808Z"
+   },
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:27:17.808Z",
+    "runId": "run_20261027152522_tilw"
+   },
+   "createdAt": "2026-10-27T15:27:17.808Z",
+   "updatedAt": "2026-10-27T15:27:17.808Z",
+   "name": "fix_plan_proposed",
+   "aliases": [
+    "fix_plan_proposed"
+   ],
+   "state": "active"
+  },
+  {
+   "type": "event",
+   "id": "event:cd:diagnosis_completed:run_20261027152522_tilw:zone:cd:O00004:1793114837892",
+   "attrs": {
+    "kind": "diagnosis_completed",
+    "headline": "No single cause dominates this zone; a capacity strain across many people is the most likely contributor [capacity_strain][zone_overview].",
+    "status": "complete",
+    "run_id": "run_20261027152522_tilw",
+    "at": "2026-10-27T15:27:17.892Z"
+   },
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:27:17.892Z",
+    "runId": "run_20261027152522_tilw"
+   },
+   "createdAt": "2026-10-27T15:27:17.892Z",
+   "updatedAt": "2026-10-27T15:27:17.892Z",
+   "name": "diagnosis_completed",
+   "aliases": [
+    "diagnosis_completed"
+   ],
+   "state": "active"
+  }
+ ],
+ "relationships": [
+  {
+   "id": "rel_e3474f0a486ad161",
+   "from": "zone:cd:O00004",
+   "type": "in_area",
+   "to": "area:cd:Wyre Forest",
+   "attrs": null,
+   "validFrom": "2026-10-27T15:25:22.320Z",
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:25:22.320Z",
+    "runId": "run_20261027152522_tilw"
+   },
+   "createdAt": "2026-10-27T15:25:22.320Z"
+  },
+  {
+   "id": "rel_6d572a97eacc7ec1",
+   "from": "zone:cd:O00004",
+   "type": "candidate_site",
+   "to": "candidate_site:cd:O00004:cand_1",
+   "attrs": {
+    "zone_people_gaining": 47709,
+    "evidence": "cand_1"
+   },
+   "validFrom": "2026-10-27T15:27:15.579Z",
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:27:15.579Z",
+    "runId": "run_20261027152522_tilw"
+   },
+   "createdAt": "2026-10-27T15:27:15.579Z"
+  },
+  {
+   "id": "rel_74737ee7c64475d4",
+   "from": "zone:cd:O00004",
+   "type": "candidate_site",
+   "to": "candidate_site:cd:O00004:cand_2",
+   "attrs": {
+    "zone_people_gaining": 31249,
+    "evidence": "cand_2"
+   },
+   "validFrom": "2026-10-27T15:27:15.612Z",
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:27:15.612Z",
+    "runId": "run_20261027152522_tilw"
+   },
+   "createdAt": "2026-10-27T15:27:15.612Z"
+  },
+  {
+   "id": "rel_3c9290c74fdfa53a",
+   "from": "zone:cd:O00004",
+   "type": "candidate_site",
+   "to": "candidate_site:cd:O00004:cand_3",
+   "attrs": {
+    "zone_people_gaining": 23680,
+    "evidence": "cand_3"
+   },
+   "validFrom": "2026-10-27T15:27:15.645Z",
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:27:15.645Z",
+    "runId": "run_20261027152522_tilw"
+   },
+   "createdAt": "2026-10-27T15:27:15.645Z"
+  },
+  {
+   "id": "rel_b14dedbff16ab12b",
+   "from": "event:cd:fix_plan_proposed:run_20261027152522_tilw:zone:cd:O00004:1793114837808",
+   "type": "concerns",
+   "to": "zone:cd:O00004",
+   "validFrom": "2026-10-27T15:27:17.810Z",
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:27:17.810Z",
+    "runId": "run_20261027152522_tilw"
+   },
+   "createdAt": "2026-10-27T15:27:17.810Z"
+  },
+  {
+   "id": "rel_05ba27dff01d4f31",
+   "from": "event:cd:diagnosis_completed:run_20261027152522_tilw:zone:cd:O00004:1793114837892",
+   "type": "concerns",
+   "to": "zone:cd:O00004",
+   "validFrom": "2026-10-27T15:27:17.896Z",
+   "schemaVersion": 1,
+   "source": {
+    "kind": "agent",
+    "by": "coordinator",
+    "at": "2026-10-27T15:27:17.896Z",
+    "runId": "run_20261027152522_tilw"
+   },
+   "createdAt": "2026-10-27T15:27:17.896Z"
+  }
+ ]
+}
