@@ -19,6 +19,7 @@ from coverage_detective.sources import live
 SOURCE = "postcodes_io"
 BASE = "https://api.postcodes.io"
 TTL_S = 30 * 24 * 3600
+SAMPLE_REVERSE_M = 2000  # the live lookup's radius: a saved postcode further away is not reported
 
 # Full UK postcode, with or without the space (e.g. "WC2N 5DU", "ld66aa").
 POSTCODE_RE = re.compile(r"^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$", re.I)
@@ -95,9 +96,14 @@ def reverse(lat: float, lon: float) -> live.LiveResult:
         res = live.get(SOURCE, f"{BASE}/postcodes", {"lat": lat, "lon": lon, "widesearch": "true", "limit": 1},
                        ttl_s=TTL_S, sample=sample + "_wide")
     found = (res.body or {}).get("result") or []
+    distance = found[0].get("distance") if found else None
+    if found and res.status == "sample":  # a saved response is for a sample place: measure from this point instead
+        distance = live.km(lat, lon, found[0]["latitude"], found[0]["longitude"]) * 1000
+        if distance > SAMPLE_REVERSE_M:  # not this point's postcode: say nothing rather than another place's
+            found = []
     if found:
         nearest = _from_postcode(found[0])
-        res.data = {"found": True, "nearest": nearest, "distance_m": found[0].get("distance")}
+        res.data = {"found": True, "nearest": nearest, "distance_m": distance}
     else:
         res.data = {"found": False, "nearest": None, "distance_m": None}
     return res

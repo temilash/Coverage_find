@@ -41,7 +41,7 @@ from coverage_detective import evidence as evidence_bundle
 from coverage_detective.api.agents import router as agents_router
 from coverage_detective.api.council import router as council_router
 from coverage_detective.config import UK_BBOX
-from coverage_detective.data import manifest, terrain
+from coverage_detective.data import manifest, sample_db, terrain
 from coverage_detective.data.queries import cell_sql
 from coverage_detective.data.zetaris import QUERY_LOG, ZetarisError, explain, query
 from coverage_detective.data.zetaris import status as zetaris_status
@@ -230,6 +230,8 @@ class EvidenceRequest(BaseModel):
 @app.post("/api/evidence")
 def evidence(req: EvidenceRequest) -> dict:
     """Evidence bundle for a point: Zetaris queries (logged in the bundle), line of sight, live sources."""
+    if sample_mode() and req.lat is not None and not sample_db.covers(req.lat, req.lon):
+        raise HTTPException(404, sample_db.coverage_message())
     try:
         return evidence_bundle.build_bundle(req.query, req.lat, req.lon)
     except LookupError as e:

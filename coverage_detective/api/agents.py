@@ -9,7 +9,9 @@
     POST /api/council/summary {scope, weights}             -> priority summary for the scope (Markdown)
 
 In sample mode (python run.py --sample) every agent reply comes from the example recorded for that place,
-zone or area (agents/replay.py); a request with no recorded example is refused with a clear message.
+zone or area (agents/replay.py). A point inside the sample extracts with no recording runs with fixed rules
+in place of the model (agents/rules.py, labelled "rules only"); anything else is refused with a clear message
+naming the areas sample mode covers.
 
 Runs take minutes, so they run in a thread (at most MAX_RUNNING at once; later ones wait as
 "queued") and the page polls GET /api/runs/{id}: the progress file has one step per agent call
@@ -32,6 +34,8 @@ from coverage_detective.agents import coordinator as C
 from coverage_detective.agents.llm import LLMError, llm
 from coverage_detective.agents.tools import Case
 from coverage_detective.agents import replay as R
+from coverage_detective.agents import rules
+from coverage_detective.data import sample_db
 from coverage_detective.config import UK_BBOX, sample_mode
 from coverage_detective.memory.meterless import memory
 
@@ -99,14 +103,17 @@ def _queued(run_id: str, scope: str, label: str) -> None:
          "steps": [], "result": None, "elapsed_s": 0}))
 
 
-def _replay(kind: str, **where) -> "R.Session | None":
-    """Sample mode: the recorded example for this request (or a clear 404)."""
+def _replay(kind: str, **where) -> "R.Session | rules.Session | None":
+    """Sample mode: the recorded example for this request; at a point inside the extracts with no recording,
+    rules only (no model); elsewhere a clear 404 naming what sample mode covers."""
     if not R.replaying():
         return None
     try:
         return R.Session("replay", R.find(kind, **where))
     except R.ReplayMissing as e:
-        raise HTTPException(404, str(e)) from e
+        if kind == "point" and sample_db.covers(where["lat"], where["lon"]):
+            return rules.Session()
+        raise HTTPException(404, f"{e}. " + (sample_db.coverage_message() if kind == "point" else "")) from e
 
 
 def _start(run_id: str, fn, **kw) -> None:
@@ -134,14 +141,20 @@ def diagnose(req: DiagnoseRequest) -> dict:
     except LookupError as e:
         raise HTTPException(404, str(e) + " (sample mode: search works for the example places only, e.g. Great Langdale, WC2N 5DU, Rhayader, Sutton St Edmund)" if sample_mode() else "") from e
     label = point.get("label") if point.get("kind") != "point" else (
-        point.get("nearest_postcode") and f"near {point['nearest_postcode']}") or req.query or ""
+        point.get("nearest_postcode") and f"near {point['nearest_postcode']}") or req.query or point.get("label") or ""
     sess = _replay("point", lat=point["lat"], lon=point["lon"])
-    run_id = memory.create_run("point", query=req.query or f"{point['lat']:.5f},{point['lon']:.5f}", label=label,
-                               location={"lat": point["lat"], "lon": point["lon"]})
+    query, lat, lon, moved = req.query, point["lat"], point["lon"], None
+    if isinstance(sess, R.Session):  # recorded replies fit the evidence at the recorded point only: run there
+        ex = R.example(sess.example_id)
+        moved = round(R._km(lat, lon, ex["lat"], ex["lon"]) * 1000)
+        query, lat, lon = None, ex["lat"], ex["lon"]
+    run_id = memory.create_run("point", query=query or f"{lat:.5f},{lon:.5f}", label=label, location={"lat": lat, "lon": lon})
     _queued(run_id, "point", label)
-    _start(run_id, C.diagnose_point, query=req.query, lat=point["lat"] if not req.query else None,
-           lon=point["lon"] if not req.query else None, audience=req.audience, replay=sess)
-    return {"run_id": run_id, "status": "queued", "label": label, "location": {"lat": point["lat"], "lon": point["lon"]}}
+    _start(run_id, C.diagnose_point, query=query, lat=lat if not query else None, lon=lon if not query else None,
+           audience=req.audience, replay=sess)
+    return {"run_id": run_id, "status": "queued", "label": label, "location": {"lat": lat, "lon": lon},
+            **({"sample_mode": "recorded", "example_id": sess.example_id, "moved_to_recorded_point_m": moved}
+               if isinstance(sess, R.Session) else {"sample_mode": "rules only"} if sess else {})}
 
 
 @router.post("/council/zones/{zone_id}/diagnose")
@@ -266,6 +279,8 @@ def letter(run_id: str, req: LetterRequest) -> dict:
         sess = R.Session("record" if R.recording() else "replay", result["example_id"])
         sess.variant = req.recipient  # one recorded letter per recipient
         case.cache["replay"] = sess
+    elif sample_mode() and result.get("rules_only"):
+        case.cache["replay"] = rules.Session()
     try:
         out = A.write_letter(case, req.recipient, result)
     except R.ReplayMissing as e:
@@ -303,6 +318,8 @@ def email(run_id: str, req: EmailRequest) -> dict:
             sess = R.Session("record" if R.recording() else "replay", result["example_id"])
             sess.variant = "council" if contact.kind == "council" else "operator"
             case.cache["replay"] = sess
+        elif sample_mode() and result.get("rules_only"):
+            case.cache["replay"] = rules.Session()
         try:
             wire = A.write_letter(case, "council" if contact.kind == "council" else "operator", result,
                                   addressee=contact.name)

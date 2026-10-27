@@ -33,7 +33,7 @@ from zoneinfo import ZoneInfo
 
 import h3
 
-from coverage_detective.config import H3_RES, sample_mode
+from coverage_detective.config import H3_RES, SAMPLE_LOCATIONS, sample_mode
 from coverage_detective.data import manifest, terrain
 from coverage_detective.data.masts import bearing_deg
 from coverage_detective.data.queries import cell_sql
@@ -520,8 +520,23 @@ def likely_best(rows: list[dict]) -> dict:
 
 # --- live sources ----------------------------------------------------------------------------
 
+def sample_tag(r: live.LiveResult, lat: float, lon: float) -> str:
+    """ "(saved sample, offline mode)", naming the sample place when it is not this point."""
+    if r.sample_place in live.SAMPLE_SLUGS:
+        name, s_lat, s_lon = SAMPLE_LOCATIONS[live.SAMPLE_SLUGS.index(r.sample_place)]
+        km = live.km(lat, lon, s_lat, s_lon)
+        if km > 2:
+            return f" (saved sample for {name.split(' (')[0]}, {km:.0f} km away, offline mode)"
+    return " (saved sample, offline mode)"
+
+
 def live_items(b: Bundle, w: live.LiveResult, m: live.LiveResult, f: live.LiveResult, cell_id: str) -> None:
     tag = {"live": "", "cached": " (cached copy: the live call failed)", "sample": " (saved sample, offline mode)"}
+    here = h3.cell_to_latlng(cell_id)
+
+    def _tag(r: live.LiveResult) -> str:
+        return sample_tag(r, *here) if r.status == "sample" else tag.get(r.status, "")
+
     if w.data:
         d, n, x = w.data, w.data["now"], w.data["next_24h"]
         verdict = {"none": "no severe weather expected", "moderate": "moderate", "severe": "severe"}[d["severity"]]
@@ -529,7 +544,7 @@ def live_items(b: Bundle, w: live.LiveResult, m: live.LiveResult, f: live.LiveRe
         b.add("weather", "Open-Meteo forecast", w.to_dict(), w.url, [cell_id],
               f"Weather now: {n['weather']}, wind {n['wind_kmh']:.0f} km/h gusting {n['gust_kmh']:.0f} km/h, rain "
               f"{n['precipitation_mm_h']:.1f} mm/h. Next 24 h: gusts up to {x['max_gust_kmh']:.1f} km/h, rain up to "
-              f"{x['max_precipitation_mm_h']:.1f} mm/h: {verdict}{why}.{tag.get(w.status, '')}",
+              f"{x['max_precipitation_mm_h']:.1f} mm/h: {verdict}{why}.{_tag(w)}",
               {"severity": d["severity"], "now": n, "next_24h": x}, {"forecast_hours": x["hours"]},
               _live_strength(w, "moderate"), ["weather"])
     else:
@@ -546,7 +561,7 @@ def live_items(b: Bundle, w: live.LiveResult, m: live.LiveResult, f: live.LiveRe
         else:
             finding, strength = f"No Met Office weather warnings are in force or due for {region}.", "moderate"
         b.add("met_office_warnings", "Met Office severe weather warnings (RSS)", m.to_dict(), m.url, [cell_id],
-              finding + tag.get(m.status, ""), {"region": region, "warnings": ws}, {"warnings": len(ws)},
+              finding + _tag(m), {"region": region, "warnings": ws}, {"warnings": len(ws)},
               _live_strength(m, strength), ["weather"])
     else:
         b.errors.append(f"met_office_warnings: {m.error}")
@@ -565,7 +580,7 @@ def live_items(b: Bundle, w: live.LiveResult, m: live.LiveResult, f: live.LiveRe
         else:
             finding = f"No flood alerts or warnings within {f.data['radius_km']} km."
         b.add("flood_warnings", "Environment Agency flood monitoring", f.to_dict(), f.url, [cell_id],
-              finding + tag.get(f.status, ""), {"warnings": fs, "via": f.data["via"]}, {"warnings": len(fs)},
+              finding + _tag(f), {"warnings": fs, "via": f.data["via"]}, {"warnings": len(fs)},
               _live_strength(f, "moderate"), ["active_incident"])
     else:
         b.errors.append(f"flood_warnings: {f.error}")

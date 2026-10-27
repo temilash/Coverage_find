@@ -64,6 +64,12 @@ def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
+def km(a_lat: float, a_lon: float, b_lat: float, b_lon: float) -> float:
+    """Distance in km (equirectangular; fine at these distances)."""
+    x = math.radians(b_lon - a_lon) * math.cos(math.radians((a_lat + b_lat) / 2))
+    return 6371.0 * math.hypot(x, math.radians(b_lat - a_lat))
+
+
 def nearest_sample(lat: float | None, lon: float | None) -> str:
     """Slug of the sample place nearest to a point (London when no point is given)."""
     if lat is None or lon is None:

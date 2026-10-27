@@ -152,6 +152,7 @@ const AG = (() => {
     return `
       ${r.replayed ? `<p class="recorded-badge" title="Sample mode: no LLM calls were made">Recorded: these agent replies are replayed from
         examples/${esc(r.example_id)} (sample mode)</p>` : ""}
+      ${r.rules_only ? `<p class="recorded-badge" title="Sample mode: no model was called; fixed rules ranked the causes from the evidence">Rules only, no model (sample mode): the evidence and checks are real; the causes were ranked by fixed rules</p>` : ""}
       <p class="rp-headline">${esc(plain(r.headline))}</p>
       ${r.status === "partial" ? `<p class="warn-text">Partial result: an agent failed twice, so this is built from the evidence alone.</p>` : ""}
       ${r.explanation ? `<details class="more-block"><summary>Full explanation</summary><p>${cite(r.explanation, run)}</p></details>` : ""}
@@ -238,7 +239,7 @@ const AG = (() => {
     const calls = rounds.reduce((n, c) => n + c.llm_calls.length, 0);
     const audit = run.trace?.audit || [];
     const rn = run.result?.rounds;
-    const rec = run.result?.replayed ? " · recorded replies (sample mode)" : "";
+    const rec = run.result?.replayed ? " · recorded replies (sample mode)" : run.result?.rules_only ? " · rules only, no model (sample mode)" : "";
     return `${running(run) ? progressHTML(run) : `<p class="rp-meta">Took ${fmt(run.elapsed_s, 0)} s · ${rn ?? "–"} round${rn === 1 ? "" : "s"} · ${calls} agent calls${rec}</p>`}
       <label class="tech-toggle"><input type="checkbox" id="tech-toggle" ${tech ? "checked" : ""}> Technical details</label>
       ${rounds.length ? `<ol class="timeline">${rounds.map((c) => roundCard(c, run, tech, open)).join("")}</ol>` : `<p class="muted">Waiting for the first round.</p>`}

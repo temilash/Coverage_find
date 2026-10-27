@@ -29,7 +29,7 @@ from coverage_detective.config import ROOT, env, sample_mode
 EXAMPLES = ROOT / "examples"
 INDEX = EXAMPLES / "index.json"
 PROMPTS = Path(__file__).parent / "prompts"
-NEAR_KM = 1.0  # a sample-mode point request uses the example recorded within this distance
+NEAR_KM = 0.1  # a sample-mode point request within this distance replays that example, run at its recorded point
 _lock = threading.Lock()
 
 
@@ -127,6 +127,10 @@ def _km(a_lat, a_lon, b_lat, b_lon) -> float:
     return 6371.0 * math.hypot(x, math.radians(b_lat - a_lat))
 
 
+def example(example_id: str) -> dict:
+    return next(e for e in index() if e["example_id"] == example_id)
+
+
 def find(kind: str, lat: float | None = None, lon: float | None = None, zone_id: str | None = None,
          scope: str | None = None) -> str:
     """The example that answers a sample-mode request, or ReplayMissing with what is available."""
@@ -138,5 +142,5 @@ def find(kind: str, lat: float | None = None, lon: float | None = None, zone_id:
             return e["example_id"]
         if kind == "point" and lat is not None and _km(lat, lon, e["lat"], e["lon"]) <= NEAR_KM:
             return e["example_id"]
-    names = ", ".join(e["label"] for e in ex) or "none"
+    names = ", ".join(e["label"] + (f" ({e['lat']}, {e['lon']})" if kind == "point" else "") for e in ex) or "none"
     raise ReplayMissing(f"sample mode has no recorded run for this {kind}; recorded {kind}s: {names}")

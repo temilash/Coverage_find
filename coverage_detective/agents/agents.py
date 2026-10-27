@@ -52,6 +52,9 @@ def ask(case: Case, agent: str, round: int, messages: list[dict], purpose: str |
     try:
         if sess and sess.mode == "replay":
             r = sess.reply(sess.next_key(agent, round), kw.get("schema"))
+        elif sess and sess.mode == "rules":  # sample mode at a point with no recording: fixed rules, no model
+            from coverage_detective.agents import rules
+            r = rules.reply(case, agent, round, kw.get("schema"), bool(kw.get("tools")))
         else:
             r = llm.chat(messages, scope=case.run_id, **kw)
             if sess:

@@ -122,3 +122,46 @@ def test_insufficient_data_example_says_so():
     text = " ".join([d["headline"], d.get("explanation") or "", *d.get("limitations", []),
                      *(a["text"] for a in d.get("actions", []))]).lower()
     assert "operators could not be identified" in text and "no coverage" not in text.replace("not the same as no coverage", "")
+
+
+# ------------------------------------------------------------------ away from the examples
+
+
+def test_sample_mode_refuses_a_point_outside_the_extracts_with_the_areas_it_covers(sample):
+    for path, body in [("/api/diagnose", {"lat": 51.75, "lon": -1.25}), ("/api/evidence", {"lat": 51.75, "lon": -1.25})]:
+        r = sample.post(path, json=body)
+        assert r.status_code == 404 and "Sample mode only has data around" in r.json()["detail"]
+        assert "great langdale" in r.json()["detail"]
+
+
+def test_a_point_inside_the_extracts_with_no_recording_runs_rules_only(sample):
+    r = sample.post("/api/diagnose", json={"lat": 52.31, "lon": -3.52})  # 1.4 km from Near Rhayader's recorded point
+    assert r.status_code == 200 and r.json()["sample_mode"] == "rules only"
+    run = wait(sample, r.json()["run_id"])
+    res = run["result"]
+    assert run["status"] == "complete" and res["rules_only"] is True and not res.get("replayed")
+    assert res["hypotheses"] and all(h["supporting"] for h in res["hypotheses"])
+    ids = {e["evidence_id"] for e in run["evidence"]}
+    assert {"speed_cell", "nearest_site", "los_ee"} <= ids  # the real tools ran on the extracts
+    calls = [c for rd in run["trace"]["rounds"] for c in rd["llm_calls"]]
+    assert calls and {c["provider"] for c in calls} == {"rules"}
+    assert any("coverage checker" in a["text"] for a in res["actions"])
+    letter = sample.post(f"/api/runs/{res['run_id']}/letter", json={"recipient": "operator"})
+    assert letter.status_code == 200 and "rules only" in letter.json()["body_markdown"]
+
+
+@needs_examples
+def test_a_recorded_example_replays_at_its_recorded_point_only(sample):
+    ex = EXAMPLES["near_rhayader"]
+    r = sample.post("/api/diagnose", json={"lat": ex["lat"] + 0.0005, "lon": ex["lon"]})  # ~56 m away
+    assert r.json()["sample_mode"] == "recorded" and r.json()["location"] == {"lat": ex["lat"], "lon": ex["lon"]}
+    assert 40 < r.json()["moved_to_recorded_point_m"] < 70
+    r = sample.post("/api/diagnose", json={"lat": ex["lat"] - 0.004, "lon": ex["lon"] + 0.013})  # ~1 km: not replayed
+    assert r.json()["sample_mode"] == "rules only"
+
+
+def test_a_saved_postcode_far_from_the_point_is_not_reported(sample):
+    from coverage_detective.sources import geocode
+    assert geocode.reverse(54.47, -3.07).data["found"] is False  # Great Langdale's saved postcode is 3 km away
+    near = geocode.reverse(54.445, -3.105).data
+    assert near["found"] and near["distance_m"] < 2000
