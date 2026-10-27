@@ -36,6 +36,8 @@ def test_replay_keys_and_missing_replies_fail_clearly():
         s.reply("critic|round 1|call 2", None)
     with pytest.raises(R.ReplayMissing, match="no recorded run for this point"):
         R.find("point", lat=50.0, lon=-5.0)
+    s.data["replies"]["letter_writer:email EE|round 0|call 1"] = {"parsed": None, "tool_calls": [], "content": "x"}
+    assert s.has("letter_writer", "email EE") and not s.has("letter_writer", "email O2")
 
 
 @pytest.fixture

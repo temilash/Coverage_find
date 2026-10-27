@@ -237,7 +237,7 @@ def evidence(req: EvidenceRequest) -> dict:
     try:
         return evidence_bundle.build_bundle(req.query, req.lat, req.lon)
     except LookupError as e:
-        raise HTTPException(404, str(e) + " (sample mode: search works for the example places only, e.g. Great Langdale, WC2N 5DU, Rhayader, Sutton St Edmund)" if sample_mode() else "") from e
+        raise HTTPException(404, str(e) + " (sample mode: search works for the example places only, e.g. CO9 1TP, Great Langdale, WC2N 5DU, Rhayader, Sutton St Edmund)" if sample_mode() else "") from e
 
 
 def live_context(lat: float, lon: float, flood_via: str = "api") -> dict:

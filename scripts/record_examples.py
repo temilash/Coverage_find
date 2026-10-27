@@ -31,6 +31,7 @@ from coverage_detective.agents import replay as R  # noqa: E402
 from coverage_detective.api import agents as API  # noqa: E402
 
 EXAMPLES = [  # example_id, kind, where, label
+    ("co9_1tp", "point", {"lat": 51.935645, "lon": 0.592832}, "CO9 1TP, Gosfield, Essex"),
     ("great_langdale", "point", {"lat": 54.445, "lon": -3.105}, "Great Langdale, Cumbria"),
     ("central_london", "point", {"lat": 51.507211, "lon": -0.128269}, "Central London (WC2N 5DU)"),
     ("near_rhayader", "point", {"lat": 52.30, "lon": -3.51}, "Near Rhayader, Powys"),
@@ -39,8 +40,11 @@ EXAMPLES = [  # example_id, kind, where, label
      "Remote cell near Bettws, Powys (no tests, no site within 10 km: insufficient data)"),
     ("zone_ousby", "zone", {"zone_id": "Z00072"}, "Ousby gap zone (Westmorland and Furness)"),
     ("opportunity_windermere", "zone", {"zone_id": "O00332"}, "Windermere improvement opportunity"),
+    ("zone_broadstone", "zone", {"zone_id": "Z00023"}, "Broadstone gap zone (Shropshire)"),
+    ("opportunity_ludlow", "zone", {"zone_id": "O00004"}, "Ludlow improvement opportunity"),
 ]
 LETTERS = {"great_langdale": ["operator", "council", "mp"]}
+EMAILS = {"co9_1tp": ["council", "EE", "O2", "Three", "Vodafone"]}  # POST /api/runs/{id}/email, one per recipient
 SUMMARIES = [("summary_uk", "uk", "the sample area"), ("summary_westmorland", "la:E06000064", "Westmorland and Furness")]
 
 
@@ -90,10 +94,13 @@ def main() -> None:
         export(example_id, r["run_id"])
         for recipient in LETTERS.get(example_id, []):
             API.letter(r["run_id"], API.LetterRequest(recipient=recipient))
+        for to in EMAILS.get(example_id, []):
+            mail = API.email(r["run_id"], API.EmailRequest(to=to))
+            print(f"   email to {mail['contact']['name']}: {mail['subject']}")
         used = providers(r["run_id"])
         index[example_id] = {"example_id": example_id, "kind": kind, "label": label, **where, "run_id": r["run_id"],
                              "status": r["status"], "headline": r["headline"], "elapsed_s": r["elapsed_s"],
-                             "letters": LETTERS.get(example_id, []), **used}
+                             "letters": LETTERS.get(example_id, []), "emails": EMAILS.get(example_id, []), **used}
         print(f"{example_id}: {r['status']} in {time.time() - t:.0f}s, {len(sess.data['replies'])} replies, "
               f"{used['providers']}: {r['headline'][:110]}")
         if set(used["providers"]) != {"nightshift"}:
