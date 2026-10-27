@@ -6,8 +6,9 @@ coverage gaps for operators and councils. Scope: mobile networks only (4G/5G, ph
 mobile data), not home broadband.
 
 Sponsor tech: **Zetaris** (federated SQL, local Docker) — every dataset the agents use is
-registered there as a separate source and queried through it. **Meterless** (memory /
-world model) comes later; agents are not built yet.
+registered there as a separate source and queried through it. **Meterless**: the H-MEM and World
+Model engines are the agents' shared case file (meterless_service/), and **Meterless Nightshift**
+is the primary AI provider (NVIDIA Nemotron through it; NVIDIA direct only as a labelled fallback).
 
 ## Product context
 
@@ -23,7 +24,7 @@ Two modes:
 2. **Where are the gaps?** region → ranked under-served areas with main cause, people
    affected and suggested fix.
 
-Agents (built later): Coordinator (routing, max 3 rounds, fallbacks), Investigator
+Agents (built; coordinator.py, agents.py): Coordinator (routing, max 3 rounds, fallbacks), Investigator
 (Zetaris + live APIs → evidence items), Diagnostician (hypotheses from a fixed cause set:
 distance_to_mast, terrain_blocking, single_operator, capacity_strain, weather,
 active_incident, insufficient_data), Critic (approves / asks for more
@@ -103,10 +104,12 @@ coverage_detective/     package
                         (priority / opportunity score), siting.py (fixes, candidates)
   memory/meterless.py   Meterless client (H-MEM + World Model over HTTP; in-memory fallback)
   data/sample_db.py     sample mode: DuckDB over sample_data/zetaris/ in place of Zetaris
-  agents/               llm.py (Nemotron client), schemas.py (pydantic), tools.py (tools -> Meterless),
-                        agents.py (the agents), guard.py (code guard), prompts/*.md,
-                        coordinator.py (the loop: diagnose_point, diagnose_zone; progress; export),
-                        replay.py (recorded replies for sample mode)
+  agents/               llm.py (Nightshift first, NVIDIA direct fallback; receipts), schemas.py (pydantic),
+                        tools.py (tools -> Meterless), agents.py (the agents), guard.py (code guard),
+                        prompts/*.md (frozen: hash in examples/index.json), coordinator.py (the loop:
+                        diagnose_point, diagnose_zone; progress; export), replay.py (recorded replies for
+                        sample mode), rules.py (sample mode away from the examples: rules, no model),
+                        trace_log.py (logs/run_<id>.jsonl + stdout)
 meterless_service/      Node HTTP service on :8100 over vendor/meterless (H-MEM, World Model); data/meterless/
 vendor/meterless/       Meterless reference engines, vendored unchanged (Apache 2.0)
   data/
@@ -123,18 +126,25 @@ vendor/meterless/       Meterless reference engines, vendored unchanged (Apache 
     ofcom_api.py        stub (Ofcom postcode API not available; returns None)
   api/app.py            FastAPI: explorer API + /api/live + /api/los + POST /api/evidence; pages /, /signal, /council
   api/council.py        /api/council/* (scopes, ranked zones, CSV, zone detail with fixes)
-  api/agents.py         agent runs: /api/diagnose, /api/runs/{id}, letters, zone runs, priority summary
+  api/agents.py         agent runs: /api/diagnose, /api/runs/{id}, letters, emails, zone runs, priority
+                        summary, POST /run (synchronous, JSON)
 scripts/download/       fetch raw data into data/raw/<source>/ (skip files that exist)
 scripts/process/        build data/processed/*.parquet (+ build_web_layers.py for the map)
 scripts/zetaris/        compose.sh (data mount), register_sources.py (one function per source)
 scripts/check_data.py   the data report through Zetaris (docs/data_report.md); --phases for the old A/B/E checks
 scripts/refresh.py      refresh stored sources on their cadence
 scripts/screenshots.py, council_screenshots.py  README screenshots -> docs/screenshots/
-tests/                  pytest (124 tests; offline: samples, mocked Zetaris / DEM)
+scripts/nightshift_probe.py   one request through Nightshift (routed model, receipt, signature)
+scripts/test_meterless.sh     Meterless Engine tests (H-MEM, World Model, service, client: 26/26)
+scripts/record_examples.py, save_output_examples.py   examples/ (live model), output_examples/ (from /run)
+tests/                  pytest (166 tests; offline: samples, mocked Zetaris / DEM / LLM)
+input_examples/, output_examples/   POST /run bodies and the answers they produced (the app never reads them)
+Dockerfile, .dockerignore   Python 3.12 + Node 20, SAMPLE_MODE=true by default, port 8000
+docs/SUBMISSION.md      HackOS submission text
 web/                    pages, no build step (MapLibre 5.24 + deck.gl 9.4 + h3-js 4.5):
                         index.html + app.js (Explore), signal.html + signal.js (My signal),
                         council.html + council.js (Council view), agents.js (agent UI, shared), style.css
-run.py                  start the explorer on :8000 (checks Zetaris)
+run.py                  start the app on :8000 (checks Zetaris; --sample or SAMPLE_MODE=true; --host)
 data/raw/               raw inputs and downloads (gitignored)
 data/processed/         built Parquet files (gitignored)
 data/web/, data/cache/  generated map layers, live-call cache (gitignored)
@@ -205,6 +215,9 @@ scripts/zetaris/compose.sh up -d driver               # Zetaris with our read-on
 # Explorer
 .venv/bin/python scripts/process/build_web_layers.py  # after any data change
 .venv/bin/python run.py                               # http://localhost:8000 (+ Meterless on :8100)
+.venv/bin/python run.py --sample                      # no Zetaris / Nightshift / key (Meterless on :8101)
+.venv/bin/python scripts/nightshift_probe.py --schema # Nightshift check (needs METERLESS_RUNTIME_TOKEN or _FILE)
+scripts/test_meterless.sh                             # Meterless Engine tests
 (cd meterless_service && npm install)                 # once: Node deps for the Meterless service
 .venv/bin/python scripts/screenshots.py --chrome ~/.cache/ms-playwright/chromium-1223/chrome-linux64/chrome
 ```
@@ -212,7 +225,7 @@ scripts/zetaris/compose.sh up -d driver               # Zetaris with our read-on
 Inputs placed by hand: `data/raw/boundary/uk_countries.geojson` (ONS countries, all four
 nations) and `data/raw/population/population.tif` (WorldPop UK).
 
-## Status (25 Oct 2026, evening)
+## Status (27 Oct 2026, afternoon)
 
 Built in phases; after each: run checks, commit, push, stop for review. Order agreed:
 A → B → E → freshness → explorer → WTR → D → C → evidence API → F → final check_data.py;
@@ -420,11 +433,26 @@ G (power cuts) dropped as future work; H (visitor load) only if time. Then the a
   refresh, licence; one cross-source row per sample place; live sources). Council view 500s fixed (empty
   scopes, all-null factors). README rewritten (architecture, loop, guard, pages, sample mode, examples).
 
+- **Submission checks** (27 Oct, branch `submission-checks`): Nightshift as the primary provider in llm.py
+  (Bearer token from METERLESS_RUNTIME_TOKEN or its proxy-token file, `meterless-app: coverage-detective`,
+  `meterless-scope` per run, 180 s; routed_model / receipt_id / route / latency / Ed25519 signature from the
+  `meterless` object into every llm_call note; meterless/auto and bare ids refused; STRICT_MODEL=1; NVIDIA
+  direct only on unreachable / 401 / 5xx, as a `provider_fallback` note). Header names and the receipt shape come
+  from two working Nightshift 1.2.3 integrations (the user's information), still to be confirmed by a live probe.
+  Sample mode: replay only within 100 m of an example (run at the recorded point; at 1 km the guard stripped 14
+  sentences of another place's numbers), rules only (agents/rules.py) elsewhere inside the extracts, a refusal
+  listing the areas outside them; a saved postcode > 2 km away is not reported; saved live samples name their
+  place. POST /run. JSONL trace per run (the Meterless client now records reads per agent). input_examples/ +
+  output_examples/ from real /run calls. Dockerfile (built and run here: pages, /run, traces OK). README,
+  technical.md, THIRD_PARTY, SUBMISSION.md. The committed example replies are still the NVIDIA-direct
+  recordings of 27 Oct 00:26 until scripts/record_examples.py is re-run through Nightshift.
+
 ### Zetaris sources
 
 `CD_CELLS`, `CD_OOKLA_MOBILE`, `CD_OOKLA_MOBILE_HISTORY`, `CD_OOKLA_MOBILE_TILES`,
 `CD_MASTS_SITES`, `CD_MASTS`, `CD_WTR_POINTS`, `CD_OFCOM_AREA`, `CD_OFCOM_NATIONS`,
-`CD_TERRAIN`, `CD_LOS`, `CD_GAP_ZONES`, `CD_GAP_ZONE_CELLS` (Parquet) and `CD_LIVE_EA_FLOODS` (live REST). Row counts are in
+`CD_TERRAIN`, `CD_LOS`, `CD_GAP_ZONES`, `CD_GAP_ZONE_CELLS`, `CD_OPP_ZONES`, `CD_OPP_ZONE_CELLS` (15 Parquet)
+and `CD_LIVE_EA_FLOODS` (live REST). Row counts are in
 data/README.md.
 
 ### Sample places (what the data says, 25 Oct)
@@ -458,14 +486,13 @@ data/README.md.
 
 ### Next
 
-1. F. Rural–urban classification + deprivation (deciles within each nation) →
-   `deprivation_r7`, `CD_DEPRIVATION` (`queries.py` already joins it when the manifest has
-   "deprivation"; layer `deprivation_decile` ready in build_web_layers).
-2. Final `scripts/check_data.py`: every Zetaris source with row counts and freshness, a
-   cross-source row per sample place, live results.
-3. H. Visitor load, if time.
-4. The agents (Coordinator, Investigator on `POST /api/evidence`, Diagnostician, Critic,
-   Advisor, Gap analyst) with Meterless memory.
+1. Live checks on the user's machine: `scripts/nightshift_probe.py --schema` (routed model, receipt, both
+   structured-output styles), then re-record the examples through Nightshift (`scripts/record_examples.py`,
+   ~15-20 min) and re-save `output_examples/` and `examples/near_rhayader/agent_trace.jsonl`; update the README
+   limitation about NVIDIA-direct recordings once done.
+2. F. Rural–urban classification + deprivation (deciles within each nation) → `deprivation_r7`,
+   `CD_DEPRIVATION` (`queries.py` already joins it when the manifest has "deprivation").
+3. H. Visitor load, if time. A comparison with Ofcom's checker (not done; listed as future work).
 
 ## Rules
 
