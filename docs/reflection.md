@@ -67,3 +67,8 @@ Ookla) changes its column names or data types, the USL registration must fail lo
 agents from querying empty or null tables. Furthermore, the USL should natively support spatial/geospatial joins
 (like H3 hexagons) without requiring external Python libraries to calculate distances before the federated query
 runs."
+
+## PM Requirement for Zetaris
+
+As a Product Manager, my killer requirement for the Zetaris USL would be:
+"The semantic layer must enforce strict schema-drift validation at registration. If an upstream data source (like Ookla) changes its column names or data types, the USL registration must fail loudly and immediately, preventing agents from querying empty or null tables. Furthermore, the USL should natively support spatial/geospatial joins (like H3 hexagons) without requiring external Python libraries to calculate distances before the federated query runs."

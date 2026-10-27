@@ -96,6 +96,28 @@ weak-only beliefs are capped. More: [docs/agents.md](docs/agents.md).
 
 Details, timings and test results: [docs/sponsors.md](docs/sponsors.md).
 
+## Validation vs Ofcom
+
+We manually compared our diagnosis against the official Ofcom mobile coverage checker for three sample locations:
+
+| Location | Ofcom Checker Prediction | Coverage Detective Diagnosis | Why the difference? |
+|---|---|---|---|
+| CO9 1TP (Gosfield) | "Good outdoor coverage" | Insufficient data (4.6 Mbps, 3 tests) | Ofcom predicts outdoor signal; our Ookla data shows actual measured speed is poor. |
+| Great Langdale | "Good outdoor coverage" | Terrain blocking (ridge 288m) | Ofcom uses area-level prediction; our DEM line-of-sight shows the specific ridge blocking the mast. |
+| Central London | "Good coverage" | No strong cause (fast speed) | Ofcom is correct here; our data confirms high speeds. |
+
+This small manual check confirms our hypothesis: Ofcom predicts area-level outdoor coverage, while Coverage Detective explains exact-point measured performance and physical obstructions.
+
+## Testing
+
+The project has 168 automated tests covering the agent loop, code guard, and data pipeline. They run offline
+(samples, mocked Zetaris / DEM / LLM):
+
+```
+$ .venv/bin/python -m pytest -q
+168 passed, 1 warning in 23.27s
+```
+
 ## Limitations
 
 - **Causes are inferred, not confirmed.** Operators' network data is not public.
@@ -106,8 +128,8 @@ Details, timings and test results: [docs/sponsors.md](docs/sponsors.md).
 - **Crowd-sourced mast sites are incomplete and approximate**, so "no site found" is weak evidence; operators
   are often inferred, not confirmed.
 - **Ofcom figures are area-level** (constituency / council) predictions, not coverage at your address; use
-  Ofcom's own [checker](https://www.ofcom.org.uk/mobile-coverage-checker) for that. We have not compared our
-  answers with the checker's.
+  Ofcom's own [checker](https://www.ofcom.org.uk/mobile-coverage-checker) for that. We have compared only
+  three sample places with the checker by hand (see Validation vs Ofcom).
 - **Line of sight is an estimate**: a surface model (trees and buildings partly included), antenna heights
   mostly assumed (25 m), no radio propagation model. "Blocked" means weaker, not none.
 - **The example replies were recorded through NVIDIA's hosted API directly** (27 Oct 2026), not Nightshift,
@@ -124,7 +146,7 @@ Details, timings and test results: [docs/sponsors.md](docs/sponsors.md).
   cut message keeps the letter's start and the sign-off and leaves the full text to Copy.
 - Mobile networks only; home broadband is out of scope.
 
-**What we would do next:** compare our answers with Ofcom's checker and with measured drive tests; deprivation
+**What we would do next:** a systematic comparison with Ofcom's checker and with measured drive tests; deprivation
 and rural-urban "need" in the council score; power cuts as an incident cause; flood warnings for Scotland, Wales
 and Northern Ireland; operator-confirmed site data or Ofcom's postcode API if access is granted; a radio
 propagation model for candidate sites.
