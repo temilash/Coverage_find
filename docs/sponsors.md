@@ -26,7 +26,7 @@ Tests: `scripts/test_meterless.sh` runs the H-MEM engine's suite (10/10 passed),
 suite (10/10), our service over both (4/4) and the Python client with its in-memory fallback (2/2): **26/26
 passed** on 27 Oct 2026.
 
-**Meterless Nightshift: the primary AI provider.** Every agent's model call goes to Nightshift's local
+**Meterless Nightshift: the first-choice AI provider in the code.** Every agent's model call goes to Nightshift's local
 OpenAI-compatible endpoint (`METERLESS_BASE_URL`, default `http://127.0.0.1:8088/v1`) with Nightshift's runtime
 token, the `meterless-app: coverage-detective` header and one `meterless-scope` per run, so Nightshift's own
 memory cannot bring other runs into a prompt. The NVIDIA key lives in Nightshift's Providers tab, not in this
@@ -36,6 +36,13 @@ receipt's Ed25519 signature. All of that is in each model call's trace line and 
 details". `STRICT_MODEL=1` rejects an answer from a non-Nemotron model. NVIDIA's API directly is only a
 fallback when Nightshift is unreachable, and it is labelled as such (`provider_fallback`). One request to
 check the setup: `.venv/bin/python scripts/nightshift_probe.py --schema`.
+
+**How our runs were made.** Nightshift runs on macOS, Windows and ARM64 (DGX Spark) only; our machine is
+Linux x86_64, so it could not run Nightshift. With no Nightshift token the client goes straight to NVIDIA's hosted
+API (`LLM_API_KEY`), and every model call records that (`provider: nvidia_direct`, with the reason as a
+`provider_fallback`). The Meterless organisers confirmed that the standard NVIDIA hosted API is acceptable for
+the provider requirement, since the H-MEM and World Model engines are active in the project. All recorded
+examples were answered by NVIDIA Nemotron through that API.
 
 **NVIDIA Nemotron: the models.** **Nemotron 3.5 Super** (`nvidia/nemotron-3.5-super-vl-120b-a12b`) runs the
 investigator (tool calling, median 1.3 s a call), the diagnostician (strict JSON schema, median 2.5 s), the

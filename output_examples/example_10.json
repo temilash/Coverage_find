@@ -1,0 +1,114 @@
+{
+ "request": {
+  "zone": "O00004"
+ },
+ "http_status": 200,
+ "response": {
+  "run_id": "run_20261027153354_5gdp",
+  "status": "complete",
+  "mode": "recorded replies (sample mode)",
+  "scope": "zone",
+  "headline": "No single cause dominates this zone; a capacity strain across many people is the most likely contributor [capacity_strain][zone_overview].",
+  "location": {
+   "lat": 52.3605731853917,
+   "lon": -2.390944697470946,
+   "label": "Ludlow"
+  },
+  "causes": [
+   {
+    "cause": "single_operator",
+    "confidence": 0.45,
+    "status": "active",
+    "evidence_ids": [
+     "zone_overview"
+    ],
+    "contradicting_ids": [],
+    "explanation": "7,108 people are in cells where only 1-2 operators are identified within 5 km [zone_overview], yet the zone average is 2.7 operators nearby, so operator scarcity is not universal [zone_overview]."
+   },
+   {
+    "cause": "capacity_strain",
+    "confidence": 0.4,
+    "status": "active",
+    "evidence_ids": [
+     "zone_overview"
+    ],
+    "contradicting_ids": [],
+    "explanation": "The zone carries a capacity-strain signal across 22,126 people and speeds fell 55% from the oldest to the latest quarter [zone_overview], but the rule-based fix notes no single weakness dominates and the evidence is zone-level rather than cell-specific [fix_rule]."
+   },
+   {
+    "cause": "insufficient_data",
+    "confidence": 0.4,
+    "status": "active",
+    "evidence_ids": [
+     "fix_rule"
+    ],
+    "contradicting_ids": [],
+    "explanation": "No single weakness dominates the zone's cells and the rule-based fix is to gather measurements first [fix_rule], so the evidence cannot separate the likely causes at this point."
+   }
+  ],
+  "ruled_out": [],
+  "actions": [],
+  "best_network": null,
+  "fix_plan": {
+   "fix_type": "gather_data",
+   "candidate": null,
+   "why": "The rule-based fix is to gather measurements first because no single weakness dominates the zone's cells [fix_rule]; the zone-level signals (capacity strain across 22,126 people, speeds down 55%, 19,216 below half the local reference median, 40,407 with 30%+ speed falls, 7,108 with only 1-2 operators nearby) cannot yet be separated into cell-specific causes [zone_overview].",
+   "assumptions": [
+    "25 m mast",
+    "line of sight to cell centres, not a radio model",
+    "no planning or land checks",
+    "measurements are needed before choosing add_operators, capacity_upgrade, or new_site"
+   ],
+   "cited_evidence": [
+    "fix_rule",
+    "zone_overview"
+   ],
+   "review": {
+    "verdict": "approve",
+    "reason": "The plan correctly treats this as an improvement opportunity (not a gap), cites the zone's specific weaknesses from [zone_overview] (capacity strain, speed drops, below-median speeds, limited operators), matches the fix_type 'gather_data' to the rule [fix_rule] which states no single weakness dominates, states assumptions, and does not claim 'no service' or 'no coverage'. Data confidence is high (653 tests) per [zone_overview], so no weak-data flag is needed.",
+    "issues": []
+   },
+   "revisions": 0
+  },
+  "rounds": 1,
+  "elapsed_s": 1.8,
+  "models": [
+   {
+    "agent": "investigator",
+    "provider": "recorded",
+    "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "calls": 1
+   },
+   {
+    "agent": "diagnostician",
+    "provider": "recorded",
+    "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "calls": 1
+   },
+   {
+    "agent": "critic",
+    "provider": "recorded",
+    "model_answered": "nvidia/nemotron-3-ultra-550b-a55b",
+    "calls": 2
+   },
+   {
+    "agent": "fix_planner",
+    "provider": "recorded",
+    "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "calls": 1
+   },
+   {
+    "agent": "advisor",
+    "provider": "recorded",
+    "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "calls": 1
+   }
+  ],
+  "limitations": [
+   "Sites are approximate; antenna heights assumed; Ofcom figures are area-level; evidence is zone-level rather than cell-specific [fix_rule][zone_overview]."
+  ],
+  "notes": [],
+  "trace": "logs/run_20261027153354_5gdp.jsonl",
+  "detail": "/api/runs/run_20261027153354_5gdp?detail=1"
+ }
+}

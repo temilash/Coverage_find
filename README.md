@@ -45,6 +45,7 @@ places are refused with the areas it covers ([exactly what it does](docs/usage.m
 
 | Example | What it shows | Agents' headline | Rounds | Live run |
 |---|---|---|---:|---:|
+| [`co9_1tp`](examples/co9_1tp/) | **the first sample**: slow measured service from only 3 tests, so no cause is strong; the critic rejects "single operator"; recorded emails to Braintree Council and all four networks | The service measures poorly here, but no single cause reaches a strong level. | 2 | 416 s |
 | [`great_langdale`](examples/great_langdale/) | hills block every operator (terrain 0.70); evidence letters to the operator, council and MP | Hills between you and the nearest masts are the likely cause. | 1 | 81 s |
 | [`near_rhayader`](examples/near_rhayader/) | **the critic loop**: it asks for a check, a second round runs, a weak belief is downgraded | Terrain blocking EE and Three signals is the likely cause. | 2 | 180 s |
 | [`central_london`](examples/central_london/) | fast measured service: "no strong cause" (good data, nothing above 0.3) | No strong cause was found; the service measures well here. | 1 | 49 s |
@@ -52,6 +53,8 @@ places are refused with the areas it covers ([exactly what it does](docs/usage.m
 | [`remote_powys`](examples/remote_powys/) | **insufficient data**: no tests and no site within 10 km | Not enough data to say why: there are no measured speeds at this point or within 1 km and no mast sites in our data within 10 km, so operators could not be identified. | 1 | 54 s |
 | [`zone_ousby`](examples/zone_ousby/) | gap zone with no measurements: candidate sites, fix plan reviewed by the critic | No strong cause was found because there are no recent measurements. | 1 | 96 s |
 | [`opportunity_windermere`](examples/opportunity_windermere/) | improvement opportunity: capacity upgrade, opportunity wording checked | Busy-network capacity strain is the likely cause. | 1 | 92 s |
+| [`zone_broadstone`](examples/zone_broadstone/) | gap zone: hills block every nearby mast (terrain 0.65), candidate high-ground sites, fix reviewed by the critic | Terrain blocking the line to every nearby mast is the likely cause. | 1 | 256 s |
+| [`opportunity_ludlow`](examples/opportunity_ludlow/) | improvement opportunity over 108 cells and five councils, opportunity wording checked; a close call: the headline names capacity strain (0.40), ranked just below single operator (0.45) | No single cause dominates this zone; a capacity strain across many people is the most likely contributor. | 1 | 120 s |
 | [`summary_uk`](examples/summary_uk/), [`summary_westmorland`](examples/summary_westmorland/) | priority summaries of the sample area and of one council |  |  |  |
 
 Each folder has the result, the Meterless trace, the evidence with SQL, the World Model and the recorded model
@@ -65,7 +68,7 @@ replies; `examples/near_rhayader/agent_trace.jsonl` is a run's step-by-step trac
   Ofcom, DEM,      source per   strength, data   diagnose,       file + World     Council view,
   live APIs)       dataset)     period and SQL)  critique, act)  Model)           Explore)
                                       ▲                │  ▲
-                                      └── code guard ──┘  └── Nemotron via Meterless Nightshift
+                                      └── code guard ──┘  └── Nemotron (Nightshift, or NVIDIA's API)
 ```
 
 Up to three rounds of **investigate → diagnose → critique**: the investigator queries the data, the
@@ -83,8 +86,10 @@ weak-only beliefs are capped. More: [docs/agents.md](docs/agents.md).
 - **Meterless Engines**: the **H-MEM** engine is the agents' shared case file and trust ledger (the "How the
   agents decided" view); the **World Model** holds places, sites per operator with line of sight, candidate
   sites and events. `scripts/test_meterless.sh`: 26/26 tests pass.
-- **Meterless Nightshift** is the primary AI provider: every model call goes through it, and the answering
-  model, receipt id and signature check are recorded per call. NVIDIA's API directly is only a labelled fallback.
+- **Meterless Nightshift** is the code's first-choice AI provider (answering model, receipt id and signature
+  recorded per call), with NVIDIA's API directly as a labelled fallback. Nightshift does not run on our Linux
+  x86_64 machine, so our runs used NVIDIA's hosted API, labelled on every call; the Meterless organisers
+  confirmed this is acceptable.
 - **NVIDIA Nemotron**: Nemotron 3.5 Super runs the investigator, diagnostician, advisor, letter writer and fix
   planner; Nemotron 3 Ultra with thinking runs the critic.
 - **Cursor**: optional for this track; Coverage Detective was built with Claude Code.
@@ -105,11 +110,12 @@ Details, timings and test results: [docs/sponsors.md](docs/sponsors.md).
   answers with the checker's.
 - **Line of sight is an estimate**: a surface model (trees and buildings partly included), antenna heights
   mostly assumed (25 m), no radio propagation model. "Blocked" means weaker, not none.
-- **The committed example replies were recorded through NVIDIA's API directly** (27 Oct 2026, before the
-  Nightshift integration), so their traces show the Nemotron model that answered but no Nightshift receipt.
-  Re-recording them through Nightshift is one command: `scripts/record_examples.py`.
-- **Nightshift's interface** (headers, token file, the `meterless` receipt object) was implemented from two
-  working Nightshift 1.2.3 integrations rather than its documentation; `scripts/nightshift_probe.py` checks it.
+- **The example replies were recorded through NVIDIA's hosted API directly** (27 Oct 2026), not Nightshift,
+  which does not run on our Linux x86_64 machine; their traces show the Nemotron model that answered but no
+  Nightshift receipt.
+- **The Nightshift integration is untested against a live Nightshift**: its interface (headers, token file, the
+  `meterless` receipt object) was implemented from two working Nightshift 1.2.3 integrations and is covered by
+  mocked tests; `scripts/nightshift_probe.py` checks it on a machine that runs Nightshift.
 - **Sample mode is a slice**: rankings are within the sample only (e.g. "#4 of 4"); away from the recorded
   examples the agents' replies are fixed rules, not a model; Explore shows cell details but not the UK-wide map
   layers (15 MB, built from the full data).

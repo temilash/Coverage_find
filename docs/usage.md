@@ -52,7 +52,7 @@ committed extracts of each Zetaris source, `sample_data/zetaris/`, using the sam
 crops, the code guard and every Meterless write. What it does not have is Zetaris, live APIs (saved responses
 are used, and say which place they were saved for) or a model key, so the agents' replies come from:
 
-- **the 7 recorded examples** (`examples/*/llm_replies.json`): a request within 100 m of an example's point (or
+- **the 10 recorded examples** (`examples/*/llm_replies.json`): a request within 100 m of an example's point (or
   for an example zone) replays that example's recorded model replies, run at the recorded point, labelled
   "Recorded" in the UI and `"mode": "recorded replies (sample mode)"` in `/run` (they were recorded for the
   resident audience, so `audience` does not change a replay);
@@ -78,12 +78,13 @@ round and call, and the evidence, guard and result are recomputed on every run.
 
 ## Examples: inputs, outputs and traces
 
-[`input_examples/`](../input_examples/) has nine `POST /run` bodies and [`output_examples/`](../output_examples/) the
+[`input_examples/`](../input_examples/) has twelve `POST /run` bodies and [`output_examples/`](../output_examples/) the
 answers they produced on `run.py --sample` (saved by `scripts/save_output_examples.py`, with each run's trace).
-The seven recorded examples, with full traces:
+The ten recorded examples, with full traces:
 
 | Example | What it shows | Agents' headline | Rounds | Live run |
 |---|---|---|---:|---:|
+| [`co9_1tp`](../examples/co9_1tp/) | **the first sample**: slow measured service from only 3 tests, so no cause is strong; the critic rejects "single operator"; recorded emails to Braintree Council and all four networks | The service measures poorly here, but no single cause reaches a strong level. | 2 | 416 s |
 | [`great_langdale`](../examples/great_langdale/) | hills block every operator (terrain 0.70); evidence letters to the operator, council and MP | Hills between you and the nearest masts are the likely cause. | 1 | 81 s |
 | [`near_rhayader`](../examples/near_rhayader/) | **the critic loop**: it asks for a check, a second round runs, a weak belief is downgraded | Terrain blocking EE and Three signals is the likely cause. | 2 | 180 s |
 | [`central_london`](../examples/central_london/) | fast measured service: "no strong cause" (good data, nothing above 0.3) | No strong cause was found; the service measures well here. | 1 | 49 s |
@@ -91,6 +92,8 @@ The seven recorded examples, with full traces:
 | [`remote_powys`](../examples/remote_powys/) | **insufficient data**: no tests and no site within 10 km | Not enough data to say why: there are no measured speeds at this point or within 1 km and no mast sites in our data within 10 km, so operators could not be identified. | 1 | 54 s |
 | [`zone_ousby`](../examples/zone_ousby/) | gap zone with no measurements: candidate sites, fix plan reviewed by the critic | No strong cause was found because there are no recent measurements. | 1 | 96 s |
 | [`opportunity_windermere`](../examples/opportunity_windermere/) | improvement opportunity: capacity upgrade, opportunity wording checked | Busy-network capacity strain is the likely cause. | 1 | 92 s |
+| [`zone_broadstone`](../examples/zone_broadstone/) | gap zone: hills block every nearby mast (terrain 0.65), candidate high-ground sites, fix reviewed by the critic | Terrain blocking the line to every nearby mast is the likely cause. | 1 | 256 s |
+| [`opportunity_ludlow`](../examples/opportunity_ludlow/) | improvement opportunity over 108 cells and five councils, opportunity wording checked; a close call: the headline names capacity strain (0.40), ranked just below single operator (0.45) | No single cause dominates this zone; a capacity strain across many people is the most likely contributor. | 1 | 120 s |
 | [`summary_uk`](../examples/summary_uk/) | priority summary of the sample area (gap and opportunity sections) |  |  |  |
 | [`summary_westmorland`](../examples/summary_westmorland/) | priority summary for one council |  |  |  |
 

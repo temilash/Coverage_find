@@ -1,11 +1,151 @@
 {
  "request": {
-  "lat": 51.75,
-  "lon": -1.25
+  "zone": "Z00023"
  },
- "http_status": 404,
+ "http_status": 200,
  "response": {
-  "status": "error",
-  "error": "sample mode has no recorded run for this point; recorded points: Central London (WC2N 5DU) (51.507211, -0.128269), Great Langdale, Cumbria (54.445, -3.105), Near Rhayader, Powys (52.3, -3.51), Remote cell near Bettws, Powys (no tests, no site within 10 km: insufficient data) (52.399095, -3.186185), Sutton St Edmund, Lincolnshire (52.700117, 0.024085). Sample mode only has data around the example places and zones: great langdale (lat 54.445, lon -3.105), central london (lat 51.507, lon -0.128), near rhayader (lat 52.300, lon -3.510), sutton st edmund (lat 52.700, lon 0.024), remote cell near bettws (lat 52.399, lon -3.186), zone Z00072 (lat 54.710, lon -2.601), zone Z00603 (lat 54.427, lon -3.117), zone O00044 (lat 52.557, lon -0.040), zone O00309 (lat 52.278, lon -3.415), zone O00332 (lat 54.371, lon -2.833), zone O01498 (lat 52.417, lon -3.209). Points must lie well inside one of these areas (their 10 km neighbourhood is needed for mast sites and line of sight). Elsewhere, run the full app with Zetaris (python run.py)."
+  "run_id": "run_20261027153347_l3ll",
+  "status": "complete",
+  "mode": "recorded replies (sample mode)",
+  "scope": "zone",
+  "headline": "Terrain blocking the line to every nearby mast is the likely cause [terrain_blocking].",
+  "location": {
+   "lat": 52.45363716673785,
+   "lon": -2.7049401362025716,
+   "label": "Broadstone"
+  },
+  "causes": [
+   {
+    "cause": "terrain_blocking",
+    "confidence": 0.65,
+    "status": "active",
+    "evidence_ids": [
+     "zone_overview",
+     "cand_1",
+     "cand_2",
+     "cand_3",
+     "existing_1",
+     "existing_2",
+     "existing_3"
+    ],
+    "contradicting_ids": [],
+    "explanation": "466 people are in cells where terrain blocks the line to every site within 5 km [zone_overview], and new high-ground masts would give clear lines to most poorly served people [cand_1][cand_2][cand_3]; mast heights are assumed, so the margin is uncertain."
+   },
+   {
+    "cause": "distance_to_mast",
+    "confidence": 0.55,
+    "status": "active",
+    "evidence_ids": [
+     "zone_overview",
+     "existing_1",
+     "existing_2",
+     "existing_3"
+    ],
+    "contradicting_ids": [],
+    "explanation": "1,140 people have no identified site within 5 km [zone_overview], while existing sites are 3.2\u20135.7 km away [existing_1][existing_2][existing_3]; operator identities for two sites are unknown, so coverage per operator is not confirmed."
+   },
+   {
+    "cause": "insufficient_data",
+    "confidence": 0.5,
+    "status": "active",
+    "evidence_ids": [
+     "zone_overview",
+     "fix_rule"
+    ],
+    "contradicting_ids": [],
+    "explanation": "Only 5 Ookla tests with low data confidence and no per-cell measurements exist [zone_overview][fix_rule], so the evidence cannot separate terrain from distance or operator-specific gaps."
+   },
+   {
+    "cause": "single_operator",
+    "confidence": 0.4,
+    "status": "active",
+    "evidence_ids": [
+     "zone_overview"
+    ],
+    "contradicting_ids": [
+     "existing_1"
+    ],
+    "explanation": "On average only 0.5 operators have approximate sites within 5 km [zone_overview], but existing sites list EE, Three and Vodafone [existing_1], so a single-operator gap is not proven at the point."
+   }
+  ],
+  "ruled_out": [],
+  "actions": [],
+  "best_network": null,
+  "fix_plan": {
+   "fix_type": "gather_data",
+   "candidate": "cand_1",
+   "why": "Only 5 Ookla tests with low data confidence exist, so terrain and distance gaps cannot be separated [zone_overview][fix_rule]; [cand_1] gives the most poorly served zone residents a clear line (1374 people) once measurements confirm the need [cand_1].",
+   "assumptions": [
+    "25 m mast",
+    "line of sight to cell centres, not a radio model",
+    "no planning or land checks"
+   ],
+   "cited_evidence": [
+    "zone_overview",
+    "fix_rule",
+    "cand_1"
+   ],
+   "candidate_values": {
+    "lat": 52.474566400754895,
+    "lon": -2.5990679666864063,
+    "ground_m": 533.2,
+    "zone_people_gaining": 1374,
+    "poor_people_gaining": 1374,
+    "people_reached": 3485
+   },
+   "candidate_finding": "Candidate 1: a new 25 m mast on high ground (533 m, near the zone) would give 1374 of the zone's people a clear line of sight (1374 poorly served people in all; 3485 people reached in 35 of 49 cells checked).",
+   "review": {
+    "verdict": "approve",
+    "reason": "Plan correctly uses the zone's people gaining (1374) from [cand_1] not everyone reached (3485); assumptions are stated; fix_type 'gather_data' matches [fix_rule]'s 'measure first' for a gap zone with weak data; weak data (5 Ookla tests, low confidence) is flagged in why citing [zone_overview] and [fix_rule].",
+    "issues": []
+   },
+   "revisions": 0
+  },
+  "rounds": 1,
+  "elapsed_s": 2.1,
+  "models": [
+   {
+    "agent": "investigator",
+    "provider": "recorded",
+    "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "calls": 1
+   },
+   {
+    "agent": "diagnostician",
+    "provider": "recorded",
+    "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "calls": 1
+   },
+   {
+    "agent": "critic",
+    "provider": "recorded",
+    "model_answered": "nvidia/nemotron-3-ultra-550b-a55b",
+    "calls": 2
+   },
+   {
+    "agent": "critic",
+    "provider": "recorded",
+    "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "calls": 1
+   },
+   {
+    "agent": "fix_planner",
+    "provider": "recorded",
+    "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "calls": 1
+   },
+   {
+    "agent": "advisor",
+    "provider": "recorded",
+    "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "calls": 1
+   }
+  ],
+  "limitations": [
+   "Sites are approximate; antenna heights assumed; Ofcom figures are area-level."
+  ],
+  "notes": [],
+  "trace": "logs/run_20261027153347_l3ll.jsonl",
+  "detail": "/api/runs/run_20261027153347_l3ll?detail=1"
  }
 }

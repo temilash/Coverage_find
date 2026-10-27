@@ -7,8 +7,10 @@ mobile data), not home broadband.
 
 Sponsor tech: **Zetaris** (federated SQL, local Docker) — every dataset the agents use is
 registered there as a separate source and queried through it. **Meterless**: the H-MEM and World
-Model engines are the agents' shared case file (meterless_service/), and **Meterless Nightshift**
-is the primary AI provider (NVIDIA Nemotron through it; NVIDIA direct only as a labelled fallback).
+Model engines are the agents' shared case file (meterless_service/). **Meterless Nightshift** is the
+code's first-choice AI provider, but it runs on macOS / Windows / ARM64 only and this machine is Linux
+x86_64, so all runs use NVIDIA's hosted API directly (labelled `nvidia_direct` per call); the Meterless
+organisers confirmed that is acceptable (27 Oct).
 
 ## Product context
 
@@ -447,6 +449,15 @@ G (power cuts) dropped as future work; H (visitor load) only if time. Then the a
   technical.md, THIRD_PARTY, SUBMISSION.md. The committed example replies are still the NVIDIA-direct
   recordings of 27 Oct 00:26 until scripts/record_examples.py is re-run through Nightshift.
 
+- **New samples, docs split** (27 Oct, branch `samples-and-docs`): CO9 1TP (Gosfield, Essex) is the first
+  sample place (config.SAMPLE_LOCATIONS, live samples via `live_samples.py co9_1tp`, which now saves only named
+  places), Broadstone gap zone Z00023 and Ludlow opportunity O00004 (one match each; Ludlow is a 108-cell zone
+  over five councils) added to build_samples.py; sample_data 9.4 -> 15 MB, earlier rows unchanged. Braintree's
+  complaints contact added (22 councils). Emails replay per recipient (`email <name>` variant; older examples
+  fall back to one per kind). Recorded live (NVIDIA direct): co9_1tp with its five emails, zone_broadstone,
+  opportunity_ludlow, and summary_uk again. README cut to a judge's page; detail in docs/setup, usage, agents,
+  sponsors, data (technical.md is an index). input_examples/ renumbered (CO9 1TP = example_1, 12 requests).
+
 ### Zetaris sources
 
 `CD_CELLS`, `CD_OOKLA_MOBILE`, `CD_OOKLA_MOBILE_HISTORY`, `CD_OOKLA_MOBILE_TILES`,
@@ -486,10 +497,8 @@ data/README.md.
 
 ### Next
 
-1. Live checks on the user's machine: `scripts/nightshift_probe.py --schema` (routed model, receipt, both
-   structured-output styles), then re-record the examples through Nightshift (`scripts/record_examples.py`,
-   ~15-20 min) and re-save `output_examples/` and `examples/near_rhayader/agent_trace.jsonl`; update the README
-   limitation about NVIDIA-direct recordings once done.
+1. Nightshift can only be checked on macOS / Windows / ARM64 (`scripts/nightshift_probe.py --schema`); not
+   possible on this machine.
 2. F. Rural–urban classification + deprivation (deciles within each nation) → `deprivation_r7`,
    `CD_DEPRIVATION` (`queries.py` already joins it when the manifest has "deprivation").
 3. H. Visitor load, if time. A comparison with Ofcom's checker (not done; listed as future work).

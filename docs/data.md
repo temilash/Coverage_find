@@ -77,7 +77,7 @@ the affected tables, re-registers them in Zetaris and updates the manifest.
 | `meterless_service/` | our small Node HTTP service over the Meterless engines (the agents' memory) |
 | `vendor/meterless/` | the Meterless H-MEM and World Model reference engines, vendored unchanged (Apache 2.0) |
 | `scripts/` | data downloads and builds, Zetaris registration, the data report, sample extracts, recording examples, the Nightshift probe, the Meterless tests, screenshots |
-| `examples/` | the 7 recorded runs and 2 summaries replayed by sample mode |
+| `examples/` | the 10 recorded runs and 2 summaries replayed by sample mode |
 | `input_examples/`, `output_examples/` | `POST /run` requests and the answers they produced |
 | `sample_data/` | small committed extracts of every Zetaris source, DEM crops and saved live responses |
 | `data/` | the data manifest, reference tables and data notes (built data, runs and memory stores are gitignored) |
