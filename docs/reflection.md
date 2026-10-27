@@ -57,3 +57,13 @@ guard can verify every number against the evidence it cites; a revision without 
 or a second round starts from what is already known instead of a re-sent blob; and the whole decision path can be
 read back afterwards from the ledger. The cost is a
 small service to run (`meterless_service/`) and an in-memory fallback for when it is down.
+
+## PM Requirement for Zetaris
+
+As a Product Manager, my killer requirement for the Zetaris USL would be:
+
+"The semantic layer must enforce strict schema-drift validation at registration. If an upstream data source (like
+Ookla) changes its column names or data types, the USL registration must fail loudly and immediately, preventing
+agents from querying empty or null tables. Furthermore, the USL should natively support spatial/geospatial joins
+(like H3 hexagons) without requiring external Python libraries to calculate distances before the federated query
+runs."
