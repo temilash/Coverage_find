@@ -1,0 +1,484 @@
+{
+ "headline": "The service measures poorly here, but no single cause reaches a strong level [insufficient_data].",
+ "explanation": "Measured mobile download speeds near your address are far below the UK median [speed_cell][speed_1km], while neighbouring cells are much faster [speed_neighbours]. EE and Three have clear lines of sight to sites about 1 km away [los_ee][los_three], so distance alone is not a strong explanation [distance_to_mast]. O2 and Vodafone sites are farther and terrain likely weakens their signals [los_o2][los_vodafone], but antenna heights are assumed or inferred, so terrain cannot be confirmed as the point-level cause [terrain_blocking]. The evidence rests on only a few tests and cannot separate distance, terrain, or single-operator causes at your exact location [insufficient_data].",
+ "cited_evidence": [
+  "speed_cell",
+  "speed_1km",
+  "speed_neighbours",
+  "los_ee",
+  "los_three",
+  "los_o2",
+  "los_vodafone",
+  "distance_to_mast",
+  "terrain_blocking",
+  "insufficient_data"
+ ],
+ "hypotheses": [
+  {
+   "id": "insufficient_data",
+   "cause": "insufficient_data",
+   "confidence": 0.4,
+   "status": "active",
+   "supporting": [
+    "speed_cell",
+    "speed_1km",
+    "operators_5km",
+    "los_o2",
+    "los_vodafone"
+   ],
+   "contradicting": [
+    "los_ee",
+    "los_three"
+   ],
+   "explanation": "Speed evidence rests on only 2-3 tests [speed_cell][speed_1km], one nearby site's operators are unknown [operators_5km], and antenna heights are assumed or inferred for O2 and Vodafone [los_o2][los_vodafone]. The evidence cannot separate distance, terrain, or single-operator causes at the point.",
+   "history": [
+    {
+     "at": "2026-10-27T15:13:00.585Z",
+     "by": "diagnostician",
+     "confidence": 0.4,
+     "previous": null,
+     "reason": "proposed",
+     "round": 1
+    },
+    {
+     "at": "2026-10-27T15:16:34.208Z",
+     "by": "diagnostician",
+     "confidence": 0.4,
+     "previous": 0.4,
+     "reason": "evidence updated in round 2",
+     "round": 2
+    }
+   ]
+  },
+  {
+   "id": "distance_to_mast",
+   "cause": "distance_to_mast",
+   "confidence": 0.2,
+   "status": "active",
+   "supporting": [
+    "speed_cell",
+    "speed_1km",
+    "los_o2",
+    "los_vodafone"
+   ],
+   "contradicting": [
+    "los_ee",
+    "los_three"
+   ],
+   "explanation": "Measured speeds are far below the UK median [speed_cell][speed_1km], while neighbours are much faster [speed_neighbours]. EE and Three have clear lines about 1 km away [los_ee][los_three], so distance alone is not a strong explanation; O2 and Vodafone sites are farther and terrain-weakened [los_o2][los_vodafone], but antenna heights are assumed or inferred, keeping this at or below 0.5.",
+   "history": [
+    {
+     "at": "2026-10-27T15:13:00.541Z",
+     "by": "diagnostician",
+     "confidence": 0.5,
+     "previous": null,
+     "reason": "proposed",
+     "round": 1
+    },
+    {
+     "at": "2026-10-27T15:16:27.268Z",
+     "by": "critic",
+     "confidence": 0.3,
+     "previous": 0.5,
+     "reason": "critic: The belief rests mainly on weak speed evidence (2-3 tests) [speed_cell][speed_1km] and on O2/Vodafone line-of-sight items whose antenna heights are assumed or inferred [los_o2][los_vodafone]. Per the strength rules, an assumed antenna height weakens a blocked line when the obstruction is under about 30 m; both obstructions are under 30 m (11 m and 22 m), so those lines are weak. EE and Three have clear lines about 1 km away [los_ee][los_three], which argues against distance as the point-level cause. The time pattern is unknown because no speed_trend or history evidence was provided.",
+     "round": 1
+    },
+    {
+     "at": "2026-10-27T15:16:34.235Z",
+     "by": "diagnostician",
+     "confidence": 0.3,
+     "previous": 0.3,
+     "reason": "evidence updated in round 2",
+     "round": 2
+    },
+    {
+     "at": "2026-10-27T15:19:37.488Z",
+     "by": "critic",
+     "confidence": 0.2,
+     "previous": 0.3,
+     "reason": "critic: EE and Three have clear lines about 1 km away [los_ee][los_three], so distance alone cannot explain the low speeds; O2 and Vodafone are farther and terrain-weakened, but antenna heights are assumed or inferred, so distance remains at or below 0.5.",
+     "round": 2
+    }
+   ]
+  },
+  {
+   "id": "terrain_blocking",
+   "cause": "terrain_blocking",
+   "confidence": 0.2,
+   "status": "active",
+   "supporting": [
+    "los_o2",
+    "los_vodafone",
+    "speed_cell",
+    "speed_1km"
+   ],
+   "contradicting": [
+    "los_ee",
+    "los_three"
+   ],
+   "explanation": "Terrain rises above the direct line to O2 and Vodafone sites [los_o2][los_vodafone], likely weakening those signals, but EE and Three have clear lines [los_ee][los_three]. Antenna heights are assumed or inferred, so terrain cannot be confirmed as the point-level cause and stays at or below 0.5.",
+   "history": [
+    {
+     "at": "2026-10-27T15:13:00.562Z",
+     "by": "diagnostician",
+     "confidence": 0.45,
+     "previous": null,
+     "reason": "proposed",
+     "round": 1
+    },
+    {
+     "at": "2026-10-27T15:16:27.314Z",
+     "by": "critic",
+     "confidence": 0.3,
+     "previous": 0.45,
+     "reason": "critic: The belief relies on O2 and Vodafone line-of-sight items [los_o2][los_vodafone] whose antenna heights are assumed or inferred. Both obstructions are under 30 m (11 m and 22 m), so per the strength rules those blocked lines are weak. EE and Three have clear lines [los_ee][los_three], so terrain cannot be confirmed as the point-level cause. The time pattern is unknown because no speed_trend or history evidence was provided.",
+     "round": 1
+    },
+    {
+     "at": "2026-10-27T15:19:37.535Z",
+     "by": "critic",
+     "confidence": 0.2,
+     "previous": 0.3,
+     "reason": "critic: Terrain rises above the direct line to O2 and Vodafone sites [los_o2][los_vodafone], likely weakening those signals, but EE and Three have clear lines [los_ee][los_three]. Antenna heights are assumed or inferred, so terrain cannot be confirmed as the point-level cause and stays at or below 0.5.",
+     "round": 2
+    }
+   ]
+  },
+  {
+   "id": "single_operator",
+   "cause": "single_operator",
+   "confidence": 0.1,
+   "status": "rejected",
+   "supporting": [
+    "operators_5km",
+    "los_ee",
+    "los_three",
+    "los_o2",
+    "los_vodafone"
+   ],
+   "contradicting": [
+    "speed_neighbours"
+   ],
+   "explanation": "Only EE, O2 and Three have sites within 5 km, and one nearby site's operators are unknown [operators_5km]; EE and Three have clear lines [los_ee][los_three] while O2 and Vodafone are weakened [los_o2][los_vodafone]. This suggests uneven operator coverage but does not prove only one operator serves the point, so confidence stays low.",
+   "history": [
+    {
+     "at": "2026-10-27T15:13:00.608Z",
+     "by": "diagnostician",
+     "confidence": 0.35,
+     "previous": null,
+     "reason": "proposed",
+     "round": 1
+    },
+    {
+     "at": "2026-10-27T15:16:27.371Z",
+     "by": "critic",
+     "confidence": 0.25,
+     "previous": 0.35,
+     "reason": "critic: The belief rests on weak speed evidence [speed_cell][speed_1km] and on O2/Vodafone line-of-sight items with assumed or inferred antenna heights [los_o2][los_vodafone]; both obstructions are under 30 m, so those lines are weak per the strength rules. EE and Three have clear lines [los_ee][los_three], so uneven operator coverage is not proven at the point. The time pattern is unknown because no speed_trend or history evidence was provided.",
+     "round": 1
+    },
+    {
+     "at": "2026-10-27T15:19:37.592Z",
+     "by": "critic",
+     "confidence": 0.1,
+     "previous": 0.25,
+     "reason": "critic rejected: Only EE, O2 and Three have sites within 5 km [operators_5km], and EE and Three have clear lines [los_ee][los_three]. This does not prove only one operator serves the point; \"operators unknown\" is not \"single operator\".",
+     "round": 2
+    }
+   ]
+  }
+ ],
+ "ruled_out": [],
+ "actions": [
+  {
+   "text": "Try EE or Three, which have clear lines of sight to nearby sites [network_comparison][los_ee][los_three].",
+   "audience": "resident"
+  },
+  {
+   "text": "Use Wi-Fi calling indoors if mobile signal is weak.",
+   "audience": "resident"
+  },
+  {
+   "text": "Check your address on Ofcom's mobile coverage checker: https://www.ofcom.org.uk/mobile-coverage-checker",
+   "audience": "resident"
+  },
+  {
+   "text": "Emergency calls work on any available network.",
+   "audience": "resident"
+  }
+ ],
+ "best_network": {
+  "summary": "EE is likely best, with Three also clear; O2 and Vodafone are likely weaker.",
+  "ranking": [
+   {
+    "operator": "EE",
+    "rank": 1,
+    "confidence": "high",
+    "why": "Clear line of sight to a site 1.0 km north, confirmed by Ofcom's licence register [network_comparison][los_ee].",
+    "evidence": [
+     "network_comparison",
+     "los_ee"
+    ]
+   },
+   {
+    "operator": "Three",
+    "rank": 2,
+    "confidence": "high",
+    "why": "Clear line of sight to a site 1.0 km north, confirmed by Ofcom's licence register [network_comparison][los_three].",
+    "evidence": [
+     "network_comparison",
+     "los_three"
+    ]
+   },
+   {
+    "operator": "O2",
+    "rank": 3,
+    "confidence": "low",
+    "why": "Site 4.0 km north with terrain likely weakening the signal; confirmed by Ofcom's licence register [los_o2].",
+    "evidence": [
+     "los_o2"
+    ]
+   },
+   {
+    "operator": "Vodafone",
+    "rank": 4,
+    "confidence": "low",
+    "why": "Site 6.1 km south with terrain likely weakening the signal; operator inferred from crowd-sourced data, not confirmed by Ofcom's licence register [los_vodafone].",
+    "evidence": [
+     "los_vodafone"
+    ]
+   }
+  ],
+  "rule_based": {
+   "reviewed_by_agents": false,
+   "label": "Based on data, not yet reviewed by agents",
+   "rule": "Operators ranked by line of sight from this point to their nearest identified site (clear, then marginal, then blocked); clear lines by distance, obstructed ones by how far the ground rises above the line.",
+   "operators": [
+    "EE",
+    "Three"
+   ],
+   "line_of_sight": "clear",
+   "text": "Likely best network here: EE, with a clear line of sight to a site 1.0 km north (confirmed by Ofcom's licence register). Also a clear line: Three (1.0 km)."
+  },
+  "operators": [
+   {
+    "operator": "EE",
+    "site": {
+     "site_id": "S090784",
+     "lat": 51.9443932117528,
+     "lon": 0.5954979854761226,
+     "distance_km": 0.99,
+     "bearing_deg": 11,
+     "direction": "north",
+     "sources": [
+      "Ofcom register"
+     ]
+    },
+    "status": "confirmed",
+    "los": {
+     "class": "clear",
+     "blocked": false,
+     "obstruction_m": -1.9,
+     "obstruction_distance_m": 60,
+     "obstruction_lat": 51.936175,
+     "obstruction_lon": 0.592994,
+     "path_length_m": 990,
+     "mast_height_m": 13.7,
+     "mast_height": "measured"
+    }
+   },
+   {
+    "operator": "O2",
+    "site": {
+     "site_id": "S093623",
+     "lat": 51.970736468284336,
+     "lon": 0.5822856003769976,
+     "distance_km": 3.97,
+     "bearing_deg": 350,
+     "direction": "north",
+     "sources": [
+      "Ofcom register"
+     ]
+    },
+    "status": "confirmed",
+    "los": {
+     "class": "blocked",
+     "blocked": true,
+     "obstruction_m": 11.2,
+     "obstruction_distance_m": 1880,
+     "obstruction_lat": 51.952267,
+     "obstruction_lon": 0.587836,
+     "path_length_m": 3968,
+     "mast_height_m": 15,
+     "mast_height": "measured"
+    }
+   },
+   {
+    "operator": "Three",
+    "site": {
+     "site_id": "S090784",
+     "lat": 51.9443932117528,
+     "lon": 0.5954979854761226,
+     "distance_km": 0.99,
+     "bearing_deg": 11,
+     "direction": "north",
+     "sources": [
+      "Ofcom register"
+     ]
+    },
+    "status": "confirmed",
+    "los": {
+     "class": "clear",
+     "blocked": false,
+     "obstruction_m": -1.9,
+     "obstruction_distance_m": 60,
+     "obstruction_lat": 51.936175,
+     "obstruction_lon": 0.592994,
+     "path_length_m": 990,
+     "mast_height_m": 13.7,
+     "mast_height": "measured"
+    }
+   },
+   {
+    "operator": "Vodafone",
+    "site": {
+     "site_id": "S040099",
+     "lat": 51.8808,
+     "lon": 0.5927,
+     "distance_km": 6.1,
+     "bearing_deg": 180,
+     "direction": "south",
+     "sources": [
+      "crowd-sourced (OpenCelliD)"
+     ]
+    },
+    "status": "inferred",
+    "los": {
+     "class": "blocked",
+     "blocked": true,
+     "obstruction_m": 22.4,
+     "obstruction_distance_m": 1704,
+     "obstruction_lat": 51.920321,
+     "obstruction_lon": 0.592795,
+     "path_length_m": 6098,
+     "mast_height_m": 25,
+     "mast_height": "assumed"
+    }
+   }
+  ]
+ },
+ "limitations": [
+  "Sites are approximate; antenna heights are assumed or inferred for some operators; Ofcom coverage figures are area-level, not point-specific.",
+  "Causes are inferred from public data, not confirmed: operators' network data is not public.",
+  "Ookla speeds are quarterly aggregates with no time-of-day detail; congestion can only be inferred.",
+  "No address-level Ofcom coverage; Ofcom figures are for the whole constituency and are predictions.",
+  "Mast sites are approximate (crowd-sourced OpenCelliD, OpenStreetMap, Ofcom's licence register) and incomplete, so 'no sites found' is weak evidence.",
+  "Line of sight uses a surface model (trees and buildings included) and mostly assumed antenna heights; blocked means a weaker signal, not no signal."
+ ],
+ "rounds": 2,
+ "status": "complete",
+ "run_id": "run_20261027151247_a5c3",
+ "scope": "point",
+ "query": null,
+ "audience": "resident",
+ "location": {
+  "label": "51.93565, 0.59283",
+  "lat": 51.935645,
+  "lon": 0.592832,
+  "postcode": "CO9 1TP",
+  "nearest_postcode": "CO9 1TP",
+  "admin_district": "Braintree",
+  "region": "East of England",
+  "country": "England",
+  "cell_id": "87194e032ffffff"
+ },
+ "critiques": [
+  {
+   "round": 1,
+   "target": "distance_to_mast",
+   "verdict": "downgrade",
+   "reason": "The belief rests mainly on weak speed evidence (2-3 tests) [speed_cell][speed_1km] and on O2/Vodafone line-of-sight items whose antenna heights are assumed or inferred [los_o2][los_vodafone]. Per the strength rules, an assumed antenna height weakens a blocked line when the obstruction is under about 30 m; both obstructions are under 30 m (11 m and 22 m), so those lines are weak. EE and Three have clear lines about 1 km away [los_ee][los_three], which argues against distance as the point-level cause. The time pattern is unknown because no speed_trend or history evidence was provided.",
+   "requested_checks": [
+    {
+     "tool": "speed_trend",
+     "operator": null,
+     "why": "determine whether poor speeds are long-standing or recent, which affects whether a permanent cause such as distance can explain them"
+    }
+   ],
+   "issues": null,
+   "suggested_confidence": 0.3
+  },
+  {
+   "round": 1,
+   "target": "terrain_blocking",
+   "verdict": "downgrade",
+   "reason": "The belief relies on O2 and Vodafone line-of-sight items [los_o2][los_vodafone] whose antenna heights are assumed or inferred. Both obstructions are under 30 m (11 m and 22 m), so per the strength rules those blocked lines are weak. EE and Three have clear lines [los_ee][los_three], so terrain cannot be confirmed as the point-level cause. The time pattern is unknown because no speed_trend or history evidence was provided.",
+   "requested_checks": [],
+   "issues": null,
+   "suggested_confidence": 0.3
+  },
+  {
+   "round": 1,
+   "target": "insufficient_data",
+   "verdict": "approve",
+   "reason": "The speed evidence is based on only 2-3 tests [speed_cell][speed_1km], operator evidence is crowd-sourced for one site [operators_5km], and antenna heights are assumed or inferred for O2 and Vodafone [los_o2][los_vodafone]. The evidence genuinely cannot separate distance, terrain, or single-operator causes at the point.",
+   "requested_checks": [],
+   "issues": null,
+   "suggested_confidence": null
+  },
+  {
+   "round": 1,
+   "target": "single_operator",
+   "verdict": "downgrade",
+   "reason": "The belief rests on weak speed evidence [speed_cell][speed_1km] and on O2/Vodafone line-of-sight items with assumed or inferred antenna heights [los_o2][los_vodafone]; both obstructions are under 30 m, so those lines are weak per the strength rules. EE and Three have clear lines [los_ee][los_three], so uneven operator coverage is not proven at the point. The time pattern is unknown because no speed_trend or history evidence was provided.",
+   "requested_checks": [],
+   "issues": null,
+   "suggested_confidence": 0.25
+  },
+  {
+   "round": 2,
+   "target": "distance_to_mast",
+   "verdict": "downgrade",
+   "reason": "EE and Three have clear lines about 1 km away [los_ee][los_three], so distance alone cannot explain the low speeds; O2 and Vodafone are farther and terrain-weakened, but antenna heights are assumed or inferred, so distance remains at or below 0.5.",
+   "requested_checks": [],
+   "issues": null,
+   "suggested_confidence": 0.2
+  },
+  {
+   "round": 2,
+   "target": "terrain_blocking",
+   "verdict": "downgrade",
+   "reason": "Terrain rises above the direct line to O2 and Vodafone sites [los_o2][los_vodafone], likely weakening those signals, but EE and Three have clear lines [los_ee][los_three]. Antenna heights are assumed or inferred, so terrain cannot be confirmed as the point-level cause and stays at or below 0.5.",
+   "requested_checks": [],
+   "issues": null,
+   "suggested_confidence": 0.2
+  },
+  {
+   "round": 2,
+   "target": "insufficient_data",
+   "verdict": "approve",
+   "reason": "Speed evidence rests on only 2-3 tests [speed_cell][speed_1km], one nearby site's operators are unknown [operators_5km], and antenna heights are assumed or inferred for O2 and Vodafone [los_o2][los_vodafone]. The evidence cannot separate distance, terrain, or single-operator causes at the point.",
+   "requested_checks": [],
+   "issues": null,
+   "suggested_confidence": null
+  },
+  {
+   "round": 2,
+   "target": "single_operator",
+   "verdict": "reject",
+   "reason": "Only EE, O2 and Three have sites within 5 km [operators_5km], and EE and Three have clear lines [los_ee][los_three]. This does not prove only one operator serves the point; \"operators unknown\" is not \"single operator\".",
+   "requested_checks": [],
+   "issues": null,
+   "suggested_confidence": 0.1
+  }
+ ],
+ "wording_check": {
+  "applies": true,
+  "ok": true,
+  "forbidden": []
+ },
+ "elapsed_s": 415.7,
+ "example_id": "co9_1tp",
+ "replayed": false,
+ "rules_only": false
+}

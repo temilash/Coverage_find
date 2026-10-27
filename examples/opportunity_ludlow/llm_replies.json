@@ -1,0 +1,254 @@
+{
+ "example_id": "opportunity_ludlow",
+ "replies": {
+  "investigator|round 1|call 1": {
+   "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+   "parsed": null,
+   "tool_calls": [
+    {
+     "id": "call-520e3a4a-f18e-47cf-941e-ca905d114416",
+     "name": "speeds_near",
+     "arguments": {
+      "operator": "EE"
+     }
+    },
+    {
+     "id": "call-5b7f98ec-5c94-46fd-8ad3-ee7a5740045c",
+     "name": "speeds_near",
+     "arguments": {
+      "operator": "O2"
+     }
+    },
+    {
+     "id": "call-a1c12169-d979-401b-96c7-8a3459c4ae8f",
+     "name": "speeds_near",
+     "arguments": {
+      "operator": "Three"
+     }
+    },
+    {
+     "id": "call-e60468aa-70c2-41e2-9525-e7f6f26118df",
+     "name": "speeds_near",
+     "arguments": {
+      "operator": "Vodafone"
+     }
+    },
+    {
+     "id": "call-86fc97ec-5454-4c3c-8a12-2f102d03a72f",
+     "name": "sites_near",
+     "arguments": {
+      "operator": "EE"
+     }
+    },
+    {
+     "id": "call-8288711f-4121-42ae-8065-6ea9bd85745a",
+     "name": "sites_near",
+     "arguments": {
+      "operator": "O2"
+     }
+    },
+    {
+     "id": "call-950c3a9d-33ce-44e2-9d94-44c5eb3c20bf",
+     "name": "sites_near",
+     "arguments": {
+      "operator": "Three"
+     }
+    },
+    {
+     "id": "call-2afc6f8c-4b0e-4461-96ba-4b276efb9dfb",
+     "name": "sites_near",
+     "arguments": {
+      "operator": "Vodafone"
+     }
+    },
+    {
+     "id": "call-58c7f518-d23f-4dec-87a6-83085b955213",
+     "name": "line_of_sight",
+     "arguments": {
+      "operator": "EE"
+     }
+    },
+    {
+     "id": "call-9784c92d-1b13-4191-9884-69f0b20c00ea",
+     "name": "line_of_sight",
+     "arguments": {
+      "operator": "O2"
+     }
+    },
+    {
+     "id": "call-6a332365-677f-4065-813b-631711ecefe6",
+     "name": "line_of_sight",
+     "arguments": {
+      "operator": "Three"
+     }
+    },
+    {
+     "id": "call-b11ff54f-ca1c-48d4-be0b-05fee98af6e7",
+     "name": "line_of_sight",
+     "arguments": {
+      "operator": "Vodafone"
+     }
+    },
+    {
+     "id": "call-35083220-107b-47f8-b0c1-dc3d6bf1c78e",
+     "name": "ofcom_area",
+     "arguments": {}
+    },
+    {
+     "id": "call-05c3c94d-9493-45df-a994-7514ea0ca714",
+     "name": "live_conditions",
+     "arguments": {}
+    }
+   ],
+   "content": null,
+   "duration_ms": 8672,
+   "provider": "nvidia_direct",
+   "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+   "receipt": {},
+   "provider_fallback": "no Nightshift token (METERLESS_RUNTIME_TOKEN / METERLESS_RUNTIME_TOKEN_FILE)"
+  },
+  "diagnostician|round 1|call 1": {
+   "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+   "parsed": {
+    "hypotheses": [
+     {
+      "id": "capacity_strain",
+      "cause": "capacity_strain",
+      "confidence": 0.55,
+      "supporting_evidence": [
+       "zone_overview"
+      ],
+      "contradicting_evidence": [],
+      "explanation": "The zone carries a capacity-strain signal across 22,126 people and speeds fell 55% from the oldest to the latest quarter [zone_overview], but the rule-based fix notes no single weakness dominates and the evidence is zone-level rather than cell-specific [fix_rule]."
+     },
+     {
+      "id": "single_operator",
+      "cause": "single_operator",
+      "confidence": 0.45,
+      "supporting_evidence": [
+       "zone_overview"
+      ],
+      "contradicting_evidence": [],
+      "explanation": "7,108 people are in cells where only 1-2 operators are identified within 5 km [zone_overview], yet the zone average is 2.7 operators nearby, so operator scarcity is not universal [zone_overview]."
+     },
+     {
+      "id": "insufficient_data",
+      "cause": "insufficient_data",
+      "confidence": 0.4,
+      "supporting_evidence": [
+       "fix_rule"
+      ],
+      "contradicting_evidence": [],
+      "explanation": "No single weakness dominates the zone's cells and the rule-based fix is to gather measurements first [fix_rule], so the evidence cannot separate the likely causes at this point."
+     }
+    ],
+    "revision_reasons": []
+   },
+   "tool_calls": [],
+   "content": null,
+   "duration_ms": 5901,
+   "provider": "nvidia_direct",
+   "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+   "receipt": {},
+   "provider_fallback": "no Nightshift token (METERLESS_RUNTIME_TOKEN / METERLESS_RUNTIME_TOKEN_FILE)"
+  },
+  "critic|round 1|call 1": {
+   "model": "nvidia/nemotron-3-ultra-550b-a55b",
+   "parsed": {
+    "critiques": [
+     {
+      "hypothesis_id": "capacity_strain",
+      "verdict": "downgrade",
+      "reason": "The capacity-strain signal is zone-level (22,126 people) and the fix_rule states no single weakness dominates the zone's cells. The 55% speed drop over quarters could have multiple causes (terrain, interference, backhaul). Confidence 0.55 is above 0.5 but rests on zone-level evidence that is not cell-specific and is contradicted by the fix_rule's assessment.",
+      "requested_checks": [],
+      "suggested_confidence": 0.4
+     },
+     {
+      "hypothesis_id": "single_operator",
+      "verdict": "approve",
+      "reason": "7,108 people are in cells where only 1-2 operators are identified within 5 km, while the zone average is 2.7 operators nearby. This indicates localized operator scarcity, consistent with the evidence.",
+      "requested_checks": [],
+      "suggested_confidence": null
+     },
+     {
+      "hypothesis_id": "insufficient_data",
+      "verdict": "approve",
+      "reason": "The rule-based fix explicitly states no single weakness dominates and recommends gathering measurements first, confirming the evidence cannot separate the likely causes at this point.",
+      "requested_checks": [],
+      "suggested_confidence": null
+     }
+    ]
+   },
+   "tool_calls": [],
+   "content": null,
+   "duration_ms": 63375,
+   "provider": "nvidia_direct",
+   "model_answered": "nvidia/nemotron-3-ultra-550b-a55b",
+   "receipt": {},
+   "provider_fallback": "no Nightshift token (METERLESS_RUNTIME_TOKEN / METERLESS_RUNTIME_TOKEN_FILE)"
+  },
+  "fix_planner|round 1|call 1": {
+   "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+   "parsed": {
+    "fix_type": "gather_data",
+    "candidate": null,
+    "why": "The rule-based fix is to gather measurements first because no single weakness dominates the zone's cells [fix_rule]; the zone-level signals (capacity strain across 22,126 people, speeds down 55%, 19,216 below half the local reference median, 40,407 with 30%+ speed falls, 7,108 with only 1-2 operators nearby) cannot yet be separated into cell-specific causes [zone_overview].",
+    "assumptions": [
+     "25 m mast",
+     "line of sight to cell centres, not a radio model",
+     "no planning or land checks",
+     "measurements are needed before choosing add_operators, capacity_upgrade, or new_site"
+    ],
+    "cited_evidence": [
+     "fix_rule",
+     "zone_overview"
+    ]
+   },
+   "tool_calls": [],
+   "content": null,
+   "duration_ms": 2046,
+   "provider": "nvidia_direct",
+   "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+   "receipt": {},
+   "provider_fallback": "no Nightshift token (METERLESS_RUNTIME_TOKEN / METERLESS_RUNTIME_TOKEN_FILE)"
+  },
+  "critic|round 1|call 2": {
+   "model": "nvidia/nemotron-3-ultra-550b-a55b",
+   "parsed": {
+    "verdict": "approve",
+    "reason": "The plan correctly treats this as an improvement opportunity (not a gap), cites the zone's specific weaknesses from [zone_overview] (capacity strain, speed drops, below-median speeds, limited operators), matches the fix_type 'gather_data' to the rule [fix_rule] which states no single weakness dominates, states assumptions, and does not claim 'no service' or 'no coverage'. Data confidence is high (653 tests) per [zone_overview], so no weak-data flag is needed.",
+    "issues": []
+   },
+   "tool_calls": [],
+   "content": null,
+   "duration_ms": 32071,
+   "provider": "nvidia_direct",
+   "model_answered": "nvidia/nemotron-3-ultra-550b-a55b",
+   "receipt": {},
+   "provider_fallback": "no Nightshift token (METERLESS_RUNTIME_TOKEN / METERLESS_RUNTIME_TOKEN_FILE)"
+  },
+  "advisor|round 0|call 1": {
+   "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+   "parsed": {
+    "headline": "No single cause dominates this zone; a capacity strain across many people is the most likely contributor [capacity_strain][zone_overview].",
+    "explanation": "The zone is an improvement opportunity, not poorly served, with 82,067 people across 108 cells [zone_overview]. Speeds fell 55% from the oldest to the latest quarter [zone_overview], and 22,126 people are in busy cells with a capacity-strain signal [capacity_strain]. Operator scarcity is not universal because the zone average is 2.7 operators nearby [zone_overview]. The rule-based fix is to gather measurements first because no single weakness dominates [fix_rule].",
+    "cited_evidence": [
+     "capacity_strain",
+     "single_operator",
+     "insufficient_data",
+     "zone_overview",
+     "fix_rule"
+    ],
+    "limitations": "Sites are approximate; antenna heights assumed; Ofcom figures are area-level; evidence is zone-level rather than cell-specific [fix_rule][zone_overview]."
+   },
+   "tool_calls": [],
+   "content": null,
+   "duration_ms": 2028,
+   "provider": "nvidia_direct",
+   "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+   "receipt": {},
+   "provider_fallback": "no Nightshift token (METERLESS_RUNTIME_TOKEN / METERLESS_RUNTIME_TOKEN_FILE)"
+  }
+ },
+ "prompts_sha": "1a1d151a4ca89c985ff0ea147701646b5733dd5e35f2ee8ac7f688c48f27cc35"
+}

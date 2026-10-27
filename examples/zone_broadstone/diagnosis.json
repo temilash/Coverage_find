@@ -1,0 +1,314 @@
+{
+ "headline": "Terrain blocking the line to every nearby mast is the likely cause [terrain_blocking].",
+ "explanation": "Terrain blocking is the most likely cause: 466 people are in cells where hills block the line to every site within 5 km [zone_overview], and new high-ground masts would give clear lines to most poorly served people [cand_1][cand_2][cand_3]. Distance is also likely: 1,140 people have no identified site within 5 km, while existing sites are 3.2\u20135.7 km away [zone_overview][existing_1][existing_2][existing_3]. Operator identities for two sites are unknown, so coverage per operator is not confirmed [existing_2][existing_3]. A single-operator gap is not proven because existing sites list EE, Three and Vodafone [existing_1], even though only 0.5 operators on average have approximate sites within 5 km [zone_overview]. The evidence cannot separate terrain from distance or operator-specific gaps because only 5 Ookla tests with low data confidence exist [zone_overview][fix_rule]. Mast heights are assumed, so the margin is uncertain [terrain_blocking]. Sites are approximate; antenna heights assumed; Ofcom figures are area-level. best_network: EE, Three and Vodafone are listed at existing site S002028 [existing_1]; S002029 and S000928 operators are unknown [existing_2][existing_3]. No site identified in our data for other operators. Confidence low because evidence is weak. Actions for a resident: try the best network; Wi-Fi calling indoors; check the address on Ofcom's mobile coverage checker (https://www.ofcom.org.uk/mobile-coverage-checker); emergency calls work on any available network.",
+ "cited_evidence": [
+  "terrain_blocking",
+  "zone_overview",
+  "cand_1",
+  "cand_2",
+  "cand_3",
+  "distance_to_mast",
+  "existing_1",
+  "existing_2",
+  "existing_3",
+  "single_operator",
+  "insufficient_data",
+  "fix_rule"
+ ],
+ "hypotheses": [
+  {
+   "id": "terrain_blocking",
+   "cause": "terrain_blocking",
+   "confidence": 0.65,
+   "status": "active",
+   "supporting": [
+    "zone_overview",
+    "cand_1",
+    "cand_2",
+    "cand_3",
+    "existing_1",
+    "existing_2",
+    "existing_3"
+   ],
+   "contradicting": [],
+   "explanation": "466 people are in cells where terrain blocks the line to every site within 5 km [zone_overview], and new high-ground masts would give clear lines to most poorly served people [cand_1][cand_2][cand_3]; mast heights are assumed, so the margin is uncertain.",
+   "history": [
+    {
+     "at": "2026-10-27T15:21:11.501Z",
+     "by": "diagnostician",
+     "confidence": 0.65,
+     "previous": null,
+     "reason": "proposed",
+     "round": 1
+    }
+   ]
+  },
+  {
+   "id": "distance_to_mast",
+   "cause": "distance_to_mast",
+   "confidence": 0.55,
+   "status": "active",
+   "supporting": [
+    "zone_overview",
+    "existing_1",
+    "existing_2",
+    "existing_3"
+   ],
+   "contradicting": [],
+   "explanation": "1,140 people have no identified site within 5 km [zone_overview], while existing sites are 3.2\u20135.7 km away [existing_1][existing_2][existing_3]; operator identities for two sites are unknown, so coverage per operator is not confirmed.",
+   "history": [
+    {
+     "at": "2026-10-27T15:21:11.519Z",
+     "by": "diagnostician",
+     "confidence": 0.55,
+     "previous": null,
+     "reason": "proposed",
+     "round": 1
+    }
+   ]
+  },
+  {
+   "id": "insufficient_data",
+   "cause": "insufficient_data",
+   "confidence": 0.5,
+   "status": "active",
+   "supporting": [
+    "zone_overview",
+    "fix_rule"
+   ],
+   "contradicting": [],
+   "explanation": "Only 5 Ookla tests with low data confidence and no per-cell measurements exist [zone_overview][fix_rule], so the evidence cannot separate terrain from distance or operator-specific gaps.",
+   "history": [
+    {
+     "at": "2026-10-27T15:21:11.546Z",
+     "by": "diagnostician",
+     "confidence": 0.5,
+     "previous": null,
+     "reason": "proposed",
+     "round": 1
+    }
+   ]
+  },
+  {
+   "id": "single_operator",
+   "cause": "single_operator",
+   "confidence": 0.4,
+   "status": "active",
+   "supporting": [
+    "zone_overview"
+   ],
+   "contradicting": [
+    "existing_1"
+   ],
+   "explanation": "On average only 0.5 operators have approximate sites within 5 km [zone_overview], but existing sites list EE, Three and Vodafone [existing_1], so a single-operator gap is not proven at the point.",
+   "history": [
+    {
+     "at": "2026-10-27T15:21:11.574Z",
+     "by": "diagnostician",
+     "confidence": 0.4,
+     "previous": null,
+     "reason": "proposed",
+     "round": 1
+    }
+   ]
+  }
+ ],
+ "fix_plan": {
+  "fix_type": "gather_data",
+  "candidate": "cand_1",
+  "why": "Only 5 Ookla tests with low data confidence exist, so terrain and distance gaps cannot be separated [zone_overview][fix_rule]; [cand_1] gives the most poorly served zone residents a clear line (1374 people) once measurements confirm the need [cand_1].",
+  "assumptions": [
+   "25 m mast",
+   "line of sight to cell centres, not a radio model",
+   "no planning or land checks"
+  ],
+  "cited_evidence": [
+   "zone_overview",
+   "fix_rule",
+   "cand_1"
+  ],
+  "candidate_values": {
+   "lat": 52.474566400754895,
+   "lon": -2.5990679666864063,
+   "ground_m": 533.2,
+   "zone_people_gaining": 1374,
+   "poor_people_gaining": 1374,
+   "people_reached": 3485
+  },
+  "candidate_finding": "Candidate 1: a new 25 m mast on high ground (533 m, near the zone) would give 1374 of the zone's people a clear line of sight (1374 poorly served people in all; 3485 people reached in 35 of 49 cells checked).",
+  "review": {
+   "verdict": "approve",
+   "reason": "Plan correctly uses the zone's people gaining (1374) from [cand_1] not everyone reached (3485); assumptions are stated; fix_type 'gather_data' matches [fix_rule]'s 'measure first' for a gap zone with weak data; weak data (5 Ookla tests, low confidence) is flagged in why citing [zone_overview] and [fix_rule].",
+   "issues": []
+  },
+  "revisions": 0
+ },
+ "limitations": [
+  "Sites are approximate; antenna heights assumed; Ofcom figures are area-level."
+ ],
+ "rounds": 1,
+ "status": "complete",
+ "run_id": "run_20261027152103_atl8",
+ "scope": "zone",
+ "query": "Z00023",
+ "zone": {
+  "zone_type": "gap",
+  "rank": 1,
+  "zone_id": "Z00023",
+  "name": "Broadstone",
+  "place_type": "village",
+  "nation": "England",
+  "council": "Shropshire",
+  "council_code": "E06000051",
+  "councils": [
+   {
+    "code": "E06000051",
+    "name": "Shropshire"
+   }
+  ],
+  "people": 1606,
+  "cells": 16,
+  "centroid": {
+   "lat": 52.45363716673785,
+   "lon": -2.7049401362025716
+  },
+  "median_speed_mbps": 16.412,
+  "download_mbps": 23.694200000000002,
+  "tests": 5,
+  "confidence": "low",
+  "trend_pct": 40.61243694629309,
+  "quarters_with_data": 4,
+  "operators_mean": 0.45,
+  "operators_nearby": [
+   "EE",
+   "Three",
+   "Vodafone"
+  ],
+  "score": 72.5,
+  "breakdown": {
+   "people": {
+    "raw": 1605.69246840477,
+    "normalised": 1,
+    "weight": 0.35,
+    "contribution": 35,
+    "no_data": false
+   },
+   "severity": {
+    "raw": 0.9274344395748487,
+    "normalised": 0.5,
+    "weight": 0.25,
+    "contribution": 12.5,
+    "no_data": false
+   },
+   "persistence": {
+    "raw": 0.25,
+    "normalised": 0.5,
+    "weight": 0.15,
+    "contribution": 7.5,
+    "no_data": false
+   },
+   "trend": {
+    "raw": -40.61243694629309,
+    "normalised": 1,
+    "weight": 0.1,
+    "contribution": 10,
+    "no_data": false
+   },
+   "operator_choice": {
+    "raw": 3.546413451370692,
+    "normalised": 0.5,
+    "weight": 0.15,
+    "contribution": 7.5,
+    "no_data": false
+   }
+  },
+  "links": {
+   "explore": "/?zone=Z00023&lat=52.45364&lon=-2.70494&zoom=10.5",
+   "signal": "/signal?lat=52.45364&lon=-2.70494"
+  },
+  "people_by_reason": {
+   "slow": 0,
+   "no_site": 1140,
+   "blocked": 466
+  },
+  "persistence": 0.25,
+  "cell_ids": [
+   "87195c6b0ffffff",
+   "87195c6b1ffffff",
+   "87195c6b2ffffff",
+   "87195c6b4ffffff",
+   "87195c6b6ffffff",
+   "87195c792ffffff",
+   "87195eb4cffffff",
+   "87195eb4dffffff",
+   "87195eb4effffff",
+   "87195eb61ffffff",
+   "87195eb68ffffff",
+   "87195eb69ffffff",
+   "87195eb6affffff",
+   "87195eb6bffffff",
+   "87195eb6cffffff",
+   "87195eb6effffff"
+  ]
+ },
+ "zone_type": "gap",
+ "location": {
+  "lat": 52.45363716673785,
+  "lon": -2.7049401362025716,
+  "label": "Broadstone"
+ },
+ "critiques": [
+  {
+   "round": 1,
+   "target": "terrain_blocking",
+   "verdict": "approve",
+   "reason": "The zone overview explicitly states 466 people are in cells where terrain blocks the line to every site within 5 km. Three independent candidate sites on high ground confirm that elevated masts would provide clear lines to most poorly served people. Mast heights are assumed, but the terrain margin is documented in the zone overview itself.",
+   "requested_checks": [],
+   "issues": null,
+   "suggested_confidence": null
+  },
+  {
+   "round": 1,
+   "target": "distance_to_mast",
+   "verdict": "approve",
+   "reason": "The zone overview directly reports 1,140 people have no identified site within 5 km, and the three existing sites are 3.2\u20135.7 km away. The unknown operators for two sites is a valid caveat noted in the belief, but does not contradict the distance finding.",
+   "requested_checks": [],
+   "issues": null,
+   "suggested_confidence": null
+  },
+  {
+   "round": 1,
+   "target": "insufficient_data",
+   "verdict": "approve",
+   "reason": "Only 5 Ookla tests exist in the latest quarter with low data confidence, and the fix rule explicitly recommends measuring first. The evidence cannot separate terrain, distance, or operator-specific gaps, which the belief correctly states.",
+   "requested_checks": [],
+   "issues": null,
+   "suggested_confidence": null
+  },
+  {
+   "round": 1,
+   "target": "single_operator",
+   "verdict": "approve",
+   "reason": "The zone overview reports only 0.5 operators on average have approximate sites within 5 km, while the nearest multi-operator site (EE, Three, Vodafone) is 5.7 km away \u2014 just outside the 5 km threshold. The belief's low confidence and statement that a single-operator gap is not proven are well calibrated to this mixed evidence [existing_1][zone_overview].",
+   "requested_checks": [],
+   "issues": null,
+   "suggested_confidence": null
+  },
+  {
+   "round": 1,
+   "target": "fix_plan",
+   "verdict": "approve",
+   "reason": "Plan correctly uses the zone's people gaining (1374) from [cand_1] not everyone reached (3485); assumptions are stated; fix_type 'gather_data' matches [fix_rule]'s 'measure first' for a gap zone with weak data; weak data (5 Ookla tests, low confidence) is flagged in why citing [zone_overview] and [fix_rule].",
+   "requested_checks": [],
+   "issues": [],
+   "suggested_confidence": null
+  }
+ ],
+ "wording_check": {
+  "applies": false
+ },
+ "elapsed_s": 256,
+ "example_id": "zone_broadstone",
+ "replayed": false,
+ "rules_only": false
+}

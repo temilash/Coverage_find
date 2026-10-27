@@ -1,0 +1,645 @@
+{
+ "example_id": "co9_1tp",
+ "replies": {
+  "investigator|round 1|call 1": {
+   "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+   "parsed": null,
+   "tool_calls": [
+    {
+     "id": "call-8bdf22ff-86d6-4a61-96e2-94eb1e47702f",
+     "name": "speeds_near",
+     "arguments": {}
+    },
+    {
+     "id": "call-8bacf3a3-319a-42ad-99d1-4d8e5ca2545d",
+     "name": "sites_near",
+     "arguments": {}
+    },
+    {
+     "id": "call-55e541c2-b4e5-44ae-bf35-ab50a2346267",
+     "name": "line_of_sight",
+     "arguments": {
+      "operator": "EE"
+     }
+    },
+    {
+     "id": "call-23b89a49-ae59-4082-a43d-c1a439fe053d",
+     "name": "line_of_sight",
+     "arguments": {
+      "operator": "O2"
+     }
+    },
+    {
+     "id": "call-54dae9a4-f5a7-4485-9a96-b4a8c62d98a2",
+     "name": "line_of_sight",
+     "arguments": {
+      "operator": "Three"
+     }
+    },
+    {
+     "id": "call-44074d9f-718f-4892-be8d-22c1a7bd6c0a",
+     "name": "line_of_sight",
+     "arguments": {
+      "operator": "Vodafone"
+     }
+    },
+    {
+     "id": "call-7bf6ff0b-e700-4352-818f-160dc5911628",
+     "name": "ofcom_area",
+     "arguments": {}
+    },
+    {
+     "id": "call-2d78df59-27e3-48a4-ab25-243061646f06",
+     "name": "live_conditions",
+     "arguments": {}
+    }
+   ],
+   "content": null,
+   "duration_ms": 1746,
+   "provider": "nvidia_direct",
+   "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+   "receipt": {},
+   "provider_fallback": "no Nightshift token (METERLESS_RUNTIME_TOKEN / METERLESS_RUNTIME_TOKEN_FILE)"
+  },
+  "diagnostician|round 1|call 1": {
+   "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+   "parsed": {
+    "hypotheses": [
+     {
+      "id": "distance_to_mast",
+      "cause": "distance_to_mast",
+      "confidence": 0.5,
+      "supporting_evidence": [
+       "speed_cell",
+       "speed_1km",
+       "speed_neighbours",
+       "los_o2",
+       "los_vodafone"
+      ],
+      "contradicting_evidence": [
+       "los_ee",
+       "los_three"
+      ],
+      "explanation": "Measured speeds are far below the UK median [speed_cell][speed_1km], while neighbours are much faster [speed_neighbours]. EE and Three have clear lines about 1 km away [los_ee][los_three], so distance alone is not a strong explanation; O2 and Vodafone sites are farther and terrain-weakened [los_o2][los_vodafone], but antenna heights are assumed or inferred, keeping this at or below 0.5."
+     },
+     {
+      "id": "terrain_blocking",
+      "cause": "terrain_blocking",
+      "confidence": 0.45,
+      "supporting_evidence": [
+       "los_o2",
+       "los_vodafone",
+       "speed_cell",
+       "speed_1km"
+      ],
+      "contradicting_evidence": [
+       "los_ee",
+       "los_three"
+      ],
+      "explanation": "Terrain rises above the direct line to O2 and Vodafone sites [los_o2][los_vodafone], likely weakening those signals, but EE and Three have clear lines [los_ee][los_three]. Antenna heights are assumed or inferred, so terrain cannot be confirmed as the point-level cause and stays at or below 0.5."
+     },
+     {
+      "id": "single_operator",
+      "cause": "single_operator",
+      "confidence": 0.35,
+      "supporting_evidence": [
+       "operators_5km",
+       "los_ee",
+       "los_three",
+       "los_o2",
+       "los_vodafone"
+      ],
+      "contradicting_evidence": [
+       "speed_neighbours"
+      ],
+      "explanation": "Only EE, O2 and Three have sites within 5 km, and one nearby site's operators are unknown [operators_5km]; EE and Three have clear lines [los_ee][los_three] while O2 and Vodafone are weakened [los_o2][los_vodafone]. This suggests uneven operator coverage but does not prove only one operator serves the point, so confidence stays low."
+     },
+     {
+      "id": "insufficient_data",
+      "cause": "insufficient_data",
+      "confidence": 0.4,
+      "supporting_evidence": [
+       "speed_cell",
+       "speed_1km",
+       "operators_5km"
+      ],
+      "contradicting_evidence": [
+       "los_ee",
+       "los_three"
+      ],
+      "explanation": "Speed evidence is based on only 2-3 tests [speed_cell][speed_1km], operator evidence is crowd-sourced for one site [operators_5km], and antenna heights are assumed or inferred [los_o2][los_vodafone]. The evidence cannot separate distance, terrain, or single-operator causes at the point."
+     }
+    ],
+    "revision_reasons": []
+   },
+   "tool_calls": [],
+   "content": null,
+   "duration_ms": 9869,
+   "provider": "nvidia_direct",
+   "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+   "receipt": {},
+   "provider_fallback": "no Nightshift token (METERLESS_RUNTIME_TOKEN / METERLESS_RUNTIME_TOKEN_FILE)"
+  },
+  "critic|round 1|call 1": {
+   "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+   "parsed": {
+    "critiques": [
+     {
+      "hypothesis_id": "distance_to_mast",
+      "verdict": "downgrade",
+      "reason": "The belief rests mainly on weak speed evidence (2-3 tests) [speed_cell][speed_1km] and on O2/Vodafone line-of-sight items whose antenna heights are assumed or inferred [los_o2][los_vodafone]. Per the strength rules, an assumed antenna height weakens a blocked line when the obstruction is under about 30 m; both obstructions are under 30 m (11 m and 22 m), so those lines are weak. EE and Three have clear lines about 1 km away [los_ee][los_three], which argues against distance as the point-level cause. The time pattern is unknown because no speed_trend or history evidence was provided.",
+      "requested_checks": [
+       {
+        "tool": "speed_trend",
+        "operator": null,
+        "why": "determine whether poor speeds are long-standing or recent, which affects whether a permanent cause such as distance can explain them"
+       }
+      ],
+      "suggested_confidence": 0.3
+     },
+     {
+      "hypothesis_id": "terrain_blocking",
+      "verdict": "downgrade",
+      "reason": "The belief relies on O2 and Vodafone line-of-sight items [los_o2][los_vodafone] whose antenna heights are assumed or inferred. Both obstructions are under 30 m (11 m and 22 m), so per the strength rules those blocked lines are weak. EE and Three have clear lines [los_ee][los_three], so terrain cannot be confirmed as the point-level cause. The time pattern is unknown because no speed_trend or history evidence was provided.",
+      "requested_checks": [
+       {
+        "tool": "speed_trend",
+        "operator": null,
+        "why": "see whether poor speeds are long-standing, which would make a permanent terrain cause more plausible"
+       }
+      ],
+      "suggested_confidence": 0.3
+     },
+     {
+      "hypothesis_id": "insufficient_data",
+      "verdict": "approve",
+      "reason": "The speed evidence is based on only 2-3 tests [speed_cell][speed_1km], operator evidence is crowd-sourced for one site [operators_5km], and antenna heights are assumed or inferred for O2 and Vodafone [los_o2][los_vodafone]. The evidence genuinely cannot separate distance, terrain, or single-operator causes at the point.",
+      "requested_checks": [],
+      "suggested_confidence": null
+     },
+     {
+      "hypothesis_id": "single_operator",
+      "verdict": "downgrade",
+      "reason": "The belief rests on weak speed evidence [speed_cell][speed_1km] and on O2/Vodafone line-of-sight items with assumed or inferred antenna heights [los_o2][los_vodafone]; both obstructions are under 30 m, so those lines are weak per the strength rules. EE and Three have clear lines [los_ee][los_three], so uneven operator coverage is not proven at the point. The time pattern is unknown because no speed_trend or history evidence was provided.",
+      "requested_checks": [
+       {
+        "tool": "speed_trend",
+        "operator": null,
+        "why": "determine whether poor speeds are long-standing, which would make a permanent single-operator coverage gap more plausible"
+       }
+      ],
+      "suggested_confidence": 0.25
+     }
+    ]
+   },
+   "tool_calls": [],
+   "content": null,
+   "duration_ms": 26191,
+   "provider": "nvidia_direct",
+   "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+   "receipt": {},
+   "provider_fallback": "no Nightshift token (METERLESS_RUNTIME_TOKEN / METERLESS_RUNTIME_TOKEN_FILE)"
+  },
+  "investigator|round 2|call 1": {
+   "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+   "parsed": null,
+   "tool_calls": [
+    {
+     "id": "call-8db7b2a3-6b72-410b-82a2-08e4d357f0e6",
+     "name": "speed_trend",
+     "arguments": {}
+    }
+   ],
+   "content": null,
+   "duration_ms": 701,
+   "provider": "nvidia_direct",
+   "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+   "receipt": {},
+   "provider_fallback": "no Nightshift token (METERLESS_RUNTIME_TOKEN / METERLESS_RUNTIME_TOKEN_FILE)"
+  },
+  "diagnostician|round 2|call 1": {
+   "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+   "parsed": {
+    "hypotheses": [
+     {
+      "id": "insufficient_data",
+      "cause": "insufficient_data",
+      "confidence": 0.4,
+      "supporting_evidence": [
+       "speed_cell",
+       "speed_1km",
+       "operators_5km",
+       "los_o2",
+       "los_vodafone"
+      ],
+      "contradicting_evidence": [
+       "los_ee",
+       "los_three"
+      ],
+      "explanation": "Speed evidence rests on only 2-3 tests [speed_cell][speed_1km], one nearby site's operators are unknown [operators_5km], and antenna heights are assumed or inferred for O2 and Vodafone [los_o2][los_vodafone]. The evidence cannot separate distance, terrain, or single-operator causes at the point."
+     },
+     {
+      "id": "distance_to_mast",
+      "cause": "distance_to_mast",
+      "confidence": 0.3,
+      "supporting_evidence": [
+       "speed_cell",
+       "speed_1km",
+       "los_o2",
+       "los_vodafone"
+      ],
+      "contradicting_evidence": [
+       "los_ee",
+       "los_three"
+      ],
+      "explanation": "Measured speeds are far below the UK median [speed_cell][speed_1km], while neighbours are much faster [speed_neighbours]. EE and Three have clear lines about 1 km away [los_ee][los_three], so distance alone is not a strong explanation; O2 and Vodafone sites are farther and terrain-weakened [los_o2][los_vodafone], but antenna heights are assumed or inferred, keeping this at or below 0.5."
+     },
+     {
+      "id": "terrain_blocking",
+      "cause": "terrain_blocking",
+      "confidence": 0.3,
+      "supporting_evidence": [
+       "los_o2",
+       "los_vodafone",
+       "speed_cell",
+       "speed_1km"
+      ],
+      "contradicting_evidence": [
+       "los_ee",
+       "los_three"
+      ],
+      "explanation": "Terrain rises above the direct line to O2 and Vodafone sites [los_o2][los_vodafone], likely weakening those signals, but EE and Three have clear lines [los_ee][los_three]. Antenna heights are assumed or inferred, so terrain cannot be confirmed as the point-level cause and stays at or below 0.5."
+     },
+     {
+      "id": "single_operator",
+      "cause": "single_operator",
+      "confidence": 0.25,
+      "supporting_evidence": [
+       "operators_5km",
+       "los_ee",
+       "los_three",
+       "los_o2",
+       "los_vodafone"
+      ],
+      "contradicting_evidence": [
+       "speed_neighbours"
+      ],
+      "explanation": "Only EE, O2 and Three have sites within 5 km, and one nearby site's operators are unknown [operators_5km]; EE and Three have clear lines [los_ee][los_three] while O2 and Vodafone are weakened [los_o2][los_vodafone]. This suggests uneven operator coverage but does not prove only one operator serves the point, so confidence stays low."
+     }
+    ],
+    "revision_reasons": []
+   },
+   "tool_calls": [],
+   "content": null,
+   "duration_ms": 5777,
+   "provider": "nvidia_direct",
+   "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+   "receipt": {},
+   "provider_fallback": "no Nightshift token (METERLESS_RUNTIME_TOKEN / METERLESS_RUNTIME_TOKEN_FILE)"
+  },
+  "critic|round 2|call 1": {
+   "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+   "parsed": {
+    "critiques": [
+     {
+      "hypothesis_id": "distance_to_mast",
+      "verdict": "downgrade",
+      "reason": "EE and Three have clear lines about 1 km away [los_ee][los_three], so distance alone cannot explain the low speeds; O2 and Vodafone are farther and terrain-weakened, but antenna heights are assumed or inferred, so distance remains at or below 0.5.",
+      "requested_checks": [],
+      "suggested_confidence": 0.2
+     },
+     {
+      "hypothesis_id": "terrain_blocking",
+      "verdict": "downgrade",
+      "reason": "Terrain rises above the direct line to O2 and Vodafone sites [los_o2][los_vodafone], likely weakening those signals, but EE and Three have clear lines [los_ee][los_three]. Antenna heights are assumed or inferred, so terrain cannot be confirmed as the point-level cause and stays at or below 0.5.",
+      "requested_checks": [],
+      "suggested_confidence": 0.2
+     },
+     {
+      "hypothesis_id": "insufficient_data",
+      "verdict": "approve",
+      "reason": "Speed evidence rests on only 2-3 tests [speed_cell][speed_1km], one nearby site's operators are unknown [operators_5km], and antenna heights are assumed or inferred for O2 and Vodafone [los_o2][los_vodafone]. The evidence cannot separate distance, terrain, or single-operator causes at the point.",
+      "requested_checks": [],
+      "suggested_confidence": null
+     },
+     {
+      "hypothesis_id": "single_operator",
+      "verdict": "reject",
+      "reason": "Only EE, O2 and Three have sites within 5 km [operators_5km], and EE and Three have clear lines [los_ee][los_three]. This does not prove only one operator serves the point; \"operators unknown\" is not \"single operator\".",
+      "requested_checks": [],
+      "suggested_confidence": null
+     }
+    ]
+   },
+   "tool_calls": [],
+   "content": null,
+   "duration_ms": 2742,
+   "provider": "nvidia_direct",
+   "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+   "receipt": {},
+   "provider_fallback": "no Nightshift token (METERLESS_RUNTIME_TOKEN / METERLESS_RUNTIME_TOKEN_FILE)"
+  },
+  "advisor|round 0|call 1": {
+   "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+   "parsed": {
+    "headline": "The service measures poorly here, but no single cause reaches a strong level [insufficient_data].",
+    "explanation": "Measured mobile download speeds near your address are far below the UK median [speed_cell][speed_1km], while neighbouring cells are much faster [speed_neighbours]. EE and Three have clear lines of sight to sites about 1 km away [los_ee][los_three], so distance alone is not a strong explanation [distance_to_mast]. O2 and Vodafone sites are farther and terrain likely weakens their signals [los_o2][los_vodafone], but antenna heights are assumed or inferred, so terrain cannot be confirmed as the point-level cause [terrain_blocking]. The evidence rests on only a few tests and cannot separate distance, terrain, or single-operator causes at your exact location [insufficient_data].",
+    "cited_evidence": [
+     "speed_cell",
+     "speed_1km",
+     "speed_neighbours",
+     "los_ee",
+     "los_three",
+     "los_o2",
+     "los_vodafone",
+     "distance_to_mast",
+     "terrain_blocking",
+     "insufficient_data"
+    ],
+    "ruled_out": [],
+    "limitations": "Sites are approximate; antenna heights are assumed or inferred for some operators; Ofcom coverage figures are area-level, not point-specific.",
+    "best_network": {
+     "summary": "EE is likely best, with Three also clear; O2 and Vodafone are likely weaker.",
+     "ranking": [
+      {
+       "operator": "EE",
+       "rank": 1,
+       "confidence": "high",
+       "why": "Clear line of sight to a site 1.0 km north, confirmed by Ofcom's licence register [network_comparison][los_ee].",
+       "evidence": [
+        "network_comparison",
+        "los_ee"
+       ]
+      },
+      {
+       "operator": "Three",
+       "rank": 2,
+       "confidence": "high",
+       "why": "Clear line of sight to a site 1.0 km north, confirmed by Ofcom's licence register [network_comparison][los_three].",
+       "evidence": [
+        "network_comparison",
+        "los_three"
+       ]
+      },
+      {
+       "operator": "O2",
+       "rank": 3,
+       "confidence": "low",
+       "why": "Site 4.0 km north with terrain likely weakening the signal; confirmed by Ofcom's licence register [los_o2].",
+       "evidence": [
+        "los_o2"
+       ]
+      },
+      {
+       "operator": "Vodafone",
+       "rank": 4,
+       "confidence": "low",
+       "why": "Site 6.1 km south with terrain likely weakening the signal; operator inferred from crowd-sourced data, not confirmed by Ofcom's licence register [los_vodafone].",
+       "evidence": [
+        "los_vodafone"
+       ]
+      },
+      {
+       "operator": "Three",
+       "rank": 3,
+       "confidence": "low",
+       "why": "One nearby site's operators could not be identified [operators_5km].",
+       "evidence": [
+        "operators_5km"
+       ]
+      }
+     ]
+    },
+    "actions": [
+     {
+      "text": "Try EE or Three, which have clear lines of sight to nearby sites [network_comparison][los_ee][los_three].",
+      "audience": "resident"
+     },
+     {
+      "text": "Use Wi-Fi calling indoors if mobile signal is weak.",
+      "audience": "resident"
+     },
+     {
+      "text": "Check your address on Ofcom's mobile coverage checker: https://www.ofcom.org.uk/mobile-coverage-checker",
+      "audience": "resident"
+     },
+     {
+      "text": "Emergency calls work on any available network.",
+      "audience": "resident"
+     }
+    ]
+   },
+   "tool_calls": [],
+   "content": null,
+   "duration_ms": 4680,
+   "provider": "nvidia_direct",
+   "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+   "receipt": {},
+   "provider_fallback": "no Nightshift token (METERLESS_RUNTIME_TOKEN / METERLESS_RUNTIME_TOKEN_FILE)"
+  },
+  "letter_writer:email Braintree Council|round 0|call 1": {
+   "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+   "parsed": {
+    "recipient": "council",
+    "subject": "Poor mobile signal at 51.93565, 0.59283",
+    "body_markdown": "Dear Braintree Council,\n\nI am writing to report poor mobile signal at 51.93565, 0.59283. Residents experience mobile download speeds far below the UK median.\n\nThe evidence is:\n- Mobile download speed in this cell averaged 4.6 Mbps in 2026Q3 (3 tests from 3 devices; upload 0.4 Mbps, latency 40 ms). The UK median across cells with 10+ tests is 103 Mbps. [speed_cell]\n- Within 1 km of this point, mobile download speed averaged 3.5 Mbps in 2026Q3 (2 tests from 2 devices on 2 Ookla tiles of about 350-400 m). [speed_1km]\n- The 6 neighbouring cells (3 with data) averaged 41.9 Mbps from 7 tests in 2026Q3. [speed_neighbours]\n- EE's nearest approximate site is 990 m north (EE confirmed by Ofcom's licence register). The direct line clears the ground by at least 2 m (antenna height from Ofcom's licence register). [los_ee]\n- Three's nearest approximate site is 990 m north (Three confirmed by Ofcom's licence register). The direct line clears the ground by at least 2 m (antenna height from Ofcom's licence register). [los_three]\n- O2's nearest approximate site is 4.0 km north (O2 confirmed by Ofcom's licence register). Terrain rises 11 m above the direct line 1.9 km from here (antenna height from Ofcom's licence register), so the signal is likely weakened, not necessarily lost. [los_o2]\n- Vodafone's nearest approximate site is 6.1 km south (operator inferred from crowd-sourced data). Terrain rises 22 m above the direct line 1.7 km from here (antenna height assumed 25 m), so the signal is likely weakened, not necessarily lost. [los_vodafone]\n\nLikely causes: insufficient data (likely); distance to mast (possibly); terrain blocking (possibly). Causes are inferred from public data and cannot be confirmed at the exact location.\n\nPlease review mobile coverage at this location and tell us whether an upgrade or new site is planned.\n\nYours sincerely,\n[Your name]\n[Your address]",
+    "cited_evidence": [
+     "speed_cell",
+     "speed_1km",
+     "speed_neighbours",
+     "los_ee",
+     "los_three",
+     "los_o2",
+     "los_vodafone"
+    ]
+   },
+   "tool_calls": [],
+   "content": null,
+   "duration_ms": 4404,
+   "provider": "nvidia_direct",
+   "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+   "receipt": {},
+   "provider_fallback": "no Nightshift token (METERLESS_RUNTIME_TOKEN / METERLESS_RUNTIME_TOKEN_FILE)"
+  },
+  "letter_writer:email Braintree Council|round 0|call 2": {
+   "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+   "parsed": {
+    "rewrites": [
+     {
+      "original": "Dear Braintree Council,\n\nI am writing to report poor mobile signal at 51.93565, 0.59283.",
+      "rewritten": "Dear Braintree Council,\n\nI am writing to report poor mobile signal at this location. [los_ee] [los_o2] [los_three] [los_vodafone]"
+     }
+    ]
+   },
+   "tool_calls": [],
+   "content": null,
+   "duration_ms": 1048,
+   "provider": "nvidia_direct",
+   "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+   "receipt": {},
+   "provider_fallback": "no Nightshift token (METERLESS_RUNTIME_TOKEN / METERLESS_RUNTIME_TOKEN_FILE)"
+  },
+  "letter_writer:email EE|round 0|call 1": {
+   "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+   "parsed": {
+    "recipient": "mp",
+    "subject": "Poor mobile signal at [Your address]",
+    "body_markdown": "Dear EE,\n\nI am writing about poor mobile signal at my home, [Your address] (51.93565, 0.59283). Residents here experience slow mobile download speeds far below the UK median.\n\nEvidence:\n- Mobile download speed in this cell averaged 4.6 Mbps in 2026Q3 (3 tests from 3 devices; upload 0.4 Mbps, latency 40 ms). The UK median across cells with 10+ tests is 103 Mbps [speed_cell].\n- Within 1 km of this point, mobile download speed averaged 3.5 Mbps in 2026Q3 (2 tests from 2 devices on 2 Ookla tiles of about 350-400 m) [speed_1km].\n- The 6 neighbouring cells (3 with data) averaged 41.9 Mbps from 7 tests in 2026Q3 [speed_neighbours].\n- EE's nearest approximate site is 990 m north (EE confirmed by Ofcom's licence register). The direct line clears the ground by at least 2 m (antenna height from Ofcom's licence register) [los_ee].\n- Three's nearest approximate site is 990 m north (Three confirmed by Ofcom's licence register). The direct line clears the ground by at least 2 m (antenna height from Ofcom's licence register) [los_three].\n- O2's nearest approximate site is 4.0 km north (O2 confirmed by Ofcom's licence register). Terrain rises 11 m above the direct line 1.9 km from here (antenna height from Ofcom's licence register), so the signal is likely weakened [los_o2].\n- Vodafone's nearest approximate site is 6.1 km south (operator inferred from crowd-sourced data). Terrain rises 22 m above the direct line 1.7 km from here (antenna height assumed 25 m), so the signal is likely weakened [los_vodafone].\n\nLikely causes: distance to mast (possibly); terrain blocking (possibly). The evidence rests on only a few tests and cannot separate distance, terrain, or single-operator causes at your exact location [insufficient_data]. Causes are inferred from public data.\n\nPlease review coverage at this location and tell us whether an upgrade is planned.\n\nYours sincerely,\n[Your name]\n[Your address]",
+    "cited_evidence": [
+     "speed_cell",
+     "speed_1km",
+     "speed_neighbours",
+     "los_ee",
+     "los_three",
+     "los_o2",
+     "los_vodafone",
+     "insufficient_data"
+    ]
+   },
+   "tool_calls": [],
+   "content": null,
+   "duration_ms": 4380,
+   "provider": "nvidia_direct",
+   "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+   "receipt": {},
+   "provider_fallback": "no Nightshift token (METERLESS_RUNTIME_TOKEN / METERLESS_RUNTIME_TOKEN_FILE)"
+  },
+  "letter_writer:email EE|round 0|call 2": {
+   "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+   "parsed": {
+    "rewrites": [
+     {
+      "original": "Dear EE,\n\nI am writing about poor mobile signal at my home, [Your address] (51.93565, 0.59283).",
+      "rewritten": "Dear EE,\n\nI am writing about poor mobile signal at my home, [Your address]. [los_ee] [los_o2] [los_three] [los_vodafone] [operators_5km] [speed_1km] [speed_cell] [speed_neighbours]"
+     }
+    ]
+   },
+   "tool_calls": [],
+   "content": null,
+   "duration_ms": 1163,
+   "provider": "nvidia_direct",
+   "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+   "receipt": {},
+   "provider_fallback": "no Nightshift token (METERLESS_RUNTIME_TOKEN / METERLESS_RUNTIME_TOKEN_FILE)"
+  },
+  "letter_writer:email O2|round 0|call 1": {
+   "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+   "parsed": {
+    "recipient": "operator",
+    "subject": "Poor mobile signal at [Your address] (51.93565, 0.59283)",
+    "body_markdown": "Dear O2,\n\nI am writing to report poor mobile signal at my address, 51.93565, 0.59283.\n\n**The problem**\nResidents at this location experience mobile download speeds far below the UK median.\n\n**The evidence**\n- Mobile download speed in this cell averaged 4.6 Mbps in 2026Q3 (3 tests from 3 devices; upload 0.4 Mbps, latency 40 ms). The UK median across cells with 10+ tests is 103 Mbps [speed_cell].\n- Within 1 km of this point, mobile download speed averaged 3.5 Mbps in 2026Q3 (2 tests from 2 devices on 2 Ookla tiles of about 350-400 m) [speed_1km].\n- The 6 neighbouring cells (3 with data) averaged 41.9 Mbps from 7 tests in 2026Q3 [speed_neighbours].\n- O2's nearest approximate site is 4.0 km north. Terrain rises 11 m above the direct line 1.9 km from here (antenna height from Ofcom's licence register), so the signal is likely weakened [los_o2].\n\n**Likely causes**\nThe likely cause is insufficient data to determine a single cause. Distance to the mast is possibly a factor. Terrain blocking is possibly a factor.\n\nThese causes are inferred from public data; the data cannot confirm the exact cause at your location.\n\n**Ask**\nPlease review O2 coverage around 51.93565, 0.59283 and consider a site or adding O2 at an existing site.\n\nYours sincerely,\n\n[Your name]\n[Your address]",
+    "cited_evidence": [
+     "speed_cell",
+     "speed_1km",
+     "speed_neighbours",
+     "los_o2"
+    ]
+   },
+   "tool_calls": [],
+   "content": null,
+   "duration_ms": 3365,
+   "provider": "nvidia_direct",
+   "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+   "receipt": {},
+   "provider_fallback": "no Nightshift token (METERLESS_RUNTIME_TOKEN / METERLESS_RUNTIME_TOKEN_FILE)"
+  },
+  "letter_writer:email O2|round 0|call 2": {
+   "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+   "parsed": {
+    "rewrites": [
+     {
+      "original": "Dear O2,\n\nI am writing to report poor mobile signal at my address, 51.93565, 0.59283.\n\n**The problem**\nResidents at this location experience mobile download speeds far below the UK median.\n\n**The evidence**\n- Mobile download speed in this cell averaged 4.6 Mbps in 2026Q3 (3 tests from 3 devices; upload 0.4 Mbps, latency 40 ms).\n- These causes are inferred from public data; the data cannot confirm the exact cause at your location.\n\n**Ask**\nPlease review O2 coverage around 51.93565, 0.59283 and consider a site or adding O2 at an existing site.",
+      "rewritten": "Dear O2,\n\nI am writing to report poor mobile signal at my address.\n\n**The problem**\nResidents at this location experience mobile download speeds below the UK median.\n\n**The evidence**\n- Mobile download speed in this cell averaged 4.6 Mbps in 2026Q3 (3 tests from 3 devices; upload 0.4 Mbps, latency 40 ms) [speed_cell].\n- The UK median across cells with 10+ tests is 103 Mbps [speed_cell].\n- O2's nearest approximate site is 4.0 km north [los_o2].\n- Terrain rises 11 m above the direct line 1.9 km from here [los_o2].\n- Only 3 operators (EE, O2 and Three) have approximate mast sites within 5 km [operators_5km].\n- These causes are inferred from public data; the data cannot confirm the exact cause at your location.\n\n**Ask**\nPlease review O2 coverage at my location and consider a site or adding O2 at an existing site."
+     }
+    ]
+   },
+   "tool_calls": [],
+   "content": null,
+   "duration_ms": 16672,
+   "provider": "nvidia_direct",
+   "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+   "receipt": {},
+   "provider_fallback": "no Nightshift token (METERLESS_RUNTIME_TOKEN / METERLESS_RUNTIME_TOKEN_FILE)"
+  },
+  "letter_writer:email Three|round 0|call 1": {
+   "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+   "parsed": {
+    "recipient": "operator",
+    "subject": "Poor mobile signal at 51.93565, 0.59283",
+    "body_markdown": "Dear Three,\n\nI am writing to report poor mobile signal at my location, 51.93565, 0.59283.\n\n**The problem**\nResidents at this location experience mobile download speeds far below the UK median.\n\n**The evidence**\n- Mobile download speed in this cell averaged 4.6 Mbps in 2026Q3 (3 tests from 3 devices; upload 0.4 Mbps, latency 40 ms). The UK median across cells with 10+ tests is 103 Mbps [speed_cell].\n- Within 1 km of this point, mobile download speed averaged 3.5 Mbps in 2026Q3 (2 tests from 2 devices on 2 Ookla tiles of about 350-400 m) [speed_1km].\n- The 6 neighbouring cells (3 with data) averaged 41.9 Mbps from 7 tests in 2026Q3 [speed_neighbours].\n- Three's nearest approximate site is 990 m north (Three confirmed by Ofcom's licence register). The direct line clears the ground by at least 2 m (antenna height from Ofcom's licence register) [los_three].\n\n**Likely causes**\nThe causes are inferred from public data and cannot be confirmed at the exact location. Distance to the mast is possibly a cause. Terrain blocking is possibly a cause. The evidence is insufficient to identify a single cause.\n\n**Ask**\nPlease review 4G coverage around 51.93565, 0.59283 and tell us whether an upgrade is planned.\n\nYours sincerely,\n\n[Your name]\n[Your address]",
+    "cited_evidence": [
+     "speed_cell",
+     "speed_1km",
+     "speed_neighbours",
+     "los_three"
+    ]
+   },
+   "tool_calls": [],
+   "content": null,
+   "duration_ms": 5104,
+   "provider": "nvidia_direct",
+   "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+   "receipt": {},
+   "provider_fallback": "no Nightshift token (METERLESS_RUNTIME_TOKEN / METERLESS_RUNTIME_TOKEN_FILE)"
+  },
+  "letter_writer:email Three|round 0|call 2": {
+   "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+   "parsed": {
+    "rewrites": [
+     {
+      "original": "Dear Three,\n\nI am writing to report poor mobile signal at my location, 51.93565, 0.59283.\n\n**The problem**\nResidents at this location experience mobile download speeds far below the UK median.\n\n**The evidence**\n- Mobile download speed in this cell averaged 4.6 Mbps in 2026Q3 (3 tests from 3 devices; upload 0.4 Mbps, latency 40 ms).\n- The evidence is insufficient to identify a single cause.\n\n**Ask**\nPlease review 4G coverage around 51.93565, 0.59283 and tell us whether an upgrade is planned.",
+      "rewritten": "Dear Three,\n\nI am writing to report poor mobile signal at my location.\n\n**The problem**\nResidents at this location experience mobile download speeds below the UK median.\n\n**The evidence**\n- Mobile download speed in this cell averaged 4.6 Mbps in 2026Q3 (3 tests from 3 devices; upload 0.4 Mbps, latency 40 ms) [speed_cell].\n- The UK median across cells with 10+ tests is 103 Mbps [speed_cell].\n- The evidence is insufficient to identify a single cause.\n\n**Ask**\nPlease review 4G coverage around my location and tell us whether an upgrade is planned."
+     }
+    ]
+   },
+   "tool_calls": [],
+   "content": null,
+   "duration_ms": 15433,
+   "provider": "nvidia_direct",
+   "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+   "receipt": {},
+   "provider_fallback": "no Nightshift token (METERLESS_RUNTIME_TOKEN / METERLESS_RUNTIME_TOKEN_FILE)"
+  },
+  "letter_writer:email Vodafone|round 0|call 1": {
+   "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+   "parsed": {
+    "recipient": "council",
+    "subject": "Poor mobile signal at [Your address]",
+    "body_markdown": "Dear Vodafone,\n\nI am writing about poor mobile signal at my address, [Your address] (51.93565, 0.59283). Residents here experience far below-average mobile download speeds.\n\nEvidence:\n- Mobile download speed within 1 km averaged 3.5 Mbps in 2026Q3 (2 tests from 2 devices on 2 Ookla tiles) [speed_1km].\n- Mobile download speed in this cell averaged 4.6 Mbps in 2026Q3 (3 tests from 3 devices; upload 0.4 Mbps, latency 40 ms). The UK median across cells with 10+ tests is 103 Mbps [speed_cell].\n- Six neighbouring cells (3 with data) averaged 41.9 Mbps from 7 tests in 2026Q3 [speed_neighbours].\n- Vodafone\u2019s nearest approximate site is 6.1 km south (operator inferred from crowd-sourced data). Terrain rises 22 m above the direct line 1.7 km from here (antenna height assumed 25 m), so the signal is likely weakened [los_vodafone].\n- Only 3 operators (EE, O2 and Three) have approximate mast sites within 5 km [operators_5km].\n\nLikely causes: terrain blocking is likely; distance to mast is possibly a factor. These causes are inferred from public data and cannot be confirmed at the exact location.\n\nPlease review Vodafone coverage at this location and consider adding Vodafone at an existing site or a new site.\n\nYours sincerely,\n[Your name]\n[Your address]",
+    "cited_evidence": [
+     "speed_1km",
+     "speed_cell",
+     "speed_neighbours",
+     "los_vodafone",
+     "operators_5km"
+    ]
+   },
+   "tool_calls": [],
+   "content": null,
+   "duration_ms": 25017,
+   "provider": "nvidia_direct",
+   "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+   "receipt": {},
+   "provider_fallback": "no Nightshift token (METERLESS_RUNTIME_TOKEN / METERLESS_RUNTIME_TOKEN_FILE)"
+  },
+  "letter_writer:email Vodafone|round 0|call 2": {
+   "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+   "parsed": {
+    "rewrites": [
+     {
+      "original": "Dear Vodafone,\n\nI am writing about poor mobile signal at my address, [Your address] (51.93565, 0.59283).",
+      "rewritten": "Dear Vodafone,\n\nI am writing about poor mobile signal at my address, [Your address]. [los_vodafone]"
+     }
+    ]
+   },
+   "tool_calls": [],
+   "content": null,
+   "duration_ms": 1392,
+   "provider": "nvidia_direct",
+   "model_answered": "private/nvidia/nemotron-3.5-super-120b-a12b",
+   "receipt": {},
+   "provider_fallback": "no Nightshift token (METERLESS_RUNTIME_TOKEN / METERLESS_RUNTIME_TOKEN_FILE)"
+  }
+ },
+ "prompts_sha": "1a1d151a4ca89c985ff0ea147701646b5733dd5e35f2ee8ac7f688c48f27cc35"
+}
