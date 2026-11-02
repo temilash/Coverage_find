@@ -42,10 +42,10 @@
       <div class="intro">
         <h2>Why is my signal bad here?</h2>
         <p>Enter a postcode or click the map. Coverage Detective gathers evidence for that exact point from public
-          data (through Zetaris) and live sources: measured speeds, the nearest site of each network and whether hills
-          block the line to it, area figures and current conditions.</p>
-        <p class="muted">The evidence is computed from data. "Diagnose with agents" then asks a small team of agents
-          (NVIDIA Nemotron) to rank the likely causes, check each other's work and explain it.</p>
+          data and live sources: measured speeds, the nearest site of each network and whether hills block the line to
+          it, area figures and current conditions.</p>
+        <p class="muted">Fixed rules then score the likely causes from that evidence. Every figure comes from the data,
+          with its source and date; nothing is written by a language model.</p>
       </div>
     </aside>
   </main>
@@ -60,7 +60,6 @@
   <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/h3-js@4.5.0/dist/h3-js.umd.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/deck.gl@9.4.0/dist.min.js"></script>
-  <script src="agents.js"></script>
   <script src="signal.js"></script>
 </body>
 </html>

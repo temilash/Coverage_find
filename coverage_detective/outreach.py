@@ -1,9 +1,10 @@
 """Who to tell about a diagnosis, and the email that tells them.
 
-A finished run ends with an evidence letter (`agents.write_letter`). This module turns that
-letter into something a resident can send: the recipient (their council, taken from the run's
-local authority, or one of the four networks), the ways to reach that recipient, and the
-message itself (subject, plain text, HTML, a mailto link).
+A diagnosis (diagnosis.py) becomes an evidence letter from a fixed template (`letter`): the
+headline, the scored causes and the evidence findings they cite, each with its source and date.
+This module turns that letter into something a resident can send: the recipient (their council,
+taken from the point's local authority, or one of the four networks), the ways to reach that
+recipient, and the message itself (subject, plain text, HTML, a mailto link).
 
 Recipients are a table, not conditionals: `data/reference/operator_contacts.csv` and
 `council_contacts.csv`, each row carrying the page the address was published on and the date
@@ -217,8 +218,8 @@ _ANNEX_ID = re.compile(r"^- \[([a-z0-9_]+)\] ", re.MULTILINE)
 
 def cited_ids(letter: dict) -> set[str]:
     """Every bracketed evidence id in the letter: those it lists, those in its annex, and those in
-    its prose. A letter supplied by the client has not been through the guard, so its bracketed
-    tokens are stripped the same way (lowercase ids never collide with [Your name])."""
+    its prose. A letter edited by the client has its bracketed ids stripped the same way
+    (lowercase ids never collide with [Your name])."""
     body = letter.get("body_markdown") or ""
     ids = {str(i) for i in letter.get("cited_evidence") or []}
     ids |= set(_ANNEX_ID.findall(body))
@@ -371,7 +372,7 @@ def slug(s: str) -> str:
 
 
 def place_of(result: dict) -> dict:
-    """Where the run is about: postcode, coordinates, council."""
+    """Where the diagnosis is about: postcode, coordinates, council."""
     location = result.get("location") or {}
     zone = result.get("zone") or {}
     return {"postcode": location.get("postcode") or location.get("nearest_postcode") or "",
@@ -381,12 +382,12 @@ def place_of(result: dict) -> dict:
 
 
 def signature(result: dict, contact: Contact, sent_by: str, at: datetime) -> str:
-    """Who is reporting, where, and which run: the recipient needs these to act on it."""
+    """Who is reporting, where, and which diagnosis: the recipient needs these to act on it."""
     place = place_of(result)
     bits = [f"Reported by {sent_by.strip() or 'a local resident'}"
             + (f" of {place['postcode']}" if place["postcode"] else "")
             + (f" ({place['lat']:.5f}, {place['lon']:.5f})" if isinstance(place["lat"], (int, float)) else "")]
-    bits.append(f"Diagnosis reference {result.get('run_id') or 'unknown'}, prepared {at:%d %B %Y} with Coverage "
+    bits.append(f"Diagnosis reference {result.get('reference') or 'unknown'}, prepared {at:%d %B %Y} with Coverage "
                 "Detective from public data; each figure below names its source and the data's date.")
     if contact.kind == "council":
         bits.append("This is a report about the area's coverage, not a complaint about the council's own service.")
@@ -430,7 +431,7 @@ def mailto_uri(to: str, subject: str, body: str, tail: str = "", max_chars: int 
 
 def compose(result: dict, letter: dict, contact: Contact, sent_by: str = "",
             at: datetime | None = None) -> Email:
-    """The email for one diagnosis, one recipient. No model call: the letter is already checked."""
+    """The email for one diagnosis, one recipient."""
     at = at or datetime.now(timezone.utc)
     place = place_of(result)
     where = place["postcode"] or place["label"] or "the area"
@@ -446,6 +447,41 @@ def compose(result: dict, letter: dict, contact: Contact, sent_by: str = "",
                  body_html=to_html(f"{letter_md}\n\n{sign_md}", ids), mailto=mailto,
                  filename=f"coverage-email-{slug(where)}-{slug(contact.key or contact.name)}.md",
                  channel=contact.routes[0].kind, routes=[r.to_dict() for r in contact.routes], truncated=truncated)
+
+
+ASKS = {
+    "council": "Please consider this location in your work with the mobile networks on local coverage, and tell me "
+               "whether any improvement is planned.",
+    "operator": "Please review your coverage at this location and tell me whether any improvement is planned.",
+}
+
+
+def letter(bundle: dict, diagnosis: dict, contact: Contact) -> dict:
+    """The evidence letter for one recipient, from a fixed template: every figure in it is quoted from an
+    evidence finding (computed in code), and the annex lists each finding with its source and date."""
+    point = bundle.get("point") or {}
+    items = {i["id"]: i for i in bundle.get("items") or []}
+    district = point.get("admin_district")
+    causes = diagnosis.get("causes") or []
+    cited = [i for i in dict.fromkeys(e for c in causes for e in c["evidence_ids"]) if i in items]
+    lines = [f"Dear {contact.name},", "",
+             f"I am writing about poor mobile signal at [Your address]{f' in {district}' if district else ''}. I checked "
+             "this location against public data with Coverage Detective, an open, statistics-based tool. Its "
+             f"rule-based diagnosis: {diagnosis['headline']}", ""]
+    if causes:
+        lines += ["**Likely causes** (rule scores from 0 to 1, not probabilities)", ""]
+        lines += [f"- {c['label']} (score {c['score']:.2f}): {c['explanation']} "
+                  + "".join(f"[{i}]" for i in c["evidence_ids"] if i in items) for c in causes]
+        lines.append("")
+    lines += [ASKS["council" if contact.kind == "council" else "operator"], "",
+              "These causes are inferred from public data, not confirmed: the networks' own data is not public.", "",
+              "Yours faithfully,", "", "[Your name]"]
+    if cited:
+        lines += ["", "---", "**Evidence and sources**", ""]
+        lines += [f"- [{i}] {items[i]['finding']} ({items[i].get('source')}; data {items[i].get('data_period')}, as of "
+                  f"{str(items[i].get('as_of') or '')[:10]})" for i in cited]
+    return {"subject": "Poor mobile signal at [Your address]: evidence from public data",
+            "body_markdown": "\n".join(lines), "cited_evidence": cited}
 
 
 def recipients(district: str | None) -> dict:

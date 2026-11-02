@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from coverage_detective.data.masts import bearing_deg, finalise_sites, masts_per_cell, merge_sites, merge_wtr
+from coverage_detective.data.masts import bearing_deg, masts_per_cell, merge_sites, merge_wtr
 from coverage_detective.sources.opencellid import cluster_sites
 from coverage_detective.sources.osm_masts import is_comms_mast, operator_groups
 

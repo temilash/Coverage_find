@@ -99,7 +99,7 @@ def record_raw(source: str, path: Path, url: str, **info) -> None:
 
 
 def source_for(table: str) -> tuple[str, dict]:
-    """The manifest source that produced a table, by Zetaris table or file name
+    """The manifest source that produced a table, by table or file name
     (e.g. "CD_OOKLA_MOBILE.ookla_mobile_r7", "ookla_mobile_r7" or "ookla_mobile_r7.parquet")."""
     stem = table.split(".")[-1] if not table.endswith(".parquet") else table[: -len(".parquet")]
     for name, src in load()["sources"].items():

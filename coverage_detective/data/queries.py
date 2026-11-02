@@ -1,4 +1,4 @@
-"""SQL used by more than one caller (the explorer API and the evidence bundle)."""
+"""SQL used by more than one caller (the explorer API and the evidence bundle); DuckDB dialect."""
 
 from __future__ import annotations
 
@@ -51,8 +51,8 @@ def cell_sql(cell_id: str) -> tuple[str, list[str]]:
 FROM CD_CELLS.cells_r7 c
 LEFT JOIN CD_OOKLA_MOBILE.ookla_mobile_r7 o ON o.cell_id = c.cell_id
 LEFT JOIN (
-  SELECT cell_id, to_json(collect_list(named_struct('quarter', quarter, 'download_mbps', download_mbps,
-         'tests', tests))) AS history_json
+  SELECT cell_id, to_json(list({{'quarter': quarter, 'download_mbps': download_mbps, 'tests': tests}}))::VARCHAR
+         AS history_json
   FROM CD_OOKLA_MOBILE_HISTORY.ookla_mobile_history_r7 WHERE cell_id = '{cell_id}' GROUP BY cell_id
 ) hst ON hst.cell_id = c.cell_id
 CROSS JOIN (

@@ -1,13 +1,15 @@
-"""Outreach: the recipient table and the composed email (no LLM, Zetaris or Meterless)."""
+"""Outreach: the recipient table, the template letter and the composed email (offline)."""
 
-import json
 from datetime import datetime, timezone
 from urllib.parse import parse_qs, unquote, urlparse
 
+from coverage_detective import diagnosis as D
 from coverage_detective import outreach as O
-from coverage_detective.config import ROOT
 
-RESULT = json.loads((ROOT / "examples" / "great_langdale" / "diagnosis.json").read_text())
+RESULT = {"reference": "871955454ffffff 2026-10-26",
+          "location": {"label": "54.44500, -3.10500", "lat": 54.445, "lon": -3.105, "postcode": "LA22 9JY",
+                       "nearest_postcode": "LA22 9JY", "admin_district": "Westmorland and Furness",
+                       "region": "North West", "country": "England", "cell_id": "871955454ffffff"}}
 LETTER = {
     "subject": "Poor mobile signal at Great Langdale (LA22 9JY)",
     "body_markdown": (
@@ -76,7 +78,7 @@ def test_compose_fills_in_the_recipient_and_produces_a_sendable_message():
     assert "I live at LA22 9JY" in email.body_text                    # [Your address] filled from the run
     assert "[los_ee]" not in email.body_text                          # evidence ids stay in the app
     assert "EE's nearest approximate site is 3.8 km away" in email.body_text
-    assert "Diagnosis reference run_20261027002210_kkcc" in email.body_text
+    assert "Diagnosis reference 871955454ffffff 2026-10-26" in email.body_text
     assert "26 October 2026" in email.body_text
     assert "not a complaint about the council's own service" in email.body_text
     assert "<p>I live at LA22 9JY" in email.body_html and "<li>No Ookla tests" in email.body_html
@@ -140,7 +142,7 @@ def test_a_body_too_long_for_a_mailto_link_is_cut_at_a_line_and_keeps_the_signat
     assert "Paragraph with detail." in body                      # not an empty draft
     assert "use Copy to send the full text" in body
     assert "Reported by a local resident of LA22 9JY" in body    # the signature is never cut
-    assert "Diagnosis reference run_20261027002210_kkcc" in body
+    assert "Diagnosis reference 871955454ffffff 2026-10-26" in body
     assert email.body_text.count("Paragraph with detail.") == 400  # Copy stays complete
 
 
@@ -179,3 +181,20 @@ def test_the_place_is_named_once_by_its_postcode():
     assert O.name_place("at [Your address] (51.93565, 0.59283).", place) == "at [Your address]."
     assert O.fill_placeholders(O.name_place("my address ([Your address], 51.93565, 0.59283)", place), "", "CO9 1TP") \
         == "my address (CO9 1TP)"
+
+
+def test_the_template_letter_quotes_the_evidence_and_lists_its_sources():
+    items = [{"id": "los_ee", "value": {"los_class": "blocked", "blocked": True}, "strength": "strong",
+              "source": "Line of sight over Copernicus DEM GLO-30 (computed)", "sample_size": {},
+              "finding": "The ground rises 260 m above the line to EE's nearest site.", "data_period": "2021",
+              "as_of": "2026-10-25"}]
+    bundle = {"point": RESULT["location"], "items": items, "likely_best": {}, "limitations": []}
+    d = D.diagnose(bundle)
+    letter = O.letter(bundle, d, O.contact_for("Westmorland and Furness", "EE"))
+    body = letter["body_markdown"]
+    assert body.startswith("Dear EE,") and d["headline"] in body and "[Your name]" in body
+    assert "(score 0.70)" in body and "[los_ee]" in body and letter["cited_evidence"] == ["los_ee"]
+    assert "- [los_ee] The ground rises 260 m above the line to EE's nearest site. (Line of sight" in body
+    assert O.ASKS["operator"] in body
+    email = O.compose(RESULT, letter, O.contact_for("Westmorland and Furness", "EE"), sent_by="A. Resident", at=AT)
+    assert "at LA22 9JY in Westmorland and Furness" in email.body_text and "A. Resident" in email.body_text

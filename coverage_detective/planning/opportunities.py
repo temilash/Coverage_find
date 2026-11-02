@@ -1,7 +1,7 @@
 """Improvement opportunities: populated cells that are NOT poorly served (not in a gap zone) but have
 a measurable weakness, clustered into zones the same way as gap zones (>= 50 people per zone).
 
-Reasons per cell (thresholds in config.py; computed here, never by an agent; a cell can have several):
+Reasons per cell (thresholds in config.py; a cell can have several):
   slow           ring speed (>= 10 tests over the cell + its 6 neighbours) below OPP_SHORTFALL x the lower
                  of the local authority median and the UK median (cells with >= 10 tests)
   falling        download fell by >= 30% from the oldest to the latest quarter, >= 3 quarters, >= 10 tests

@@ -1,4 +1,4 @@
-"""Evidence bundle shape and wording, with Zetaris and the DEM mocked and live sources from samples."""
+"""Evidence bundle shape and wording, with the database and the DEM mocked and live sources from samples."""
 
 import pytest
 from fastapi.testclient import TestClient
@@ -39,7 +39,7 @@ def fake(monkeypatch, tmp_path):
                        {"quadkey": "q2", "lat": 52.305, "lon": -3.51, "download_mbps": 25.0, "upload_mbps": 5.0,
                         "latency_ms": 35.0, "tests": 10, "devices": 4, "distance_km": 0.6}]}
 
-    def query(sql, timeout=None):
+    def query(sql, params=None):
         rows = ([state["cell"]] if "FROM CD_CELLS" in sql else state["sites"] if "CD_MASTS_SITES" in sql
                 else state["tiles"] if "CD_OOKLA_MOBILE_TILES" in sql
                 else [{"devices_per_1k_p50": 3.6, "devices_per_1k_p90": 27.3, "download_mbps_p50": 103.0, "cells": 7640}])
@@ -70,8 +70,8 @@ def test_bundle_shape_and_query_log(fake):
     for i in b["items"]:
         assert set(i) == ITEM_KEYS, i["id"]
         assert i["strength"] in ("strong", "moderate", "weak") and i["finding"].endswith((".", ")"))
-    assert [q["id"] for q in b["zetaris_queries"]] == ["Q1", "Q2", "Q3", "Q4"]
-    assert all(q["sql"] for q in b["zetaris_queries"])
+    assert [q["id"] for q in b["queries"]] == ["Q1", "Q2", "Q3", "Q4"]
+    assert all(q["sql"] for q in b["queries"])
     assert "ofcom.org.uk/mobile-coverage-checker" in b["resident_check"]
 
 
@@ -147,7 +147,7 @@ def test_operator_comparison_and_likely_best(fake):
     assert vf["site"]["sources"] == ["Ofcom register"]
     assert ops["EE"]["los"]["class"] == "blocked" and ops["EE"]["los"]["obstruction_m"] == 137.0
     best = b["likely_best"]
-    assert best["operators"] == ["Vodafone"] and best["reviewed_by_agents"] is False
+    assert best["operators"] == ["Vodafone"] and best["label"] == "Rule-based, from line of sight"
     assert best["text"].startswith("Likely best network here: Vodafone") and "No site identified in our data for O2" in best["text"]
 
 

@@ -11,8 +11,8 @@ when a newer release zip is in data/raw/ofcom/ (Ofcom has no API: download it by
 from the Connected Nations pages); cells (WorldPop, ONS) and dem are manual.
 
 A refresh downloads the new raw data (the previous file is kept as *.prev until the new
-one is in, then removed), rebuilds the affected tables, re-registers them in Zetaris
-and updates data/manifest.json (the build scripts write it). Live sources (postcodes,
+one is in, then removed), rebuilds the affected tables (DuckDB reads the new Parquet files
+directly; restart the app to pick them up) and updates data/manifest.json (the build scripts write it). Live sources (postcodes,
 weather, warnings, floods) are fetched at question time and are not handled here.
 """
 
@@ -90,7 +90,6 @@ def check_ookla() -> Status:
 def refresh_ookla() -> None:
     run("scripts/download/ookla.py", "--quarters", "4")
     run("scripts/process/build_ookla.py", "--force")
-    run("scripts/zetaris/register_sources.py", "ookla_mobile", "ookla_mobile_history", "ookla_mobile_tiles")
 
 
 # --- masts: opencellid (weekly) and osm (monthly) ---------------------------------------
@@ -110,7 +109,6 @@ def check_age(files: list[Path], max_days: int) -> Status:
 def refresh_masts(files: list[Path], download_script: str) -> None:
     swap_and_download(files, download_script)
     run("scripts/process/build_masts.py", "--force")  # merges the register too, if built
-    run("scripts/zetaris/register_sources.py", "masts_sites", "masts_cells")
     rebuild_los()
 
 
@@ -118,7 +116,6 @@ def rebuild_los() -> None:
     """Line of sight runs to each cell's nearest site, so it follows the mast tables."""
     if (PROCESSED / "los_r7.parquet").exists():
         run("scripts/process/build_terrain.py", "--los")
-        run("scripts/zetaris/register_sources.py", "los")
 
 
 # --- Ofcom Wireless Telegraphy Register (monthly) -------------------------------------------
@@ -141,7 +138,6 @@ def refresh_wtr() -> None:
     for f in WTR_FILES:
         f.with_name(f.name + ".prev").unlink(missing_ok=True)
     run("scripts/process/build_wtr.py")  # also rebuilds the mast tables
-    run("scripts/zetaris/register_sources.py", "wtr_points", "masts_sites", "masts_cells")
     rebuild_los()
 
 
@@ -161,7 +157,6 @@ def check_ofcom() -> Status:
 
 def refresh_ofcom() -> None:
     run("scripts/process/build_ofcom.py", "--force")
-    run("scripts/zetaris/register_sources.py", "ofcom_area", "ofcom_nations")
 
 
 # --- manual -------------------------------------------------------------------------------

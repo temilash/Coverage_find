@@ -1,10 +1,10 @@
-"""Data report, run through Zetaris: every source with row counts and freshness, one cross-source row per
+"""Data report, run through DuckDB: every table with row counts and freshness, one cross-source row per
 sample place, and the live sources.
 
-    python scripts/check_data.py             # the report -> docs/data_report.md (+ data/check_data_report.json)
-    python scripts/check_data.py --phases    # the older per-phase checks (A, B, E)
+    python scripts/check_data.py             # the report -> docs/data_report.md (+ logs/check_data_report.json)
+    python scripts/check_data.py --phases    # detailed checks: slowest cells, mast sites, Ofcom figures
 
-Row counts and query times come from Zetaris (each source is a separate Lightning database); data
+Row counts and query times come from DuckDB over data/processed/ (one schema per table); data
 periods, build dates, refresh cadence and licences from data/manifest.json.
 """
 
@@ -24,9 +24,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from coverage_detective.config import H3_RES, ROOT, SAMPLE_LOCATIONS  # noqa: E402
 from coverage_detective.data import manifest  # noqa: E402
 from coverage_detective.data.queries import cell_sql  # noqa: E402
-from coverage_detective.data.zetaris import QUERY_LOG, query  # noqa: E402
+from coverage_detective.data.db import QUERY_LOG, query  # noqa: E402
 
-SOURCES = [  # Zetaris database, table, manifest source key, what it is
+SOURCES = [  # schema, table, manifest source key, what it is
     ("CD_CELLS", "cells_r7", "cells", "H3 r7 grid, WorldPop population, nation"),
     ("CD_OOKLA_MOBILE", "ookla_mobile_r7", "ookla", "Ookla mobile speeds per cell, latest quarter"),
     ("CD_OOKLA_MOBILE_HISTORY", "ookla_mobile_history_r7", "ookla", "Ookla speeds per cell and quarter"),
@@ -43,7 +43,6 @@ SOURCES = [  # Zetaris database, table, manifest source key, what it is
     ("CD_OPP_ZONES", "opportunity_zones", "opportunity_zones", "Improvement opportunities"),
     ("CD_OPP_ZONE_CELLS", "opportunity_zone_cells", "opportunity_zones", "Improvement opportunity cells"),
 ]
-LIVE_TABLES = [("CD_LIVE_EA_FLOODS", "floods", "Environment Agency flood warnings (live REST)")]
 
 SLOWEST_SQL = """
 SELECT c.cell_id, c.nation, round(c.lat, 3) AS lat, round(c.lon, 3) AS lon,
@@ -59,12 +58,12 @@ LIMIT 10
 
 
 def table(rows: list[dict], columns: list[str]) -> str:
-    """Rows as text, columns in the given order (Zetaris does not keep SELECT order)."""
+    """Rows as text, columns in the given order."""
     return pd.DataFrame(rows, columns=columns).to_string(index=False)
 
 
 def check_phase_a() -> None:
-    print("Phase A: 10 slowest populated cells with >= 10 tests (CD_CELLS x CD_OOKLA_MOBILE, via Zetaris)")
+    print("Phase A: 10 slowest populated cells with >= 10 tests (CD_CELLS x CD_OOKLA_MOBILE)")
     rows = query(SLOWEST_SQL)
     print(table(rows, ["cell_id", "nation", "lat", "lon", "population", "download_mbps",
                        "upload_mbps", "latency_ms", "tests", "devices", "quarter"]))
@@ -73,26 +72,26 @@ def check_phase_a() -> None:
 
 
 def check_phase_b() -> None:
-    print("\nPhase B: approximate mast sites by source and operator (CD_MASTS_SITES, via Zetaris)")
+    print("\nPhase B: approximate mast sites by source and operator (CD_MASTS_SITES)")
     rows = query("SELECT sources, count(*) AS sites FROM CD_MASTS_SITES.masts_sites GROUP BY sources ORDER BY sites DESC")
     print(table(rows, ["sources", "sites"]))
     rows = query("""
         SELECT a.operator, a.sites, coalesce(c.sites, 0) AS confirmed_by_register
         FROM (SELECT operator, count(*) AS sites
-              FROM (SELECT explode(split(operators, ',')) AS operator FROM CD_MASTS_SITES.masts_sites)
+              FROM (SELECT unnest(string_split(operators, ',')) AS operator FROM CD_MASTS_SITES.masts_sites)
               WHERE operator <> '' GROUP BY operator) a
         LEFT JOIN (SELECT operator, count(*) AS sites
-                   FROM (SELECT explode(split(operators_confirmed, ',')) AS operator FROM CD_MASTS_SITES.masts_sites)
+                   FROM (SELECT unnest(string_split(operators_confirmed, ',')) AS operator FROM CD_MASTS_SITES.masts_sites)
                    WHERE operator <> '' GROUP BY operator) c ON c.operator = a.operator
         ORDER BY a.sites DESC""")
     print(table(rows, ["operator", "sites", "confirmed_by_register"]))
     rows = query("""SELECT licensee, operators, count(*) AS points, count(DISTINCT link_id) AS links,
-                           round(percentile_approx(antenna_height_m, 0.5)) AS median_antenna_height_m
+                           round(quantile_cont(antenna_height_m, 0.5)) AS median_antenna_height_m
                     FROM CD_WTR_POINTS.wtr_points GROUP BY licensee, operators ORDER BY points DESC""")
     print("Ofcom licence register points (CD_WTR_POINTS):")
     print(table(rows, ["licensee", "operators", "points", "links", "median_antenna_height_m"]))
 
-    print("\nPhase B: sample locations (CD_CELLS x CD_OOKLA_MOBILE x CD_MASTS, via Zetaris)")
+    print("\nPhase B: sample locations (CD_CELLS x CD_OOKLA_MOBILE x CD_MASTS)")
     ids = {h3.latlng_to_cell(lat, lon, H3_RES): name for name, lat, lon in SAMPLE_LOCATIONS}
     in_list = ", ".join(f"'{c}'" for c in ids)
     rows = query(f"""
@@ -119,7 +118,7 @@ def check_phase_b() -> None:
 
 
 def check_phase_e() -> None:
-    print("\nPhase E: Ofcom area coverage for the sample locations (CD_OFCOM_AREA, via Zetaris)")
+    print("\nPhase E: Ofcom area coverage for the sample locations (CD_OFCOM_AREA)")
     ids = {h3.latlng_to_cell(lat, lon, H3_RES): name for name, lat, lon in SAMPLE_LOCATIONS}
     in_list = ", ".join(f"'{c}'" for c in ids)
     rows = query(f"""
@@ -153,14 +152,6 @@ def report() -> dict:
                         "as_of": as_of, "age_days": (today - date.fromisoformat(as_of[:10])).days if as_of else None,
                         "refresh": src.get("refresh"), "licence": src.get("licence")})
         print(f"  {db}.{table_name}: {int(n):,} rows ({sources[-1]['query_ms']} ms), {meta.get('data_period')}")
-    live = []
-    for db, table_name, what in LIVE_TABLES:
-        t = time.perf_counter()
-        try:
-            n = query(f"SELECT size(items) AS n FROM {db}.{table_name}")[0]["n"]
-            live.append({"database": db, "table": table_name, "what": what, "items_now": n, "query_ms": round((time.perf_counter() - t) * 1000)})
-        except Exception as e:  # noqa: BLE001
-            live.append({"database": db, "table": table_name, "what": what, "error": str(e)[:160]})
     places = []
     for name, lat, lon in SAMPLE_LOCATIONS:
         cid = h3.latlng_to_cell(lat, lon, H3_RES)
@@ -183,21 +174,19 @@ def report() -> dict:
         live_places.append({"place": name, "geocode": g.status, "weather": f"{w.status}: {w.data.get('severity')}",
                             "met_office": f"{mo.status}: {mo.data.get('count')} warnings ({mo.data.get('region')})",
                             "floods": f"{f.status}: {f.data.get('count')}"})
-    return {"generated": time.strftime("%Y-%m-%d %H:%M"), "sources": sources, "live_tables": live, "places": places,
+    return {"generated": time.strftime("%Y-%m-%d %H:%M"), "sources": sources, "places": places,
             "live_sources": live_places}
 
 
 def markdown(r: dict) -> str:
-    out = [f"# Data report\n\nGenerated {r['generated']} by `scripts/check_data.py`: every query below ran through Zetaris "
-           "(one Lightning database per source). Freshness from `data/manifest.json`.\n",
-           "## Sources\n", "| Zetaris source | Rows | Query | Data period | As of | Age | Refresh | Licence |", "|---|---:|---:|---|---|---:|---|---|"]
+    out = [f"# Data report\n\nGenerated {r['generated']} by `scripts/check_data.py`: every query below ran on DuckDB "
+           "over the Parquet files in data/processed/. Freshness from `data/manifest.json`.\n",
+           "## Sources\n", "| Table | Rows | Query | Data period | As of | Age | Refresh | Licence |", "|---|---:|---:|---|---|---:|---|---|"]
     for s in r["sources"]:
         out.append(f"| `{s['database']}.{s['table']}` ({s['what']}) | {s['rows']:,} | {s['query_ms']} ms | {s['data_period'] or ''} | "
                    f"{s['as_of'] or ''} | {s['age_days'] if s['age_days'] is not None else ''} d | {s['refresh'] or ''} | {s['licence'] or ''} |")
-    for s in r["live_tables"]:
-        out.append(f"| `{s['database']}.{s['table']}` ({s['what']}) | {s.get('items_now', 'error')} now | {s.get('query_ms', '')} ms | live | | | each query | OGL v3 |")
     out += ["\n## Sample places: one cross-source row each\n",
-            "One Zetaris query per place joins cells, Ookla (latest + history + neighbours), masts, Ofcom area, terrain and line of sight.\n",
+            "One query per place joins cells, Ookla (latest + history + neighbours), masts, Ofcom area, terrain and line of sight.\n",
             "| Place | People | Mbps | Tests | Quarters | Nearest site | Sites in 5 km | Operators | Operator data | Council | 4G not-spot land | Elevation | Line of sight (cell centre) | Query |",
             "|---|---:|---:|---:|---:|---:|---:|---|---|---|---:|---:|---|---:|"]
     f = lambda v, d=1: "" if v is None else (f"{v:,.{d}f}" if isinstance(v, (int, float)) else str(v))  # noqa: E731
@@ -218,7 +207,8 @@ def main() -> None:
         check_phase_e()
         return
     r = report()
-    (ROOT / "data" / "check_data_report.json").write_text(json.dumps(r, indent=1, default=str))
+    (ROOT / "logs").mkdir(exist_ok=True)
+    (ROOT / "logs" / "check_data_report.json").write_text(json.dumps(r, indent=1, default=str))
     md = markdown(r)
     (ROOT / "docs").mkdir(exist_ok=True)
     (ROOT / "docs" / "data_report.md").write_text(md)

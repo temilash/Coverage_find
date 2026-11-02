@@ -1,17 +1,17 @@
-"""Outreach check: the recipient table, and the email composed from a saved run.
+"""Outreach check: the recipient table, and the email composed from a sample diagnosis.
 
-    python scripts/check_outreach.py                 # table + a real saved run (Great Langdale)
-    python scripts/check_outreach.py --run <full.json> --to EE
+    python scripts/check_outreach.py                          # table + the email for Great Langdale (offline)
+    python scripts/check_outreach.py --lat 52.30 --lon -3.51 --to all
 
-Needs no Zetaris, no LLM and no Meterless: it reads examples/*/*.full.json (or a run export you
-pass) and composes from a letter written the way the letter writer writes one. Use it after
-editing data/reference/*_contacts.csv, before a demo, and when a council's address changes.
+Runs offline in sample mode: the evidence bundle and diagnosis come from the committed extracts, and the
+letter is the fixed template (outreach.letter). Use it after editing data/reference/*_contacts.csv and
+when a council's address changes. The point must lie inside the sample extracts.
 """
 
 from __future__ import annotations
 
 import argparse
-import json
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -19,10 +19,12 @@ from urllib.parse import unquote, urlparse
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+os.environ.setdefault("SAMPLE_MODE", "1")  # before the package reads the environment
+
+from coverage_detective import diagnosis as D  # noqa: E402
+from coverage_detective import evidence as ev  # noqa: E402
 from coverage_detective import outreach as O  # noqa: E402
 from coverage_detective.config import ROOT  # noqa: E402
-
-DEFAULT_RUN = ROOT / "examples" / "great_langdale" / "diagnosis.json"
 
 
 def check_table() -> int:
@@ -53,22 +55,16 @@ def check_table() -> int:
     return problems
 
 
-def check_email(result: dict, evidence: list[dict], to: str, sent_by: str) -> int:
-    district = (result.get("location") or {}).get("admin_district") or (result.get("zone") or {}).get("council")
+def check_email(bundle: dict, diagnosis: dict, to: str, sent_by: str) -> int:
+    point = bundle["point"]
+    district = point.get("admin_district")
     contact = O.contact_for(district, to)
+    result = {"location": point, "reference": f"{bundle['cell_id']} {bundle['generated_at'][:10]}"}
     place = O.place_of(result)
-    print(f"\nRun {result.get('run_id')}  ({place['postcode'] or place['label']}, {district}) -> {contact.name}")
+    print(f"\n{place['postcode'] or place['label']} ({district}) -> {contact.name}")
     print(f"  routes: {', '.join(f'{r.kind}: {r.value}' for r in contact.routes)}")
-    letter = {
-        "subject": f"Poor mobile signal at {place['postcode'] or place['label']}",
-        "body_markdown": (f"# Mobile signal at {place['postcode'] or place['label']}\n\n"
-                          "I live at [Your address] and the signal at my home is poor "
-                          f"{''.join(f'[{i['evidence_id']}]' for i in evidence[:2])}.\n\n"
-                          "**What the public data shows**\n\n- See the evidence listed below\n\n"
-                          "Please review 4G coverage here and tell me whether an upgrade is planned.\n\n"
-                          "---\n**Evidence and sources**\n\n" + _annex(evidence)),
-    }
-    email = O.compose(result, letter, contact, sent_by=sent_by, at=datetime.now(timezone.utc))
+    email = O.compose(result, O.letter(bundle, diagnosis, contact), contact, sent_by=sent_by,
+                      at=datetime.now(timezone.utc))
     print(f"  to: {email.to or '(none published)'}   channel: {email.channel}   "
           f"mailto: {len(email.mailto)} chars{' (cut at a line: Copy carries the rest)' if email.truncated else ''}")
     if email.mailto:
@@ -84,43 +80,23 @@ def check_email(result: dict, evidence: list[dict], to: str, sent_by: str) -> in
     return 0
 
 
-def _evidence(path: Path) -> list[dict]:
-    """The evidence items next to the run (examples/<id>/evidence.json: a list, or an export with one)."""
-    if not path.exists():
-        return []
-    data = json.loads(path.read_text())
-    return data if isinstance(data, list) else (data.get("evidence") or [])
-
-
-def _annex(evidence: list[dict]) -> str:
-    lines = []
-    for item in evidence:
-        lines.append(f"- [{item['evidence_id']}] {item.get('finding')} ({item.get('source')}; "
-                     f"data {item.get('data_period')}, as of {str(item.get('as_of') or '')[:10]})")
-    return "\n".join(lines) or "- (no evidence export next to this run)"
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--run", type=Path, default=DEFAULT_RUN, help="a run result (examples/<id>/diagnosis.json)")
-    parser.add_argument("--to", default="council", help="council, EE, O2, Three or Vodafone")
+    parser.add_argument("--lat", type=float, default=54.445, help="a point inside the sample extracts")
+    parser.add_argument("--lon", type=float, default=-3.105)
+    parser.add_argument("--to", default="council", help="council, EE, O2, Three, Vodafone or all")
     parser.add_argument("--sent-by", default="", help="the resident's name for the signature")
     args = parser.parse_args()
 
     problems = check_table()
-    result = json.loads(args.run.read_text())
-    result = result.get("result", result)          # a bare result, or a run file that wraps one
-    evidence = _evidence(args.run.with_name("evidence.json"))
-    if result:
-        for to in ("council", "EE", "O2", "Three", "Vodafone") if args.to == "all" else (args.to,):
-            try:
-                problems += check_email(result, evidence, to, args.sent_by)
-            except LookupError as e:
-                print(f"\nFAIL {to}: {e}")
-                problems += 1
-    else:
-        print(f"\nFAIL {args.run}: no result in this file")
-        problems += 1
+    bundle = ev.build_bundle(lat=args.lat, lon=args.lon)
+    diagnosis = D.diagnose(bundle)
+    for to in ("council", "EE", "O2", "Three", "Vodafone") if args.to == "all" else (args.to,):
+        try:
+            problems += check_email(bundle, diagnosis, to, args.sent_by)
+        except LookupError as e:
+            print(f"\nFAIL {to}: {e}")
+            problems += 1
     print(f"\n{'FAIL' if problems else 'OK'}: {problems} problem(s)")
     return 1 if problems else 0
 

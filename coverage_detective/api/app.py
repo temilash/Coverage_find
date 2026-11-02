@@ -1,22 +1,21 @@
 """Data explorer API and web app.
 
-    python run.py                     # checks Zetaris, then serves on http://localhost:8000
+    python run.py                     # checks the data, then serves on http://localhost:8000
 
 Routes:
-  GET /health                  server, layers and Zetaris status
+  GET /health                  server, layers and data status
   GET /api/layers              map layers (from data/web/layers/index.json)
   GET /api/layer/{name}        [cell_id, value(, weak)] for every cell with a value
   GET /api/masts?bbox=         approximate mast sites in a bbox (max 5,000)
   GET /api/tiles?bbox=         Ookla tiles (latest quarter) in a small bbox
-  GET /api/cell/{cell_id}      everything about one cell, via one Zetaris query
+  GET /api/cell/{cell_id}      everything about one cell, via one DuckDB query
   GET /api/geocode?q=          postcode or place name (postcodes.io)
   GET /api/geocode/reverse     nearest postcode to ?lat=&lon=
   GET /api/live?lat=&lon=      live context: weather, Met Office warnings, EA flood warnings
   GET /api/los?lat=&lon=(&site_id=)  line of sight from the exact point to a site (default nearest)
-  POST /api/evidence           evidence bundle for {"query": postcode or place} or {"lat", "lon"}
-  POST /api/diagnose           start an agent diagnosis -> run_id (api/agents.py; also zone runs,
-  GET  /api/runs/{run_id}      letters and the council priority summary)
-  POST /run                    one call: {lat, lon} | {place} | {zone} -> waits, returns the diagnosis as JSON
+  POST /api/evidence           evidence bundle for {"query": postcode or place} or {"lat", "lon"}, with its
+                               rule-based diagnosis
+  POST /api/diagnose           the diagnosis alone (api/diagnosis.py; also the outreach email)
   /                            the data explorer (web/index.html)
   /signal                      My signal: evidence for one exact point (web/signal.html)
   /council                     Council view: ranked gap zones (web/council.html; API in api/council.py)
@@ -33,19 +32,16 @@ from functools import lru_cache
 import h3
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Query
-from pydantic import BaseModel, Field, model_validator
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from coverage_detective.config import H3_RES, PROCESSED, ROOT, SAMPLES, sample_mode
-from coverage_detective import evidence as evidence_bundle
-from coverage_detective.api.agents import router as agents_router, run_router
+from coverage_detective.config import H3_RES, ROOT, sample_mode
+from coverage_detective.api.diagnosis import PointRequest, bundle_for
+from coverage_detective.api.diagnosis import router as diagnosis_router
 from coverage_detective.api.council import router as council_router
-from coverage_detective.config import UK_BBOX
-from coverage_detective.data import manifest, sample_db, terrain
+from coverage_detective.data import db, manifest, terrain
 from coverage_detective.data.queries import cell_sql
-from coverage_detective.data.zetaris import QUERY_LOG, ZetarisError, explain, query
-from coverage_detective.data.zetaris import status as zetaris_status
+from coverage_detective.data.db import QUERY_LOG, DBError, query
 from coverage_detective.sources import flood_warnings, geocode as geocoder, live as live_sources
 from coverage_detective.sources import met_office_warnings, weather
 
@@ -56,16 +52,15 @@ MAX_TILE_BBOX_DEG2 = 0.6  # tiles only when zoomed in
 
 app = FastAPI(title="Coverage Detective data explorer")
 app.include_router(council_router)
-app.include_router(agents_router)
-app.include_router(run_router)
+app.include_router(diagnosis_router)
 
 
 # --- static data held in memory ------------------------------------------------------------
 
 
 def _data_file(name: str):
-    """data/processed/<name>, or in sample mode the committed extract (sample_data/zetaris/<name>)."""
-    return SAMPLES / "zetaris" / name if sample_mode() else PROCESSED / name
+    """data/processed/<name>, or in sample mode the committed extract (sample_data/db/<name>)."""
+    return db.data_dir() / name
 
 
 @lru_cache(maxsize=1)
@@ -108,9 +103,8 @@ def _bbox(bbox: str) -> tuple[float, float, float, float]:
 
 @app.get("/health")
 def health() -> dict:
-    zetaris = zetaris_status()
     layers = len(json.loads((LAYERS_DIR / "index.json").read_text())) if (LAYERS_DIR / "index.json").exists() else 0
-    return {"status": "ok", "layers": layers, "zetaris": zetaris, "sample_mode": sample_mode()}
+    return {"status": "ok", "layers": layers, "data": db.status(), "sample_mode": sample_mode()}
 
 
 @app.get("/api/layers")
@@ -160,9 +154,9 @@ def cell(cell_id: str) -> dict:
         raise HTTPException(400, f"{cell_id!r} is not an H3 resolution-{H3_RES} cell")
     sql, tables = cell_sql(cell_id)
     try:
-        rows = query(sql, timeout=60)
-    except ZetarisError as e:
-        raise HTTPException(502, f"Zetaris query failed: {explain(e)}") from e
+        rows = query(sql)
+    except DBError as e:
+        raise HTTPException(502, f"Query failed: {e}") from e
     if not rows:
         raise HTTPException(404, f"Cell {cell_id} is not in the UK grid")
     data = rows[0]
@@ -177,7 +171,7 @@ def cell(cell_id: str) -> dict:
             data_dates[t] = manifest.evidence_meta(t)
         except KeyError:
             pass
-    return {"cell": data, "zetaris": {"sql": sql, "duration_ms": log["duration_ms"], "rows": log["rows"]},
+    return {"cell": data, "query": {"sql": sql, "duration_ms": log["duration_ms"], "rows": log["rows"]},
             "data_dates": data_dates}
 
 
@@ -217,37 +211,21 @@ def los(lat: float = Query(..., ge=49, le=61.5), lon: float = Query(..., ge=-9, 
     return {"lat": lat, "lon": lon, "site": site, **result}
 
 
-class EvidenceRequest(BaseModel):
-    query: str | None = Field(None, min_length=2, max_length=100, description="UK postcode or place name")
-    lat: float | None = Field(None, ge=UK_BBOX["min_lat"], le=UK_BBOX["max_lat"])
-    lon: float | None = Field(None, ge=UK_BBOX["min_lon"], le=UK_BBOX["max_lon"])
-
-    @model_validator(mode="after")
-    def one_location(self):
-        if not self.query and (self.lat is None or self.lon is None):
-            raise ValueError('give "query", or both "lat" and "lon"')
-        return self
-
-
 @app.post("/api/evidence")
-def evidence(req: EvidenceRequest) -> dict:
-    """Evidence bundle for a point: Zetaris queries (logged in the bundle), line of sight, live sources."""
-    if sample_mode() and req.lat is not None and not sample_db.covers(req.lat, req.lon):
-        raise HTTPException(404, sample_db.coverage_message())
-    try:
-        return evidence_bundle.build_bundle(req.query, req.lat, req.lon)
-    except LookupError as e:
-        raise HTTPException(404, str(e) + " (sample mode: search works for the example places only, e.g. CO9 1TP, Great Langdale, WC2N 5DU, Rhayader, Sutton St Edmund)" if sample_mode() else "") from e
+def evidence(req: PointRequest) -> dict:
+    """Evidence bundle for a point (DuckDB queries logged in the bundle, line of sight, live sources) and its
+    rule-based diagnosis."""
+    return bundle_for(req)
 
 
-def live_context(lat: float, lon: float, flood_via: str = "api") -> dict:
+def live_context(lat: float, lon: float) -> dict:
     """Weather, Met Office warnings and EA flood warnings for a point, fetched in parallel."""
     place_res = geocoder.reverse(lat, lon)
     place = place_res.data.get("nearest")
     with ThreadPoolExecutor(max_workers=3) as pool:
         w = pool.submit(weather.forecast, lat, lon)
         m = pool.submit(met_office_warnings.for_place, place, lat, lon)
-        f = pool.submit(flood_warnings.near, lat, lon, place and place.get("country"), flood_via)
+        f = pool.submit(flood_warnings.near, lat, lon, place and place.get("country"))
         w, m, f = w.result(), m.result(), f.result()
     calm = (w.data.get("severity") == "none" and m.data.get("count") == 0 and f.data.get("count") in (0, None)
             and "unavailable" not in (w.status, m.status, f.status))
@@ -262,9 +240,8 @@ def live_context(lat: float, lon: float, flood_via: str = "api") -> dict:
 
 
 @app.get("/api/live")
-def live(lat: float = Query(..., ge=49, le=61.5), lon: float = Query(..., ge=-9, le=2.5),
-         flood_via: str = Query("api", pattern="^(api|zetaris)$")) -> dict:
-    return live_context(lat, lon, flood_via)
+def live(lat: float = Query(..., ge=49, le=61.5), lon: float = Query(..., ge=-9, le=2.5)) -> dict:
+    return live_context(lat, lon)
 
 
 @app.get("/signal", include_in_schema=False)

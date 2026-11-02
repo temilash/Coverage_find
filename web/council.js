@@ -1,6 +1,6 @@
 /* Council view: gap zones and improvement opportunities on the map now (GET /api/council/view; zoom caps in
-   config.COUNCIL_VIEW), ranked by a transparent score with adjustable weights; a zone panel with the agents'
-   diagnosis (tabs from agents.js) and a fix view (candidate sites, cell outcomes, Today / With candidate). */
+   config.COUNCIL_VIEW), ranked by a transparent score with adjustable weights; a zone panel with the zone's figures,
+   its rule-based fix and a fix view (candidate sites, cell outcomes, Today / With candidate). */
 "use strict";
 
 const BASEMAP = "https://tiles.openfreemap.org/styles/positron";
@@ -41,7 +41,7 @@ const isOpp = (id) => String(id || "").startsWith("O");
 
 const state = {
   scope: "uk", pick: "view", show: "both", weights: { ...DEFAULT_WEIGHTS }, oppWeights: { ...DEFAULT_OPP_WEIGHTS }, wKind: "gap",
-  view: null, request: 0, zone: null, detail: null, run: null, runId: null, panel: null, prevView: null, queue: null,
+  view: null, request: 0, zone: null, detail: null, panel: null, prevView: null,
   fix: { cand: null, chosen: false, mode: "today", showAll: false, hover: null },
 };
 
@@ -94,17 +94,13 @@ const distM = (a, b) => {
   return Math.hypot(x, y) * 111320;
 };
 
-/* The selected candidate: the user's choice, else the agents' pick, else candidate 1. */
-function agentPickIndex() {
-  const f = state.run?.result?.fix_plan;
-  if (!f || !f.candidate || state.run.result.zone?.zone_id !== state.zone) return null;
-  const n = Number(String(f.candidate).replace("cand_", ""));
-  return Number.isFinite(n) ? n - 1 : null;
-}
+/* The rule's pick: candidates come ranked by the people in the zone who gain a clear line (planning/siting.py).
+   The selected candidate is the user's choice, else the rule's pick. */
+const RULE_PICK = 0;
 function selectedCandidate() {
   const d = state.detail;
   if (!d || !d.candidates.length) return null;
-  const i = Math.min(state.fix.chosen ? state.fix.cand : (agentPickIndex() ?? 0), d.candidates.length - 1);
+  const i = Math.min(state.fix.chosen ? state.fix.cand : RULE_PICK, d.candidates.length - 1);
   return { ...d.candidates[i], index: i };
 }
 
@@ -150,7 +146,7 @@ function fixLayers() {
   const cand = selectedCandidate();
   const withCand = state.fix.mode === "with" && cand;
   const cells = outcomes(withCand ? cand : null);
-  const pick = agentPickIndex();
+  const pick = RULE_PICK;
   const out = [];
   out.push(new deck.H3HexagonLayer({
     id: "fix-cells", data: cells, getHexagon: (c) => c.cell_id, extruded: false, coverage: 1, stroked: true,
@@ -284,7 +280,7 @@ function renderLegend() {
         <li><span class="swatch hatch"></span>Still blocked</li><li><span class="swatch" style="background:${MUTED}"></span>Not tested</li>`
         : opp ? `<li><span class="swatch" style="background:#99F6E4"></span>Cell with a measurable weakness</li>`
         : `<li><span class="swatch" style="background:#FDBA74"></span>Poorly served cell (today)</li>`}
-      <li><span class="pin-swatch"></span>Candidate site (number); <span class="star">★</span> the agents' recommendation</li>
+      <li><span class="pin-swatch"></span>Candidate site (number); <span class="star">★</span> most people in the zone gain a clear line</li>
       <li><span class="ring-swatch"></span>Approximate site area (about 250 m)</li>
       <li><span class="dot existing-dot"></span>Existing site (ring: operator)</li></ul>`;
   } else {
@@ -318,7 +314,7 @@ function selectCandidate(i, focus = true) {
   state.fix.mode = "with";
   render();
   renderLegend();
-  view.render();
+  renderZone();
   if (focus) fitZone(true);
 }
 
@@ -379,16 +375,15 @@ function rowHTML(z) {
       ${opp ? `<span class="reason-tags">${z.reasons.map((r) => `<span class="cause-tag">${REASON_TAGS[r]}</span>`).join("")}</span>` : ""}</td>
     <td class="num">${fmt(z.people, 0)}</td>
     <td class="num">${z.median_speed_mbps === null ? "–" : fmt(z.median_speed_mbps, 1)}<span class="zone-sub">${fmt(z.tests, 0)} test${z.tests === 1 ? "" : "s"}</span></td>
-    <td class="score-cell"><strong>${fmt(z.score, 1)}</strong>${bar(z.breakdown, opp)}</td>
-    <td class="act"><button type="button" class="row-diagnose" data-diagnose="${z.zone_id}">Diagnose</button></td></tr>`;
+    <td class="score-cell"><strong>${fmt(z.score, 1)}</strong>${bar(z.breakdown, opp)}</td></tr>`;
 }
 
 function sectionHTML(title, part, hiddenNote) {
   const head = `<thead><tr><th>#</th><th>${title}</th><th class="num" title="People in the zone's cells">People</th>
     <th class="num" title="Median download speed of the zone's cells (Mbps), latest quarter; tests below">Mbps</th>
-    <th title="Score, 0 to 100 within the chosen area">Score</th><th></th></tr></thead>`;
-  const rows = part.zones.length ? part.zones.map(rowHTML).join("") : `<tr><td colspan="6" class="empty">${hiddenNote || "None in view."}</td></tr>`;
-  return `<table class="zones"><colgroup><col class="c-rank"><col><col class="c-num"><col class="c-num"><col class="c-score"><col class="c-act"></colgroup>
+    <th title="Score, 0 to 100 within the chosen area">Score</th></tr></thead>`;
+  const rows = part.zones.length ? part.zones.map(rowHTML).join("") : `<tr><td colspan="5" class="empty">${hiddenNote || "None in view."}</td></tr>`;
+  return `<table class="zones"><colgroup><col class="c-rank"><col><col class="c-num"><col class="c-num"><col class="c-score"></colgroup>
     ${head}<tbody>${rows}</tbody></table>`;
 }
 
@@ -407,13 +402,12 @@ function renderList() {
     summary.push(`<strong>${fmt(o.in_view, 0)} improvement opportunit${o.in_view === 1 ? "y" : "ies"}</strong> in view${zoomedOut ? " (zoom in to list them)" : o.shown < o.in_view ? `, top ${o.shown} listed` : ""}`);
     parts.push(sectionHTML("Improvement opportunities", o, zoomedOut ? `Zoom in to level ${OPP_ZOOM} or closer to list improvement opportunities.` : ""));
   }
-  $("list-summary").innerHTML = `${summary.join(" · ")}. <span class="muted">${esc(pickLabel())}; ${v.duration_ms} ms through Zetaris.</span>`;
+  $("list-summary").innerHTML = `${summary.join(" · ")}. <span class="muted">${esc(pickLabel())}; ${v.duration_ms} ms (DuckDB).</span>`;
   $("list").innerHTML = parts.join("");
   $("list").querySelectorAll("tr[data-zone]").forEach((tr) => {
-    tr.addEventListener("click", (e) => { if (!e.target.closest("button")) openZone(tr.dataset.zone); });
+    tr.addEventListener("click", () => openZone(tr.dataset.zone));
     tr.addEventListener("keydown", (e) => { if (e.key === "Enter") openZone(tr.dataset.zone); });
   });
-  $("list").querySelectorAll("[data-diagnose]").forEach((b) => b.addEventListener("click", () => openZone(b.dataset.diagnose, null, true)));
   const notes = v.notes || [];
   $("map-note").hidden = !notes.length;
   $("map-note").innerHTML = notes.map(esc).join("<br>");
@@ -421,7 +415,6 @@ function renderList() {
   tog.checked = state.show !== "gaps";
   tog.disabled = map.getZoom() < OPP_ZOOM;
   $("opp-toggle-wrap").title = tog.disabled ? `Zoom in to level ${OPP_ZOOM} to see improvement opportunities` : "";
-  $("top3-btn").disabled = !listedZones().length || !!state.queue;
 }
 
 const listedZones = () => [...(state.show !== "opportunities" ? state.view?.gaps.zones || [] : []),
@@ -537,17 +530,15 @@ document.querySelectorAll("#show-seg [data-show]").forEach((b) => b.addEventList
 $("opp-toggle").addEventListener("change", (e) => setShow(e.target.checked ? "both" : "gaps"));
 document.querySelectorAll("#weights-seg [data-w]").forEach((b) => b.addEventListener("click", () => { state.wKind = b.dataset.w; renderSliders(); }));
 
-/* ---------- right panel: zone (tabs: Result / How the agents decided / Evidence) or priority summary ---------- */
-
-const mainReason = (z) => Object.entries(z.people_by_reason).sort((a, b) => b[1] - a[1])[0];
+/* ---------- right panel: the zone's rule-based fix, candidate sites and figures ---------- */
 
 function candidateCardsHTML() {
   const d = state.detail;
   if (!d || !d.candidates.length) return "";
-  const pick = agentPickIndex(), sel = selectedCandidate();
+  const pick = RULE_PICK, sel = selectedCandidate();
   return `<h3 class="rp-h">Candidate sites</h3><div class="cand-cards">${d.candidates.map((c, i) => `
     <button type="button" class="cand-card ${sel && sel.index === i && state.fix.mode === "with" ? "active" : ""}" data-cand="${i}">
-      <span class="cand-top"><span class="cand-n">${i + 1}</span>${i === pick ? `<span class="badge">★ Recommended</span>` : ""}</span>
+      <span class="cand-top"><span class="cand-n">${i + 1}</span>${i === pick ? `<span class="badge">★ Most people gain a line</span>` : ""}</span>
       <span class="cand-big">${fmt(c.people_reached, 0)} <small>people reached</small></span>
       <span class="muted">${fmt(c.zone_people_gaining, 0)} in this zone · nearest existing site ${c.nearest_existing_km == null ? "–" : `${fmt(c.nearest_existing_km, 1)} km`} · ground ${fmt(c.ground_m, 0)} m</span>
     </button>`).join("")}</div>
@@ -571,199 +562,54 @@ function zoneFiguresHTML(d) {
     <p class="zone-links"><a href="${z.links.explore}">See its cells in Explore</a><a href="${z.links.signal}">My signal at its centre</a></p>`;
 }
 
-function fixCardHTML(run) {
-  const f = run.result?.fix_plan, d = state.detail;
-  if (!f || !d) return candidateCardsHTML();
-  const opp = d.zone_type === "opportunity";
-  const v = f.candidate_values || {};
-  const n = f.candidate ? Number(String(f.candidate).replace("cand_", "")) : null;
-  const cand = n ? d.candidates[n - 1] : null;
-  const where = n ? `Candidate ${n}: high ground at ${fmt(v.ground_m, 0)} m${cand ? (cand.in_zone ? " inside the zone" : " next to the zone") : ""}, starred on the map`
-    : "No single site chosen";
-  const tests = d.fix.why.find((w) => /test/i.test(w));
-  const NEXT = { new_site: "Check the site on the ground (planning, land, power) before approaching the operators.",
-    add_operators: "Ask the operators without a site nearby about sharing the existing site.",
-    capacity_upgrade: "Share the measured weakness with the operators and ask about capacity plans.",
-    gather_data: "Collect measurements (drive tests or operator data) before deciding." };
-  const next = d.fix.secondary_label ? `${d.fix.secondary_label}${tests ? `: ${tests.charAt(0).toLowerCase()}${tests.slice(1)}` : "."}`
-    : NEXT[f.fix_type] || NEXT.new_site;
-  const review = f.review ? `The Critic ${f.review.verdict === "approve" ? "approved" : "did not approve"} this plan${f.revisions ? ` after ${f.revisions} revision${f.revisions > 1 ? "s" : ""}` : ""}.` : "";
+const NEXT = { new_site: "Check the site on the ground (planning, land, power) before approaching the operators.",
+  add_operators: "Ask the operators without a site nearby about sharing the existing site.",
+  capacity_upgrade: "Share the measured weakness with the operators and ask about capacity plans.",
+  gather_data: "Collect measurements (drive tests or operator data) before deciding." };
+
+function fixCardHTML(d) {
+  const f = d.fix, opp = d.zone_type === "opportunity";
+  const cand = d.candidates.length ? d.candidates[RULE_PICK] : null;
+  const tests = f.why.find((w) => /test/i.test(w));
+  const next = f.secondary_label ? `${f.secondary_label}${tests ? `: ${tests.charAt(0).toLowerCase()}${tests.slice(1)}` : "."}`
+    : NEXT[f.type] || NEXT.new_site;
   return `<div class="rp-card fix-card">
-    <p class="rp-label">${opp ? "Suggested improvement (an opportunity, not a confirmed gap)" : "Recommended fix"}</p>
-    <p class="fix-title">${esc(FIX_LABELS[f.fix_type] || f.fix_type)}</p>
+    <p class="rp-label">${opp ? "Suggested improvement (an opportunity, not a confirmed gap)" : "Suggested fix"} · rule-based</p>
+    <p class="fix-title">${esc(f.label)}</p>
     <dl class="fix-dl">
-      <dt>Where</dt><dd>${esc(where)}</dd>
-      ${v.zone_people_gaining !== undefined ? `<dt>People reached</dt><dd><strong>${fmt(v.zone_people_gaining, 0)} of ${fmt(d.zone.people, 0)}</strong> people in the zone
-        would gain a clear line of sight (${fmt(v.people_reached, 0)} people reached in all)</dd>` : ""}
+      ${cand ? `<dt>Best candidate</dt><dd>Candidate 1: high ground at ${fmt(cand.ground_m, 0)} m${cand.in_zone ? " inside the zone" : " next to the zone"},
+        starred on the map</dd>
+        <dt>People reached</dt><dd><strong>${fmt(cand.zone_people_gaining, 0)} of ${fmt(d.zone.people, 0)}</strong> people in the zone
+        would gain a clear line of sight (${fmt(cand.people_reached, 0)} people reached in all)</dd>` : ""}
       ${opp ? `<dt>Weakness</dt><dd>${esc(d.zone.reasons.map((r) => REASON_TAGS[r]).join(", "))}</dd>` : ""}
-      <dt>Assumptions</dt><dd>${esc((f.assumptions || []).map(AG.plain).join("; "))}</dd>
+      <dt>Why</dt><dd>${esc(f.why.join(" "))}</dd>
       <dt>Suggested next step</dt><dd>${esc(next)}</dd>
     </dl>
-    ${review ? `<p class="muted">${esc(review)}</p>` : ""}</div>${candidateCardsHTML()}`;
+    <p class="muted">Line of sight over the terrain model, from an assumed 25 m mast to people at 1.5 m: not a radio coverage
+      prediction.</p></div>`;
 }
 
-function zoneAfterWhy() {
-  return `<div class="rp-actions"><button type="button" class="secondary" id="zone-diagnose">Diagnose again</button></div>
-    <details class="more-block"><summary>Zone figures</summary>${state.detail ? zoneFiguresHTML(state.detail) : ""}</details>`;
+function zonePanelHTML(d) {
+  return `${fixCardHTML(d)}${candidateCardsHTML()}
+    <h3 class="rp-h">Zone figures</h3>${zoneFiguresHTML(d)}
+    <details class="ev-sql"><summary>Data details: ${d.queries.length} queries · ${d.duration_ms} ms (planning ${d.planning_ms} ms)</summary>
+    ${d.queries.map((q) => `<p class="muted">${q.rows} rows · ${q.duration_ms} ms</p><pre class="sql">${esc(q.sql)}</pre>`).join("")}</details>`;
 }
 
-function zoneIdle() {
-  if (!state.detail) return `<p class="muted">Loading the zone and checking candidate sites…</p>`;
-  const opp = state.detail.zone_type === "opportunity";
-  return `<div class="rp-card cta"><p class="rp-label">Ask the agents</p>
-      <p>They diagnose ${opp ? "the weakness behind this improvement opportunity" : "the zone's main cause"} in rounds (the Critic can ask for
-      more checks), then the Fix planner proposes ${opp ? "an upgrade" : "a fix"} and the Critic reviews it. About two minutes.</p>
-      <button type="button" class="primary" id="zone-diagnose">Diagnose ${opp ? "opportunity" : "zone"} (agents)</button></div>
-    ${candidateCardsHTML()}
-    <h3 class="rp-h">Zone figures</h3>${zoneFiguresHTML(state.detail)}`;
+function renderZone() {
+  if (state.panel !== "zone") return;
+  if (!state.detail) {
+    $("panel-body").innerHTML = `<p class="muted">Loading the zone and checking candidate sites…</p>`;
+    return;
+  }
+  $("panel-body").innerHTML = zonePanelHTML(state.detail);
+  $("panel-body").querySelectorAll("[data-cand]").forEach((c) => c.addEventListener("click", () => selectCandidate(Number(c.dataset.cand))));
 }
 
-function zoneEvidenceExtra(run) {
-  const d = state.detail;
-  if (!d) return "";
-  return `${run ? "" : `<h3 class="rp-h">Zone figures (computed)</h3><ul class="plain-list">${d.summary.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>`}
-    <details class="ev-sql"><summary>Data details: ${d.zetaris_queries.length} Zetaris queries · ${d.duration_ms} ms (planning ${d.planning_ms} ms)</summary>
-    ${d.zetaris_queries.map((q) => `<p class="muted">${q.rows} rows · ${q.duration_ms} ms</p><pre class="sql">${esc(q.sql)}</pre>`).join("")}</details>`;
-}
-
-const view = AG.runView($("rp-tabs"), $("panel-body"), {
-  idle: zoneIdle, afterHeadline: fixCardHTML, afterWhy: zoneAfterWhy, evidenceExtra: zoneEvidenceExtra,
-  onRender: () => {
-    const b = $("zone-diagnose");
-    if (b) { b.addEventListener("click", diagnoseZone); b.disabled = AG.running(state.run); }
-    $("panel-body").querySelectorAll("[data-cand]").forEach((c) => c.addEventListener("click", () => selectCandidate(Number(c.dataset.cand))));
-  },
-});
-
-function setHeader(title, sub, tabs = true) {
+function setHeader(title, sub) {
   $("rp-title").textContent = title;
   $("rp-sub").innerHTML = sub;
-  $("rp-tabs").hidden = !tabs;
 }
-
-function renderZoneRun(run) {
-  state.run = run;
-  view.setRun(run);
-  if (!AG.running(run)) { render(); renderLegend(); }
-}
-
-async function attachZoneRun(runId) {
-  state.runId = runId;
-  syncUrl();
-  try {
-    await AG.poll(runId, renderZoneRun, () => state.runId === runId);
-  } catch (e) {
-    $("panel-body").innerHTML = `<p class="error">Could not follow the run: ${esc(e.message)}</p>`;
-  }
-}
-
-async function startRun(zoneId) {
-  return AG.post(`/api/council/zones/${zoneId}/diagnose`, { zone_type: isOpp(zoneId) ? "opportunity" : "gap" });
-}
-
-async function diagnoseZone() {
-  const zoneId = state.zone;
-  if ($("zone-diagnose")) $("zone-diagnose").disabled = true;
-  try {
-    const r = await startRun(zoneId);
-    if (state.zone === zoneId) await attachZoneRun(r.run_id);
-  } catch (e) {
-    $("panel-body").insertAdjacentHTML("afterbegin", `<p class="error">Could not start the agents: ${esc(e.message)}</p>`);
-    if ($("zone-diagnose")) $("zone-diagnose").disabled = false;
-  }
-}
-
-/* ---------- "Diagnose the top 3 in view": one at a time, with the progress strip ---------- */
-
-async function diagnoseTop3() {
-  const zones = listedZones().slice(0, 3);
-  if (!zones.length || state.queue) return;
-  state.queue = zones.map((z) => ({ zone: z, status: "waiting", run: null, runId: null }));
-  $("top3-btn").disabled = true;
-  renderQueue();
-  for (const item of state.queue) {
-    item.status = "running";
-    renderQueue();
-    try {
-      const r = await startRun(item.zone.zone_id);
-      item.runId = r.run_id;
-      item.run = await AG.poll(r.run_id, (run) => { item.run = run; renderQueue(); });
-      item.status = item.run?.status || "complete";
-    } catch (e) {
-      item.status = "failed";
-      item.error = e.message;
-    }
-    renderQueue();
-  }
-  const done = state.queue;
-  state.queue = null;
-  $("top3-btn").disabled = false;
-  renderQueue(done);
-}
-
-function renderQueue(finished = null) {
-  const q = state.queue || finished;
-  const el = $("queue");
-  el.hidden = !q;
-  if (!q) return;
-  el.innerHTML = `<p class="queue-head"><strong>Diagnosing the top ${q.length} in view</strong>, one at a time (about two minutes each)
-    ${finished ? `<button type="button" class="link-btn" id="queue-close">Close</button>` : ""}</p>
-    <ol>${q.map((it) => `<li><button type="button" class="link" data-open="${it.zone.zone_id}" data-run="${it.runId || ""}">${esc(it.zone.name)}</button>
-      <span class="muted">${it.zone.zone_type === "opportunity" ? "opportunity" : "gap zone"} · ${esc(it.status)}${it.run?.result?.headline && !AG.running(it.run) ? `: ${esc(AG.plain(it.run.result.headline))}` : ""}</span>
-      ${it.status === "running" && it.run ? AG.progressHTML(it.run) : ""}</li>`).join("")}</ol>`;
-  el.querySelectorAll("[data-open]").forEach((b) => b.addEventListener("click", () => openZone(b.dataset.open, b.dataset.run || null)));
-  if ($("queue-close")) $("queue-close").addEventListener("click", () => { $("queue").hidden = true; });
-}
-$("top3-btn").addEventListener("click", diagnoseTop3);
-
-/* ---------- priority summary of what is listed ---------- */
-
-function summarySection(kind, sec) {
-  const lines = String(sec.body_markdown || "").split("\n");
-  const prose = AG.markdown(lines.filter((l) => !/\[[ZO]\d{5}\]/.test(l)).join("\n"));
-  const items = sec.zone_rows.map((z) => {
-    const opp = kind === "opportunity";
-    const tags = opp ? (z.reasons || []).map((r) => REASON_TAGS[r]) : [REASON_TAGS[mainReason(z)[0]]];
-    const n = mainReason(z)[1];
-    return `<li class="prio-item"><button type="button" class="prio-open" data-zone="${z.zone_id}">
-      <span class="prio-top"><strong>${esc(z.name)}</strong>${tags.map((t) => `<span class="cause-tag">${esc(t)}</span>`).join("")}</span>
-      <span class="prio-people">${fmt(n, 0)} of ${fmt(z.people, 0)} people</span>
-      <span class="muted prio-meta">${esc(z.zone_id)} · ${esc(z.council)} · ${fmt(z.tests, 0)} test${z.tests === 1 ? "" : "s"}${opp && z.limited_data ? " · limited data" : ""}${z.diagnosis ? ` · agents: ${esc(AG.plain(z.diagnosis))}` : ""}</span>
-    </button></li>`;
-  }).join("");
-  return `<h3 class="rp-h">${kind === "gap" ? "Gap zones" : "Improvement opportunities"}</h3>${prose}<ol class="prio">${items}</ol>`;
-}
-
-async function prioritySummary() {
-  closeZone();
-  const zones = listedZones();
-  const gapIds = zones.filter((z) => z.zone_type === "gap").map((z) => z.zone_id).slice(0, 40);
-  const oppIds = zones.filter((z) => z.zone_type === "opportunity").map((z) => z.zone_id).slice(0, 60);
-  const label = state.pick === "view" ? "the current map view" : state.pick === "uk" ? "the UK (top 40 gap zones)" : scopeName(state.pick);
-  state.panel = "summary";
-  $("panel").hidden = false;
-  setCollapsed(false);
-  setHeader("Priority summary", `${esc(label)} · ${gapIds.length} gap zones, ${oppIds.length} opportunities listed`, false);
-  $("panel-body").innerHTML = `<p class="muted">The Advisor is summarising what is listed, using any agent diagnoses in Meterless…</p>`;
-  try {
-    const r = await AG.post("/api/council/summary", { scope: state.scope, label, weights: weightParam(), opp_weights: oppWeightParam(),
-      gap_ids: gapIds, opportunity_ids: oppIds });
-    if (state.panel !== "summary") return;
-    const secs = Object.entries(r.sections);
-    setHeader("Priority summary", `${esc(label)} · ${secs.map(([k, s]) => `${s.zones.length} ${k === "gap" ? "gap zones" : "opportunities"}`).join(", ")}`
-      + (r.guard.length ? ` · ${r.guard.length} guard correction${r.guard.length > 1 ? "s" : ""}` : ""), false);
-    $("panel-body").innerHTML = `<div class="summary-panel">${secs.map(([k, s]) => summarySection(k, s)).join("")}
-      <div class="rp-actions"><button type="button" class="secondary" id="summary-download">Download .md</button></div>
-      <p class="muted rp-foot">Written by the Advisor agent from the listed zones; numbers are checked against the zone data by code.
-      The lists are built from that data. Scores rank need, not certainty.</p></div>`;
-    const md = `# ${r.title}\n\n${r.body_markdown}\n`;
-    $("summary-download").addEventListener("click", () => AG.download(`priority-summary-${state.scope.replace(/\W+/g, "-")}.md`, md));
-    $("panel-body").querySelectorAll(".prio-open").forEach((b) => b.addEventListener("click", () => openZone(b.dataset.zone)));
-  } catch (e) {
-    $("panel-body").innerHTML = `<p class="error">${esc(e.message)}</p>`;
-  }
-}
-$("summary-btn").addEventListener("click", prioritySummary);
 
 /* ---------- open / close a zone; fit and reset view ---------- */
 
@@ -778,11 +624,10 @@ function fitZone(withCandidate = false) {
     { padding: { top: 110, bottom: 150, left: 150, right: wide && !$("panel").classList.contains("collapsed") ? 500 : 50 }, maxZoom: 12, duration: 900 });
 }
 
-async function openZone(zoneId, runId = null, diagnose = false) {
+async function openZone(zoneId) {
   if (!state.zone && !state.prevView) state.prevView = { center: map.getCenter(), zoom: map.getZoom() };
   state.zone = zoneId;
   state.panel = "zone";
-  state.run = state.runId = null;
   state.detail = null;
   state.fix = { cand: null, chosen: false, mode: "today", showAll: false, hover: null };
   syncUrl();
@@ -793,7 +638,7 @@ async function openZone(zoneId, runId = null, diagnose = false) {
   setHeader(row ? row.name : zoneId, `${kindWord} · ${row ? `${esc(row.council)} · ` : ""}${zoneId}`);
   $("panel").hidden = false;
   setCollapsed(false);
-  view.reset();
+  renderZone();
   try {
     const d = await getJSON(`/api/council/zones/${zoneId}?weights=${encodeURIComponent(isOpp(zoneId) ? oppWeightParam() : weightParam())}`);
     if (state.zone !== zoneId) return;
@@ -801,14 +646,12 @@ async function openZone(zoneId, runId = null, diagnose = false) {
     const z = d.zone;
     const rk = d.ranks[state.scope] || d.ranks.uk;
     setHeader(z.name, `${kindWord} · ${z.zone_id} · ${esc(z.council)}${rk ? ` · #${rk.rank} of ${rk.of} in ${esc(scopeName(state.scope in d.ranks ? state.scope : "uk"))}` : ""}`);
-    view.render();
+    renderZone();
     $("panel-body").scrollTop = 0;
     $("reset-view").hidden = !state.prevView;
     fitZone();
     renderLegend();
     render();
-    if (runId) attachZoneRun(runId);
-    else if (diagnose) diagnoseZone();
   } catch (e) {
     $("panel-body").innerHTML = `<p class="error">Could not load the zone: ${esc(e.message)}</p>`;
   }
@@ -818,7 +661,6 @@ function closeZone() {
   state.zone = null;
   state.panel = null;
   state.detail = null;
-  state.run = state.runId = null;
   $("panel").hidden = true;
   $("fix-switch").hidden = true;
   document.querySelectorAll("tr.selected").forEach((tr) => tr.classList.remove("selected"));
@@ -849,7 +691,6 @@ function syncUrl() {
   if (state.pick !== "view") p.set("area", state.pick);
   if (state.show !== "both") p.set("show", state.show);
   if (state.zone) p.set("zone", state.zone);
-  if (state.zone && state.runId) p.set("run", state.runId);
   history.replaceState(null, "", `/council${p.toString() ? `?${p}` : ""}`);
 }
 
@@ -877,7 +718,7 @@ map.on("load", async () => {
     if (params.get("lat") && params.get("lon")) map.jumpTo({ center: [+params.get("lon"), +params.get("lat")], zoom: +(params.get("zoom") || 10) });
     else if (c?.bbox && !params.get("zone")) map.fitBounds([[c.bbox[0], c.bbox[1]], [c.bbox[2], c.bbox[3]]], { padding: 40, maxZoom: 11, duration: 0 });
     await loadView();
-    if (params.get("zone")) openZone(params.get("zone"), params.get("run"));
+    if (params.get("zone")) openZone(params.get("zone"));
   } catch (e) {
     $("list-summary").innerHTML = `<span class="error">${esc(e.message)}</span>`;
   }

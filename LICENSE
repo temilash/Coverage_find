@@ -20,7 +20,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-This licence covers the project's own code only. Data, the vendored Meterless engines and other third-party
-components keep their own licences: see THIRD_PARTY.md. The committed data extracts (sample_data/) and recorded
-examples (examples/) are derived from Ookla open data (CC BY-NC-SA 4.0) and others, so they are for
-non-commercial use.
+This licence covers the project's own code only. Data and other third-party components keep their own
+licences: see THIRD_PARTY.md. The committed data extracts (sample_data/) are derived from Ookla open data
+(CC BY-NC-SA 4.0) and others, so they are for non-commercial use.

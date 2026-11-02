@@ -1,4 +1,4 @@
-"""Gap zones, priority scoring and siting rules (synthetic data, no Zetaris or DEM files)."""
+"""Gap zones, priority scoring and siting rules (synthetic data, no database or DEM files)."""
 
 import h3
 import numpy as np

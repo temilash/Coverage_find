@@ -1,6 +1,6 @@
 """Phase B: mast sites from OpenCelliD + OpenStreetMap, and mast figures per H3 cell.
 
-    python scripts/download/opencellid.py   # needs OPENCELLID_TOKEN
+    python scripts/download/opencellid.py   # optional: needs a free OpenCelliD token (OPENCELLID_TOKEN)
     python scripts/download/osm.py          # Geofabrik GB + Ireland extracts
     python scripts/process/build_masts.py [--force]
 
@@ -15,6 +15,8 @@ Writes to data/processed/:
   masts_meta.json      inputs and counts
 
 List-like columns are comma-separated strings, which every SQL engine can read.
+Without OpenCelliD files the sites come from OpenStreetMap and the Ofcom register only: far fewer
+sites, and more of them with no known operator (the build says so and records it in the manifest).
 """
 
 from __future__ import annotations
@@ -69,9 +71,15 @@ def osm_sites(force: bool) -> pd.DataFrame:
 
 def build(force: bool) -> None:
     files = sorted(OCID_DIR.glob("*.csv.gz"))
-    if not files:
-        sys.exit(f"No OpenCelliD files in {OCID_DIR}; run scripts/download/opencellid.py (needs OPENCELLID_TOKEN)")
-    radio_cells, counts = read_cells(files, pd.read_csv(REFERENCE), pd.read_csv(GROUPS))
+    if files:
+        radio_cells, counts = read_cells(files, pd.read_csv(REFERENCE), pd.read_csv(GROUPS))
+    else:
+        print(f"  OpenCelliD: no files in {OCID_DIR}, so sites come from OpenStreetMap and the Ofcom register only "
+              "(far fewer sites). To add them: scripts/download/opencellid.py with a free OpenCelliD token.")
+        radio_cells = pd.DataFrame({c: pd.Series(dtype=t) for c, t in [
+            ("radio", str), ("mcc", int), ("net", int), ("label", str), ("operator_group", str),
+            ("lat", float), ("lon", float), ("samples", float)]})
+        counts = {"rows_read": 0, "other_radio": 0, "outside_bbox": 0, "excluded_networks": {}, "kept": 0}
     print(f"  OpenCelliD: {counts['rows_read']:,} radio cells read, {counts['kept']:,} kept "
           f"({counts['other_radio']:,} other radio types, {counts['outside_bbox']:,} outside the UK bbox)")
     for label, n in sorted(counts["excluded_networks"].items(), key=lambda kv: -kv[1]):
@@ -104,11 +112,12 @@ def build(force: bool) -> None:
         inputs[wtr_csv.name] = manifest.file_date(wtr_csv)
     META_OUT.write_text(json.dumps({"inputs_downloaded": inputs, "opencellid": counts,
                                     "opencellid_sites": len(ocid), "osm_masts": len(osm), "ofcom_wtr": wtr_stats}, indent=2))
-    ocid_date = max(v for k, v in inputs.items() if k.endswith(".csv.gz"))
+    ocid_date = max((v for k, v in inputs.items() if k.endswith(".csv.gz")), default=None)
     osm_date = max(v for k, v in inputs.items() if k.endswith(".osm.pbf"))
     manifest.record(
         "masts", title="Approximate mast sites: OpenCelliD + OpenStreetMap + Ofcom licence register",
-        data_period=f"OpenCelliD downloaded {ocid_date}; OpenStreetMap extract downloaded {osm_date}"
+        data_period=(f"OpenCelliD downloaded {ocid_date}" if ocid_date else "OpenCelliD not included")
+                    + f"; OpenStreetMap extract downloaded {osm_date}"
                     + (f"; Ofcom WTR downloaded {inputs['WTR.csv']}" if "WTR.csv" in inputs else ""),
         downloaded=inputs, outputs=[SITES_OUT, CELLS_OUT, OSM_OUT],
         refresh="OpenCelliD weekly; OpenStreetMap monthly; Ofcom WTR monthly",

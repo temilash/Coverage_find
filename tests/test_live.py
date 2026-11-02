@@ -133,14 +133,8 @@ def test_floods_not_covered_outside_england(offline):
 
 def test_floods_from_sample(offline):
     res = flood_warnings.near(*LANGDALE, "England")
-    assert res.status == "sample" and res.data["covered"] and res.data["via"] == "api"
+    assert res.status == "sample" and res.data["covered"]
     assert all(w["severity_level"] in (1, 2, 3) for w in res.data["warnings"])
-
-
-def test_zetaris_flood_sql_filters_by_distance():
-    sql = flood_warnings.zetaris_sql(54.445, -3.105)
-    assert "CD_LIVE_EA_FLOODS.floods" in sql and "CD_LIVE_EA_FLOODS.flood_areas" in sql
-    assert "severityLevel BETWEEN 1 AND 3" in sql and "<= 10" in sql
 
 
 def test_failure_falls_back_to_sample_after_one_retry(failing_network):

@@ -63,7 +63,7 @@ def parse_weights(text: str | None, kind: str = "gap") -> dict[str, float]:
 def raw_factors(zones: pd.DataFrame, kind: str = "gap") -> pd.DataFrame:
     """Raw factor values per zone (NaN = no data)."""
     raw = pd.DataFrame(index=zones.index)
-    # Zetaris returns an all-null column as None objects, not NaN: make every factor numeric first.
+    # An all-null column can come back as None objects, not NaN: make every factor numeric first.
     zones = zones.apply(lambda col: pd.to_numeric(col, errors="coerce") if col.name in NUMERIC else col)
     raw["people"] = zones.population
     if kind == "opportunity":

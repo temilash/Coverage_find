@@ -1,9 +1,9 @@
-"""Evidence bundle for one point: what the Investigator agent will call.
+"""Evidence bundle for one point: every statistic behind a diagnosis (diagnosis.py scores it).
 
     build_bundle(query="WC2N 5DU")  or  build_bundle(lat=54.445, lon=-3.105)
 
 1. Resolve the point (postcodes.io): its H3 r7 cell and the six neighbours.
-2. Zetaris (every query is logged in the bundle):
+2. DuckDB (data/db.py; every query is logged in the bundle):
      Q1  the cross-source cell query (cells, Ookla + history + neighbours, masts, Ofcom area,
          terrain, line of sight), the same one the explorer uses;
      Q2  approximate mast sites within 10 km of the exact point (CD_MASTS_SITES);
@@ -16,8 +16,7 @@
 4. Live: weather, Met Office warnings, EA flood warnings.
 
 The bundle also carries `operators` (per operator: nearest site, confirmed or inferred, line
-of sight from the exact point) and `likely_best` (a rule-based summary, not reviewed by
-agents). Every item: id, source, data_period, as_of, query_or_url, cell_ids, finding (one plain
+of sight from the exact point) and `likely_best` (a rule-based summary). Every item: id, source, data_period, as_of, query_or_url, cell_ids, finding (one plain
 sentence computed here, following the CLAUDE.md wording rules), value, sample_size,
 strength (strong / moderate / weak) and bears_on (causes it is relevant to). Numbers come
 from code and SQL; nothing here is written by an LLM.
@@ -33,11 +32,11 @@ from zoneinfo import ZoneInfo
 
 import h3
 
-from coverage_detective.config import H3_RES, SAMPLE_LOCATIONS, sample_mode
+from coverage_detective.config import H3_RES, SAMPLE_LOCATIONS, SAMPLES, sample_mode
 from coverage_detective.data import manifest, terrain
 from coverage_detective.data.masts import bearing_deg
 from coverage_detective.data.queries import cell_sql
-from coverage_detective.data.zetaris import QUERY_LOG, ZetarisError, query
+from coverage_detective.data.db import QUERY_LOG, DBError, query
 from coverage_detective.sources import flood_warnings, geocode, live, met_office_warnings, weather
 
 OPERATORS = ["EE", "O2", "Three", "Vodafone"]
@@ -77,13 +76,13 @@ class Bundle:
             "sample_size": sample_size, "strength": strength, "bears_on": bears_on,
         })
 
-    def zetaris(self, qid: str, sql: str, cached: bool = False) -> list[dict]:
+    def sql(self, qid: str, sql: str, cached: bool = False) -> list[dict]:
         if cached and qid in _CACHE:
             rows, entry = _CACHE[qid]
             self.queries.append({"id": qid, **entry, "cached": True})
             return rows
         try:
-            rows = query(sql, timeout=60)
+            rows = query(sql)
         finally:
             self.queries.append({"id": qid, **QUERY_LOG[-1], "cached": False})
         if cached:
@@ -169,10 +168,22 @@ WHERE distance_km <= {km}
 ORDER BY distance_km"""
 
 
-UK_CONTEXT_SQL = """SELECT percentile_approx(devices_per_1k_pop, 0.5) AS devices_per_1k_p50,
-  percentile_approx(devices_per_1k_pop, 0.9) AS devices_per_1k_p90,
-  percentile_approx(download_mbps, 0.5) AS download_mbps_p50, count(*) AS cells
+UK_CONTEXT_SQL = """SELECT quantile_cont(devices_per_1k_pop, 0.5) AS devices_per_1k_p50,
+  quantile_cont(devices_per_1k_pop, 0.9) AS devices_per_1k_p90,
+  quantile_cont(download_mbps, 0.5) AS download_mbps_p50, count(*) AS cells
 FROM CD_OOKLA_MOBILE.ookla_mobile_r7 WHERE tests >= 10"""
+
+
+def uk_context(b: Bundle) -> dict | None:
+    """UK medians (Q3). Sample mode answers from uk_context.json, saved from the full data, so the
+    medians match the full data rather than the small extracts."""
+    if not sample_mode():
+        rows = b.sql("Q3", UK_CONTEXT_SQL, cached=True)
+        return rows[0] if rows else None
+    rows = json.loads((SAMPLES / "db" / "uk_context.json").read_text())
+    b.queries.append({"id": "Q3", "sql": " ".join(UK_CONTEXT_SQL.split()), "duration_ms": 0, "rows": len(rows),
+                      "error": None, "cached": True, "note": "sample mode: saved from the full data"})
+    return rows[0] if rows else None
 
 
 def tiles_sql(lat: float, lon: float, quarter: str, km: float = SPEED_RADIUS_KM) -> str:
@@ -190,7 +201,7 @@ WHERE distance_km <= {km}
 ORDER BY distance_km"""
 
 
-# --- evidence from the stored tables (Zetaris) -----------------------------------------------
+# --- evidence from the stored tables (DuckDB) ------------------------------------------------
 
 def nearby_speed_item(b: Bundle, map_tiles: list[dict], quarter: str, cell_id: str) -> None:
     """Test-weighted speed over the Ookla tiles within 1 km of the exact point (all 2 km tiles go to the map)."""
@@ -199,7 +210,7 @@ def nearby_speed_item(b: Bundle, map_tiles: list[dict], quarter: str, cell_id: s
     map_value = [{k: t[k] for k in ("lat", "lon", "download_mbps", "tests", "distance_km")} for t in map_tiles]
     tests = sum(t["tests"] for t in tiles)
     if not tests:
-        b.add("speed_1km", "Ookla open data tiles (Zetaris CD_OOKLA_MOBILE_TILES)", meta, "zetaris:Q4", [cell_id],
+        b.add("speed_1km", "Ookla open data tiles (CD_OOKLA_MOBILE_TILES)", meta, "sql:Q4", [cell_id],
               f"No Ookla speed tests were recorded within {SPEED_RADIUS_KM:.0f} km of this point in {quarter}.",
               {"tiles": map_value, "quarter": quarter, "radius_km": SPEED_RADIUS_KM}, {"tests": 0, "tiles": 0}, "weak",
               ["insufficient_data"])
@@ -208,7 +219,7 @@ def nearby_speed_item(b: Bundle, map_tiles: list[dict], quarter: str, cell_id: s
     devices = sum(t["devices"] for t in tiles)
     strength = "strong" if tests >= STRONG_TESTS else "moderate" if tests >= WEAK_TESTS else "weak"
     few = " Few tests, so this is weak evidence." if tests < WEAK_TESTS else ""
-    b.add("speed_1km", "Ookla open data tiles (Zetaris CD_OOKLA_MOBILE_TILES)", meta, "zetaris:Q4",
+    b.add("speed_1km", "Ookla open data tiles (CD_OOKLA_MOBILE_TILES)", meta, "sql:Q4",
           sorted({cell_id, *(h3.latlng_to_cell(t["lat"], t["lon"], H3_RES) for t in tiles)}),
           f"Within {SPEED_RADIUS_KM:.0f} km of this point, mobile download speed averaged {mbps:.1f} Mbps in {quarter} "
           f"({tests} tests from {devices} devices on {len(tiles)} Ookla tiles of about 350-400 m).{few}",
@@ -219,13 +230,13 @@ def nearby_speed_item(b: Bundle, map_tiles: list[dict], quarter: str, cell_id: s
 
 
 def speed_items(b: Bundle, c: dict, cell_id: str, ring: list[str], ctx: dict | None) -> None:
-    meta, q = _meta("ookla_mobile_r7"), "zetaris:Q1"
+    meta, q = _meta("ookla_mobile_r7"), "sql:Q1"
     tests, quarter = c.get("tests"), c.get("quarter") or _meta("ookla_mobile_r7")["data_period"]
     if tests:
         strength = "strong" if tests >= STRONG_TESTS else "moderate" if tests >= WEAK_TESTS else "weak"
         few = f" Only {tests} test{'s' if tests != 1 else ''}, so this is weak evidence." if tests < WEAK_TESTS else ""
         uk = f" The UK median across cells with 10+ tests is {ctx['download_mbps_p50']:.0f} Mbps." if ctx else ""
-        b.add("speed_cell", "Ookla open data (Zetaris CD_OOKLA_MOBILE)", meta, q, [cell_id],
+        b.add("speed_cell", "Ookla open data (CD_OOKLA_MOBILE)", meta, q, [cell_id],
               f"Mobile download speed in this cell averaged {c['download_mbps']:.1f} Mbps in {quarter} "
               f"({tests} tests from {c['devices']} devices; upload {_num(c.get('upload_mbps'))} Mbps, latency "
               f"{_num(c.get('latency_ms'), 0)} ms).{uk}{few}",
@@ -235,20 +246,20 @@ def speed_items(b: Bundle, c: dict, cell_id: str, ring: list[str], ctx: dict | N
               {"tests": tests, "devices": c.get("devices")}, strength,
               ["distance_to_mast", "terrain_blocking", "capacity_strain", "insufficient_data"])
     else:
-        b.add("speed_cell", "Ookla open data (Zetaris CD_OOKLA_MOBILE)", meta, q, [cell_id],
+        b.add("speed_cell", "Ookla open data (CD_OOKLA_MOBILE)", meta, q, [cell_id],
               f"No Ookla speed tests were recorded in this cell in {quarter}, so there is no measured speed here.",
               None, {"tests": 0}, "weak", ["insufficient_data"])
 
     nt = c.get("neighbour_tests")
     if nt:
         n_cells = c.get("neighbour_cells_with_data")
-        b.add("speed_neighbours", "Ookla open data (Zetaris CD_OOKLA_MOBILE)", meta, q, ring,
+        b.add("speed_neighbours", "Ookla open data (CD_OOKLA_MOBILE)", meta, q, ring,
               f"The 6 neighbouring cells ({n_cells} with data) averaged {c['neighbour_download_mbps']:.1f} Mbps "
               f"from {nt} tests in {quarter}.",
               {"download_mbps": c["neighbour_download_mbps"], "cells_with_data": n_cells}, {"tests": nt},
               "moderate" if nt >= WEAK_TESTS else "weak", ["insufficient_data", "distance_to_mast"])
     else:
-        b.add("speed_neighbours", "Ookla open data (Zetaris CD_OOKLA_MOBILE)", meta, q, ring,
+        b.add("speed_neighbours", "Ookla open data (CD_OOKLA_MOBILE)", meta, q, ring,
               f"None of the 6 neighbouring cells had Ookla speed tests in {quarter}.", None, {"tests": 0}, "weak",
               ["insufficient_data"])
 
@@ -257,7 +268,7 @@ def speed_items(b: Bundle, c: dict, cell_id: str, ring: list[str], ctx: dict | N
         pct = c["download_change_pct"]
         direction = "fell" if pct < 0 else "rose"
         weak = tests < WEAK_TESTS or quarters < 3
-        b.add("speed_trend", "Ookla open data (Zetaris CD_OOKLA_MOBILE_HISTORY)", _meta("ookla_mobile_history_r7"), q,
+        b.add("speed_trend", "Ookla open data (CD_OOKLA_MOBILE_HISTORY)", _meta("ookla_mobile_history_r7"), q,
               [cell_id],
               f"Download speed here {direction} {abs(pct):.0f}% over {quarters} quarters, from "
               f"{c['download_mbps_oldest']:.1f} to {c['download_mbps']:.1f} Mbps"
@@ -269,7 +280,7 @@ def speed_items(b: Bundle, c: dict, cell_id: str, ring: list[str], ctx: dict | N
     per_head = c.get("devices_per_1k_pop")
     if tests and per_head is not None and ctx:
         high = per_head >= ctx["devices_per_1k_p90"]
-        b.add("usage_per_head", "Ookla open data (Zetaris CD_OOKLA_MOBILE)", meta, "zetaris:Q1, zetaris:Q3", [cell_id],
+        b.add("usage_per_head", "Ookla open data (CD_OOKLA_MOBILE)", meta, "sql:Q1, sql:Q3", [cell_id],
               f"{per_head:.1f} devices per 1,000 residents ran speed tests here in {quarter}, against a UK median of "
               f"{ctx['devices_per_1k_p50']:.1f} (90th percentile {ctx['devices_per_1k_p90']:.1f})"
               + (": unusually high, which can point to visitors or heavy use." if high else "."),
@@ -283,7 +294,7 @@ def ofcom_item(b: Bundle, c: dict, cell_id: str) -> None:
     if not c.get("pcon_name"):
         return
     when = _month(c.get("ofcom_data_date"))
-    b.add("ofcom_area", "Ofcom Connected Nations (Zetaris CD_OFCOM_AREA)", _meta("ofcom_area_r7"), "zetaris:Q1",
+    b.add("ofcom_area", "Ofcom Connected Nations (CD_OFCOM_AREA)", _meta("ofcom_area_r7"), "sql:Q1",
           [cell_id],
           f"In {c['pcon_name']}, {c['g4_geo_out_0']:.1f}% of land has no outdoor 4G from any operator and "
           f"{c['g4_geo_out_1']:.1f}% from only one (Ofcom Connected Nations, {when}). This is a predicted figure "
@@ -300,7 +311,7 @@ def terrain_item(b: Bundle, c: dict, cell_id: str) -> None:
     rng = c["elevation_range_m"]
     hilly = "hilly ground, where terrain can block signal" if rng >= 150 else \
         "rolling ground" if rng >= 50 else "fairly flat ground"
-    b.add("terrain_cell", "Copernicus DEM GLO-30 (Zetaris CD_TERRAIN)", _meta("terrain_r7"), "zetaris:Q1", [cell_id],
+    b.add("terrain_cell", "Copernicus DEM GLO-30 (CD_TERRAIN)", _meta("terrain_r7"), "sql:Q1", [cell_id],
           f"Ground in this cell ranges over {rng:.0f} m (mean elevation {c['elevation_mean_m']:.0f} m): {hilly}.",
           {"elevation_range_m": rng, "elevation_mean_m": c["elevation_mean_m"]}, {"dem_samples": 343}, "moderate",
           ["terrain_blocking"])
@@ -309,8 +320,8 @@ def terrain_item(b: Bundle, c: dict, cell_id: str) -> None:
 # --- mast sites around the exact point -------------------------------------------------------
 
 def site_items(b: Bundle, sites: list[dict], lat: float, lon: float, cell_id: str) -> None:
-    meta, q = _meta("masts_sites"), "zetaris:Q2"
-    src = "Approximate mast sites (Zetaris CD_MASTS_SITES)"
+    meta, q = _meta("masts_sites"), "sql:Q2"
+    src = "Approximate mast sites (CD_MASTS_SITES)"
     if not sites:
         b.add("nearest_site", src, meta, q, [cell_id],
               f"No approximate mast sites were found within {SITE_RADIUS_KM:.0f} km. This is weak evidence: "
@@ -370,8 +381,8 @@ def los_class(los: dict) -> str:
 
 
 def no_site_item(b: Bundle, op: str, sites: list[dict], cell_id: str) -> None:
-    b.add(f"no_site_{op.lower()}", "Approximate mast sites (Zetaris CD_MASTS_SITES)", _meta("masts_sites"),
-          "zetaris:Q2", [cell_id],
+    b.add(f"no_site_{op.lower()}", "Approximate mast sites (CD_MASTS_SITES)", _meta("masts_sites"),
+          "sql:Q2", [cell_id],
           f"No approximate {op} mast site was found within {SITE_RADIUS_KM:.0f} km. This is weak evidence: "
           "crowd-sourced data is incomplete and many sites have unknown operators.",
           None, {"sites_within_10km": len(sites)}, "weak", ["distance_to_mast", "single_operator"])
@@ -411,7 +422,7 @@ def los_item(b: Bundle, s: dict, for_ops: list[str], lat: float, lon: float, cel
         strength = "moderate"
     key = item_id or "los_" + ("_".join(o.lower() for o in for_ops) or "nearest")
     b.add(key, "Line of sight over Copernicus DEM GLO-30 (computed)", meta,
-          f"terrain.line_of_sight from ({lat:.5f}, {lon:.5f}) to site {s['site_id']} (zetaris:Q2)",
+          f"terrain.line_of_sight from ({lat:.5f}, {lon:.5f}) to site {s['site_id']} (sql:Q2)",
           sorted({cell_id, h3.latlng_to_cell(s["lat"], s["lon"], H3_RES)}), sentence,
           {"site_id": s["site_id"], "operators_at_site": ops_here, "operators_confirmed": confirmed,
            "for_operators": for_ops, "los_class": los_class(los),
@@ -490,7 +501,7 @@ def likely_best(rows: list[dict]) -> dict:
         round(r["site"]["distance_km"], 1), r["status"] != "confirmed"))  # ties: confirmed operators first
     missing = [r["operator"] for r in rows if not r["site"]]
     gap = (f" No site identified in our data for {_join(missing)}." if missing else "")
-    base = {"reviewed_by_agents": False, "label": "Based on data, not yet reviewed by agents",
+    base = {"label": "Rule-based, from line of sight",
             "rule": "Operators ranked by line of sight from this point to their nearest identified site "
                     "(clear, then marginal, then blocked); clear lines by distance, obstructed ones by how "
                     "far the ground rises above the line."}
@@ -580,7 +591,7 @@ def live_items(b: Bundle, w: live.LiveResult, m: live.LiveResult, f: live.LiveRe
         else:
             finding = f"No flood alerts or warnings within {f.data['radius_km']} km."
         b.add("flood_warnings", "Environment Agency flood monitoring", f.to_dict(), f.url, [cell_id],
-              finding + _tag(f), {"warnings": fs, "via": f.data["via"]}, {"warnings": len(fs)},
+              finding + _tag(f), {"warnings": fs}, {"warnings": len(fs)},
               _live_strength(f, "moderate"), ["active_incident"])
     else:
         b.errors.append(f"flood_warnings: {f.error}")
@@ -627,7 +638,7 @@ def build_bundle(query_text: str | None = None, lat: float | None = None, lon: f
                                      "country", "lat", "lon")},
           None, "weak" if approx else "strong", [])
 
-    # Live sources run while Zetaris answers.
+    # Live sources run while DuckDB answers.
     with ThreadPoolExecutor(max_workers=3) as pool:
         fw = pool.submit(weather.forecast, lat, lon)
         fm = pool.submit(met_office_warnings.for_place, point, lat, lon)
@@ -637,18 +648,17 @@ def build_bundle(query_text: str | None = None, lat: float | None = None, lon: f
         quarter = _meta("ookla_mobile_r7")["data_period"]
         try:
             sql, _ = cell_sql(cell_id)
-            rows = b.zetaris("Q1", sql)
+            rows = b.sql("Q1", sql)
             cell = rows[0] if rows else None
             if cell is None:
                 b.errors.append(f"cell {cell_id} is not in the UK grid")
-            sites = b.zetaris("Q2", sites_sql(lat, lon))
+            sites = b.sql("Q2", sites_sql(lat, lon))
             for s in sites:
                 s["has_microwave_backhaul"] = _bool(s["has_microwave_backhaul"])
-            ctx_rows = b.zetaris("Q3", UK_CONTEXT_SQL, cached=True)
-            ctx = ctx_rows[0] if ctx_rows else None
-            tiles = b.zetaris("Q4", tiles_sql(lat, lon, quarter, TILE_MAP_RADIUS_KM))
-        except ZetarisError as e:
-            b.errors.append(f"Zetaris: {e}")
+            ctx = uk_context(b)
+            tiles = b.sql("Q4", tiles_sql(lat, lon, quarter, TILE_MAP_RADIUS_KM))
+        except DBError as e:
+            b.errors.append(f"query failed: {e}")
 
         if tiles is not None:
             nearby_speed_item(b, tiles, quarter, cell_id)
@@ -668,6 +678,6 @@ def build_bundle(query_text: str | None = None, lat: float | None = None, lon: f
         "generated_at": live.now_iso(), "sample_mode": sample_mode(),
         "items": b.items, "operators": operators, "likely_best": likely_best(operators),
         "sites": map_sites(sites),
-        "zetaris_queries": b.queries, "errors": b.errors, "limitations": LIMITATIONS,
+        "queries": b.queries, "errors": b.errors, "limitations": LIMITATIONS,
         "resident_check": "Check your address on Ofcom's mobile coverage checker: https://www.ofcom.org.uk/mobile-coverage-checker",
     }

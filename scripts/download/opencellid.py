@@ -2,9 +2,10 @@
 
     python scripts/download/opencellid.py
 
-Needs OPENCELLID_TOKEN in .env (free account at https://opencellid.org). Files land in
-data/raw/opencellid/<mcc>.csv.gz; existing files are skipped. Without a token this prints
-instructions and exits without failing. Licence: CC BY-SA 4.0.
+Optional: the only download that needs a key, a free OpenCelliD account token (OPENCELLID_TOKEN in
+.env). Files land in data/raw/opencellid/<mcc>.csv.gz; existing files are skipped. Without a token
+this prints instructions and exits without failing, and build_masts.py uses OpenStreetMap and the
+Ofcom register only. The app itself never needs a key. Licence: CC BY-SA 4.0.
 """
 
 from __future__ import annotations

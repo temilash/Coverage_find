@@ -330,7 +330,7 @@ function panelHTML(res) {
       <p class="status">${esc(statusSentence(c))}</p></section>
     <section><h3>Ofcom: the wider area</h3>${ofcom}</section>
     <section><h3>Data dates</h3><dl class="kv">${dates}</dl></section>
-    <details><summary>Data details: Zetaris query (${res.zetaris.duration_ms} ms)</summary><pre class="sql">${esc(res.zetaris.sql)}</pre></details>
+    <details><summary>Data details: SQL query (${res.query.duration_ms} ms, DuckDB)</summary><pre class="sql">${esc(res.query.sql)}</pre></details>
     <a class="diagnose go" href="/signal?lat=${state.point.lat.toFixed(5)}&lon=${state.point.lon.toFixed(5)}">Check an exact location here</a>
     <p class="diagnose-note">Opens My signal at ${state.point.exact ? "the point you clicked" : "the cell centre"}: speeds within 1 km,
       each network's nearest site and line of sight from that exact spot.</p>`;
@@ -353,7 +353,7 @@ async function selectCell(cellId, point = null) {
   render();
   const panel = $("panel");
   panel.hidden = false;
-  $("panel-body").innerHTML = `<p class="loading">Querying Zetaris…</p>`;
+  $("panel-body").innerHTML = `<p class="loading">Querying…</p>`;
   try {
     const res = await getJSON(`/api/cell/${cellId}`);
     if (state.selected === cellId) $("panel-body").innerHTML = panelHTML(res);

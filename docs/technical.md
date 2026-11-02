@@ -1,16 +1,8 @@
 # Technical reference
 
-The technical reference is now split by topic:
-
-- [setup.md](setup.md): full mode, Zetaris, Meterless Nightshift, Docker, the settings, the data build, development commands
-- [usage.md](usage.md): sample mode, the pages (Explore, My signal, Council view), `POST /run`, the evidence API, the
-  sample inputs and outputs, emails and letters
-- [agents.md](agents.md): the agent loop, the agents' roles, the code guard, traces and logs
-- [sponsors.md](sponsors.md): Zetaris, the Meterless engines (with their tests), Meterless Nightshift, NVIDIA
-  Nemotron, Cursor, pre-existing components
-- [data.md](data.md): data sources, licences, freshness, repository layout ([data_report.md](data_report.md) has
-  each Zetaris source's rows, query time and age)
-- [SUBMISSION.md](SUBMISSION.md): the HackOS submission text
-- [usl.md](usl.md): the unified semantic layer view over five Zetaris sources, with queries run through Zetaris
-- [data_quality.md](data_quality.md): a data quality rule on the Ookla sources, shown running, and the rules the agents rely on
-- [reflection.md](reflection.md): reflections on Zetaris and Meterless
+- [setup.md](setup.md): install, the data build, the DuckDB data layer, running, refreshing, Docker
+- [usage.md](usage.md): sample mode, the pages (My signal, Council view, Explore), the API, the evidence bundle
+- [data.md](data.md): data sources, licences, freshness, repository layout
+- [data_quality.md](data_quality.md): a data quality rule on the Ookla tables, shown running, and the rules that
+  handle cells with few or no tests
+- [data/README.md](../data/README.md): processing steps and row counts per source

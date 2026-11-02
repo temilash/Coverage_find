@@ -1,5 +1,5 @@
-/* My signal: evidence for one exact point from POST /api/evidence (computed in code), then the agents'
-   diagnosis on request (POST /api/diagnose, polled at GET /api/runs/{id}; rendering in agents.js). */
+/* My signal: evidence for one exact point and its rule-based diagnosis, both from POST /api/evidence (computed in
+   code: evidence.py, diagnosis.py), and the email that sends it (POST /api/email). */
 "use strict";
 
 const BASEMAP = "https://tiles.openfreemap.org/styles/positron";
@@ -24,8 +24,7 @@ const fmt = (v, d = 1) => (v === null || v === undefined || Number.isNaN(v) ? "�
 const rgb = (hex, a = 255) => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16), a];
 const speedColor = (v) => SPEED.colors[SPEED.breaks.filter((b) => v >= b).length];
 
-const state = { bundle: null, request: null, run: null, runId: null, email: null, emailTo: null,
-                recipients: null, recipientsFor: null, view: null };
+const state = { bundle: null, request: null, email: null, emailTo: null, recipients: null, recipientsFor: null };
 
 const map = new maplibregl.Map({ container: "map", style: BASEMAP, center: [-3.2, 54.6], zoom: 4.9, attributionControl: { compact: true } });
 map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
@@ -215,14 +214,7 @@ function panelHTML(b) {
       <a class="to-explore" href="/?cell=${esc(b.cell_id)}&lat=${p.lat.toFixed(5)}&lon=${p.lon.toFixed(5)}&zoom=11">See this area in Explore →</a>
     </div>
 
-    <section class="agents" id="agents">
-      <div class="agents-head"><h3>Why: the agents' diagnosis</h3>
-        <label class="aud">For <select id="audience" aria-label="Explain for">
-          <option value="resident">a resident</option><option value="council officer">a council officer</option>
-          <option value="operator">an operator</option></select></label></div>
-      <div id="ag-tabs"></div>
-      <div id="ag-body"></div>
-    </section>
+    ${diagnosisHTML(b)}
 
     <section class="best card-inner">
       <div class="best-head"><h3>Likely best network here (rule-based)</h3><span class="tag">${esc(best.label)}</span></div>
@@ -247,40 +239,51 @@ function panelHTML(b) {
 
     <section><h3>Right now</h3>${evidenceLine(item("weather"))}${evidenceLine(item("met_office_warnings"))}${evidenceLine(item("flood_warnings"))}</section>
 
-    <section><h3>What you can do now</h3>
-      <p class="status"><a href="https://www.ofcom.org.uk/mobile-coverage-checker" target="_blank" rel="noopener">Check your address on Ofcom's mobile coverage checker</a>
-      for each network's own prediction at your address.</p></section>
-
     <details><summary>All evidence (${b.items.length} items)</summary>
       ${others.map((i) => `<div class="ev"><p><span class="mono">${esc(i.id)}</span> ${esc(i.finding)}</p>
         <p class="meta">${strengthChip(i.strength)} ${esc(i.source)} · ${esc(i.data_period || "")} · ${esc(i.query_or_url)}
         ${i.bears_on.length ? `· bears on ${esc(i.bears_on.join(", "))}` : ""}</p></div>`).join("")}
     </details>
-    <details><summary>Zetaris queries (${b.zetaris_queries.length})</summary>
-      ${b.zetaris_queries.map((q) => `<p class="meta"><strong>${esc(q.id)}</strong> · ${q.rows} rows · ${q.duration_ms} ms${q.cached ? " (cached)" : ""}</p><pre class="sql">${esc(q.sql)}</pre>`).join("")}
+    <details><summary>Queries (${b.queries.length}, DuckDB)</summary>
+      ${b.queries.map((q) => `<p class="meta"><strong>${esc(q.id)}</strong> · ${q.rows} rows · ${q.duration_ms} ms${q.cached ? " (cached)" : ""}</p><pre class="sql">${esc(q.sql)}</pre>`).join("")}
     </details>
     <details><summary>Limitations</summary><ul class="limits">${b.limitations.map((l) => `<li>${esc(l)}</li>`).join("")}</ul></details>
     ${b.errors.length ? `<p class="error">Some sources failed: ${esc(b.errors.join("; "))}</p>` : ""}`;
 }
 
-/* ---------- agents: the shared tabbed run view (agents.js) inside the agents section ---------- */
+/* ---------- the diagnosis: causes scored by fixed rules (diagnosis.py) ---------- */
 
-function bestNetworkHTML(run) {
-  const bn = run.result?.best_network;
-  if (!bn || !bn.ranking?.length) return "";
-  const comp = (run.evidence || []).find((e) => e.evidence_id === "network_comparison");
-  if (comp && (comp.sample_size?.operators_with_site ?? 1) === 0) {  // nothing to rank: say so, do not name a network
-    return `<div class="rp-card"><p class="rp-label">Best network here</p><p class="fix-title">None can be ranked</p>
-      <p>No operator has a site identified in our data within 10 km, so we cannot say which network is best here.
-      Check the address on Ofcom's mobile coverage checker for each network's own prediction.</p></div>`;
-  }
-  const first = bn.ranking[0];
-  return `<div class="rp-card"><p class="rp-label">Best network here</p>
-    <p class="fix-title"><span class="op-swatch" style="background:${OP_STYLE[first.operator].color}"></span>${esc(first.operator)}
-      <span class="conf-word">${esc(first.confidence)} confidence</span></p>
-    <p>${AG.cite(bn.summary, run)}</p>
-    <ol class="net-rank">${bn.ranking.slice(1).map((n) => `<li><strong>${esc(n.operator)}</strong> <span class="conf-word">${esc(n.confidence)} confidence</span>
-      <span class="muted">${esc(AG.firstSentence(n.why))}</span></li>`).join("")}</ol></div>`;
+const linkify = (t) => esc(t).replace(/https?:\/\/[^\s<]+/g, (u) => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`);
+const scoreClass = (v) => (v >= 0.6 ? "c-likely" : v >= 0.4 ? "c-possible" : "c-unlikely");
+
+function citedList(ids, word) {
+  return ids.map((i) => `<li>${word ? `<em>${word}</em> ` : ""}<span class="mono">${esc(i)}</span> ${esc(item(i)?.finding || "")}</li>`).join("");
+}
+
+function causeHTML(c) {
+  const n = c.evidence_ids.length + c.contradicting_ids.length;
+  return `<li class="why-item">
+    <div class="why-head"><strong>${esc(c.label)}</strong></div>
+    <div class="cbar" title="Rule score from 0 to 1: how strongly the data points to this cause, not a probability">
+      <div class="conf-track"><div class="conf-fill ${scoreClass(c.score)}" style="width:${Math.round(c.score * 100)}%"></div></div>
+      <span class="conf-num">${c.score.toFixed(2)}</span></div>
+    <p>${esc(c.explanation)}${c.weak_only ? ` <span class="muted">Supported by weak evidence only.</span>` : ""}</p>
+    <details class="more-block"><summary>Evidence (${n})</summary>
+      <ul class="plain-list muted">${citedList(c.evidence_ids)}${citedList(c.contradicting_ids, "against:")}</ul></details></li>`;
+}
+
+function diagnosisHTML(b) {
+  const d = b.diagnosis;
+  return `<section class="diag" id="diag">
+    <h3>Why: likely causes</h3>
+    <p class="rp-headline">${esc(d.headline)}</p>
+    ${d.causes.length ? `<ul class="why">${d.causes.map(causeHTML).join("")}</ul>` : ""}
+    ${d.ruled_out.length ? `<h4 class="rp-h4">Ruled out</h4><ul class="ruled">${d.ruled_out.map((r) =>
+      `<li><strong>${esc(r.cause.replace("_", " "))}</strong> <span class="muted">${esc(r.reason)}</span></li>`).join("")}</ul>` : ""}
+    <p class="footnote">${esc(d.method)}</p>
+    <h3 class="rp-h">What to do</h3><ul class="actions">${d.actions.map((a) => `<li>${linkify(a)}</li>`).join("")}</ul>
+    <div id="send">${sendHTML()}</div>
+  </section>`;
 }
 
 /* ---------- sending the diagnosis: the resident's council, or a network ---------- */
@@ -323,8 +326,7 @@ function emailCard(e) {
     </div>
     <p class="footnote">${canMail ? "This app does not send anything: the button opens your own email app with the message filled in."
       : emailRoute ? "This app does not send anything, and this message is too long to hand to a mail app after editing: Copy message has all of it."
-      : "This app does not send anything: copy the message into their form yourself."}
-      ${d.guard?.length ? `The guard corrected ${d.guard.length} claim${d.guard.length > 1 ? "s" : ""} in the draft.` : ""}</p>
+      : "This app does not send anything: copy the message into their form yourself."}</p>
     ${d.truncated && canMail ? `<p class="footnote warn-text">This message is longer than a mail link can carry, so the button
       opens your email app with the start and the sign-off. Copy message has all of it.</p>` : ""}
   </div>`;
@@ -336,38 +338,37 @@ function sendHTML() {
   const opts = recipientOptions()
     .map(([v, t]) => `<option value="${esc(v)}" ${chosen === v ? "selected" : ""}>${esc(t)}</option>`).join("");
   return `<h3 class="rp-h">Send this diagnosis</h3>
-    <p class="muted">To your council, which can act on a local gap, or to a network to complain about its service here.</p>
+    <p class="muted">To your council, which can act on a local gap, or to a network to complain about its service here.
+      The letter is a fixed template filled from the diagnosis and its evidence.</p>
     <div class="letter-controls">
       <label>To <select id="email-to">${opts}</select></label>
       <input id="email-name" type="text" maxlength="80" placeholder="Your name (optional)" value="${esc(e?.sentBy || "")}">
       <button type="button" id="draft-email" ${e?.busy ? "disabled" : ""}>${e?.data ? "Write again" : "Write the email"}</button>
     </div>
-    ${e?.busy ? `<p class="muted">The letter writer is drafting for ${esc(e.to)} from the reviewed diagnosis…</p>` : ""}
+    ${e?.busy ? `<p class="muted">Preparing the email for ${esc(e.to)}…</p>` : ""}
     ${e?.error ? `<p class="error">${esc(e.error)}</p>` : ""}
     ${e?.data ? emailCard(e) : ""}`;
 }
 
-function afterWhyHTML(run) {
-  const r = run.result || {};
-  return `${(r.actions || []).length ? `<h3 class="rp-h">What to do</h3><ul class="actions">${r.actions.map((a) => `<li>${AG.cite(a.text, run)}</li>`).join("")}</ul>` : ""}
-    ${(r.limitations || []).filter(Boolean).length ? `<details class="more-block"><summary>Limitations</summary><ul class="plain-list muted">${r.limitations.filter(Boolean).map((l) => `<li>${esc(l)}</li>`).join("")}</ul></details>` : ""}
-    ${sendHTML()}
-    <div class="rp-actions"><button type="button" class="secondary" id="diagnose">Diagnose again</button></div>`;
+function renderSend() {
+  if (!$("send")) return;
+  $("send").innerHTML = sendHTML();
+  bindSend();
 }
 
-function idleHTML() {
-  return `<p class="muted">An Investigator, Diagnostician and Critic work through this evidence in rounds (up to 3): the Critic can
-    send them back for more checks. Takes one to three minutes.</p>
-    <div class="agent-buttons"><button type="button" class="primary" id="diagnose">Diagnose with agents</button></div>`;
+function download(name, text) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], { type: "text/markdown" }));
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
-function bindAgentButtons() {
-  const d = $("diagnose");
-  if (d) { d.addEventListener("click", diagnose); d.disabled = AG.running(state.run); }
+function bindSend() {
   if ($("email-to")) $("email-to").addEventListener("change", (e) => {
     state.emailTo = e.target.value;
     state.email = null;
-    state.view.render();
+    renderSend();
   });
   if ($("email-name")) $("email-name").addEventListener("input", (e) => { if (state.email) state.email.sentBy = e.target.value; });
   if ($("draft-email")) $("draft-email").addEventListener("click", draftEmail);
@@ -385,7 +386,7 @@ function bindAgentButtons() {
   if ($("email-download")) {
     $("email-download").addEventListener("click", () => {
       const { subject, text, data } = state.email;
-      AG.download(data.filename, `To: ${data.to || data.contact.name}\nSubject: ${subject}\n\n${text}\n`);
+      download(data.filename, `To: ${data.to || data.contact.name}\nSubject: ${subject}\n\n${text}\n`);
     });
   }
 }
@@ -423,46 +424,7 @@ async function loadRecipients() {
   } catch {
     state.recipients = null;
   }
-  if (state.view) state.view.render();
-}
-
-function makeView() {
-  state.view = AG.runView($("ag-tabs"), $("ag-body"), {
-    idle: idleHTML, afterHeadline: bestNetworkHTML, afterWhy: afterWhyHTML, onRender: bindAgentButtons,
-    scroller: () => $("panel"),
-    scrollTop: () => $("panel").scrollTop + $("agents").getBoundingClientRect().top - $("panel").getBoundingClientRect().top - 8,
-  });
-  loadRecipients();
-}
-
-function renderRun(run) {
-  state.run = run;
-  state.view.setRun(run);
-}
-
-async function attachRun(runId) {
-  state.runId = runId;
-  const p = new URLSearchParams(location.search);
-  p.set("run", runId);
-  history.replaceState(null, "", `/signal?${p}`);
-  try {
-    await AG.poll(runId, renderRun, () => state.runId === runId);
-  } catch (e) {
-    $("ag-body").innerHTML = `<p class="error">Could not follow the run: ${esc(e.message)}</p>`;
-  }
-}
-
-async function diagnose() {
-  const p = state.bundle.point;
-  $("diagnose").disabled = true;
-  state.email = null;
-  try {
-    const r = await AG.post("/api/diagnose", { lat: p.lat, lon: p.lon, audience: $("audience").value });
-    await attachRun(r.run_id);
-  } catch (e) {
-    $("ag-body").insertAdjacentHTML("afterbegin", `<p class="error">Could not start the agents: ${esc(e.message)}</p>`);
-    $("diagnose").disabled = false;
-  }
+  renderSend();
 }
 
 async function draftEmail() {
@@ -470,14 +432,18 @@ async function draftEmail() {
   state.emailTo = to;
   const sentBy = ($("email-name")?.value || "").trim();
   state.email = { to, sentBy, busy: true, data: null, error: null };
-  state.view.render();
+  renderSend();
+  const p = state.bundle.point;
   try {
-    const d = await AG.post(`/api/runs/${state.runId}/email`, { to, sent_by: sentBy });
+    const r = await fetch("/api/email", { method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ lat: p.lat, lon: p.lon, to, sent_by: sentBy }) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(typeof d.detail === "string" ? d.detail : JSON.stringify(d.detail));
     state.email = { to, sentBy, data: d, subject: d.subject, text: d.body_text, dirty: false };
   } catch (e) {
     state.email = { to, sentBy, data: null, error: e.message };
   }
-  state.view.render();
+  renderSend();
 }
 
 /* ---------- panel collapse ---------- */
@@ -495,10 +461,10 @@ $("panel-collapse").addEventListener("click", () => {
 
 async function check(request) {
   state.request = request;
-  state.run = state.runId = state.email = null;
+  state.email = null;
   state.recipients = state.recipientsFor = null;
   const panel = $("panel");
-  panel.innerHTML = `<p class="loading">Gathering evidence for this point (Zetaris queries, line of sight, live sources)…</p>`;
+  panel.innerHTML = `<p class="loading">Gathering evidence for this point (DuckDB queries, line of sight, live sources)…</p>`;
   const qs = request.query ? `?q=${encodeURIComponent(request.query)}` : `?lat=${request.lat.toFixed(5)}&lon=${request.lon.toFixed(5)}`;
   history.replaceState(null, "", `/signal${qs}`);
   try {
@@ -509,8 +475,8 @@ async function check(request) {
     state.bundle = body;
     panel.innerHTML = panelHTML(body);
     panel.scrollTop = 0;
-    makeView();
-    if (request.run) attachRun(request.run);
+    bindSend();
+    loadRecipients();
     $("map-hint").hidden = true;
     renderLegend();
     render();
@@ -535,7 +501,6 @@ $("search").addEventListener("submit", (ev) => {
 map.on("load", () => {
   render();  // deck.gl's onClick receives every map click, with or without a picked object
   const params = new URLSearchParams(location.search);
-  const run = params.get("run") || undefined;
-  if (params.get("q")) { $("search-input").value = params.get("q"); check({ query: params.get("q"), run }); }
-  else if (params.get("lat") && params.get("lon")) check({ lat: +params.get("lat"), lon: +params.get("lon"), run });
+  if (params.get("q")) { $("search-input").value = params.get("q"); check({ query: params.get("q") }); }
+  else if (params.get("lat") && params.get("lon")) check({ lat: +params.get("lat"), lon: +params.get("lon") });
 });

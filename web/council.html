@@ -32,7 +32,7 @@
           autocomplete="off" placeholder="Search a council or nation">
         <ul id="area-list" class="combo-list" role="listbox" hidden></ul>
       </div>
-      <p class="area-help">Pick an area, then select a zone to ask the agents why and what to fix.</p>
+      <p class="area-help">Pick an area, then select a zone to see its figures and a suggested fix.</p>
     </div>
     <div class="seg" id="show-seg" role="radiogroup" aria-label="Show">
       <button type="button" role="radio" data-show="gaps">Gaps</button>
@@ -60,12 +60,7 @@
       </div>
       <div class="list-bar">
         <p class="list-summary" id="list-summary">Loading zones…</p>
-        <div class="list-actions">
-          <button type="button" id="summary-btn" class="link-btn">Priority summary (agents)</button>
-          <button type="button" id="top3-btn" class="link-btn">Diagnose the top 3 in view</button>
-        </div>
       </div>
-      <div id="queue" class="queue" hidden></div>
       <div class="table-wrap" id="list"></div>
     </section>
     <div class="council-map-wrap">
@@ -84,7 +79,6 @@
             <div class="rp-title"><h2 id="rp-title"></h2><p class="rp-sub" id="rp-sub"></p></div>
             <button type="button" class="panel-close" id="panel-close" aria-label="Close">×</button>
           </div>
-          <div id="rp-tabs"></div>
         </header>
         <div class="rp-body" id="panel-body"></div>
       </aside>
@@ -99,7 +93,6 @@
   <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/h3-js@4.5.0/dist/h3-js.umd.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/deck.gl@9.4.0/dist.min.js"></script>
-  <script src="agents.js"></script>
   <script src="council.js"></script>
 </body>
 </html>

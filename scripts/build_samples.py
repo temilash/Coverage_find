@@ -1,10 +1,10 @@
-"""Extracts for sample mode (python run.py --sample): small copies of every Zetaris source and DEM crops
-around the example places and zones, so the agents run with no Zetaris, no live calls and no LLM key.
+"""Extracts for sample mode (python run.py --sample): small copies of every table and DEM crops around
+the example places and zones, so the app and the tests run offline without the full data.
 
     python scripts/build_samples.py
 
-Reads data/processed/*.parquet (the files Zetaris serves) and data/raw/dem/; writes
-sample_data/zetaris/<table>.parquet + extract.json (tables, boxes, row counts), uk_context.json (the
+Reads data/processed/*.parquet and data/raw/dem/; writes
+sample_data/db/<table>.parquet + extract.json (tables, boxes, row counts), uk_context.json (the
 UK-wide medians, from the full data) and sample_data/dem/<box>.tif (int16, deflate, native 30 m).
 Boxes: 12 km around each sample place (sites within 10 km and line of sight to them), and the zone's
 cells + 16 km for each example zone (candidate high points within 6.5 km, reach 8 km). Zone tables
@@ -25,7 +25,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from coverage_detective.config import CELLS_PATH, PROCESSED, RAW, SAMPLE_LOCATIONS, SAMPLES  # noqa: E402
 
-OUT = SAMPLES / "zetaris"
+OUT = SAMPLES / "db"
 DEM_OUT = SAMPLES / "dem"
 POINT_KM = 12.0
 ZONE_KM = 16.0

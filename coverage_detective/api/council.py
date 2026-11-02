@@ -10,7 +10,7 @@
 Two zone types: gap zones (Z00001; poorly served cells, planning/zones.py) and improvement opportunities
 (O00001; cells with a measurable weakness, planning/opportunities.py). scope: uk | nation:<name> |
 la:<local authority code>. weights / opp_weights: e.g. people:0.4,severity:0.3 (see planning/scoring.py).
-All data comes through Zetaris (CD_GAP_ZONES, CD_GAP_ZONE_CELLS, CD_OPP_ZONES, CD_OPP_ZONE_CELLS, CD_CELLS,
+All data comes from DuckDB (CD_GAP_ZONES, CD_GAP_ZONE_CELLS, CD_OPP_ZONES, CD_OPP_ZONE_CELLS, CD_CELLS,
 CD_MASTS_SITES, CD_OFCOM_AREA); every query is listed in the response.
 """
 
@@ -29,7 +29,7 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import Response
 
 from coverage_detective import config
-from coverage_detective.data.zetaris import QUERY_LOG, ZetarisError, explain, query
+from coverage_detective.data.db import QUERY_LOG, DBError, query
 from coverage_detective.planning import scoring, siting
 from coverage_detective.planning.opportunities import REASON_LABELS, REASONS
 
@@ -61,9 +61,9 @@ def _kind(kind: str) -> str:
 
 def _q(sql: str, log: list) -> list[dict]:
     try:
-        rows = query(sql, timeout=60)
-    except ZetarisError as e:
-        raise HTTPException(502, f"Zetaris query failed: {explain(e)}") from e
+        rows = query(sql)
+    except DBError as e:
+        raise HTTPException(502, f"Query failed: {e}") from e
     finally:
         log.append({k: QUERY_LOG[-1][k] for k in ("sql", "duration_ms", "rows", "error")})
     return rows
@@ -86,7 +86,7 @@ def scope_filter(scope: str, table: str = "") -> str:
         return "1 = 1"
     p = f"{table}." if table else ""
     kind, _, value = scope.partition(":")
-    return f"{p}nation = '{value}'" if kind == "nation" else f"array_contains(split({p}la_codes, ','), '{value}')"
+    return f"{p}nation = '{value}'" if kind == "nation" else f"list_contains(string_split({p}la_codes, ','), '{value}')"
 
 
 def _zones(scope: str, log: list, kind: str = "gap") -> pd.DataFrame:
@@ -228,7 +228,7 @@ def view(bbox: str | None = None, zoom: float = Query(5.0, ge=0, le=24), scope: 
         elif (note := view_note("gap zones" if kind == "gap" else "improvement opportunities", len(rows), n_view, cap)):
             out["notes"].append(note)
     out["duration_ms"] = round((time.time() - t) * 1000)
-    out["zetaris_queries"] = log
+    out["queries"] = log
     return out
 
 
@@ -244,7 +244,7 @@ def scopes() -> dict:
 FROM CD_OFCOM_AREA.ofcom_area_r7 a JOIN CD_CELLS.cells_r7 c ON c.cell_id = a.cell_id
 WHERE a.laua_code IS NOT NULL GROUP BY a.laua_code, a.laua_name, c.nation""", log)
     zones = {k: _q(f"SELECT zone_id, nation, la_codes, population FROM {KINDS[k]['zones']}", log) for k in KINDS}
-    return {**picker_counts(las, zones["gap"], zones["opportunity"]), "zetaris_queries": log}
+    return {**picker_counts(las, zones["gap"], zones["opportunity"]), "queries": log}
 
 
 def picker_counts(las: list[dict], gaps: list[dict], opps: list[dict]) -> dict:
@@ -295,7 +295,7 @@ def zones(scope: str = "uk", weights: str | None = None, limit: int = Query(500,
     rows = [_zone_row(r, cells.get(r["zone_id"], []), kind) for r in scored.head(limit).to_dict("records")]
     return {"scope": scope, "type": kind, "zones_in_scope": len(scored),
             "people_in_zones": round(float(scored.population.sum())) if len(scored) else 0,
-            "scoring": summary, "zones": rows, "duration_ms": round((time.time() - t) * 1000), "zetaris_queries": log}
+            "scoring": summary, "zones": rows, "duration_ms": round((time.time() - t) * 1000), "queries": log}
 
 
 @router.get("/zones.csv")
@@ -327,7 +327,7 @@ def zones_csv(scope: str = "uk", weights: str | None = None, type: str = Query("
 
 
 def _summary(z: dict, cells: list[dict]) -> list[str]:
-    """Plain sentences computed from the zone's numbers (the agents write the narrative)."""
+    """Plain sentences computed from the zone's numbers."""
     r = z["people_by_reason"]
     out = [f"{z['people']:,} people in {z['cells']} H3 cells ({z['council']}, {z['nation']})."]
     if z["zone_type"] == "opportunity":
@@ -381,7 +381,7 @@ JOIN {KINDS[kind]['zones']} z ON z.zone_id = c.zone_id WHERE c.zone_id = '{zone_
     if not rows:
         raise HTTPException(404, f"No zone {zone_id}")
     return {"zone_id": zone_id, "zone_type": kind, "name": rows[0]["name"], "cell_ids": [r["cell_id"] for r in rows],
-            "zetaris_queries": log}
+            "queries": log}
 
 
 def _km(lat1, lon1, lat2, lon2) -> float:
@@ -442,4 +442,4 @@ WHERE lat BETWEEN {min(lats) - pad:.5f} AND {max(lats) + pad:.5f}
             "existing_all": [{"site_id": s["site_id"], "lat": s["lat"], "lon": s["lon"],
                               "operators": [o for o in str(s.get("operators") or "").split(",") if o]} for s in sites[:400]],
             **plan, "planning_ms": round((time.time() - planning_t) * 1000),
-            "duration_ms": round((time.time() - t) * 1000), "zetaris_queries": log}
+            "duration_ms": round((time.time() - t) * 1000), "queries": log}

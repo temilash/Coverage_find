@@ -1,4 +1,4 @@
-"""Candidate fixes for one gap zone or improvement opportunity (rule-based; the agents' candidate_sites tool).
+"""Candidate fixes for one gap zone or improvement opportunity (rule-based).
 
 suggest_opportunity_fix() does the same for improvement opportunities: add_operators, capacity_upgrade,
 a (small) new_site when no site is within 5 km, or gather_data; limited data adds "measure first".
@@ -92,7 +92,7 @@ def suggest_fix(zone: dict, sites_within_5km: int) -> dict:
         why.append(f"Only {_tests(zone['tests'])} in the zone.")
     return {"type": kind, "label": FIX_LABELS[kind], "why": why,
             "secondary": secondary, "secondary_label": FIX_LABELS.get(secondary),
-            "rule_based": True, "note": "Rule-based suggestion, not yet reviewed by agents."}
+            "rule_based": True, "note": "Rule-based suggestion from the zone data and the terrain model."}
 
 
 def suggest_opportunity_fix(zone: dict, sites_within_5km: int) -> dict:
@@ -125,7 +125,7 @@ def suggest_opportunity_fix(zone: dict, sites_within_5km: int) -> dict:
         why.append(f"Only {_tests(zone['tests'])} in the zone (limited data).")
     return {"type": kind, "label": FIX_LABELS[kind], "why": why,
             "secondary": secondary, "secondary_label": FIX_LABELS.get(secondary),
-            "rule_based": True, "note": "Rule-based suggestion for an improvement opportunity, not yet reviewed by agents."}
+            "rule_based": True, "note": "Rule-based suggestion for an improvement opportunity, from the zone data and the terrain model."}
 
 
 def high_points(zone_cells: list[dict], dem=None) -> list[dict]:

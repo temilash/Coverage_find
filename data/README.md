@@ -23,13 +23,12 @@ Raw files live in `data/raw/` and built files in `data/processed/`; both are git
 download date of each raw input, build time, refresh cadence, licence, and for each output
 file its row count, size and SHA-256. `scripts/refresh.py` uses it to decide what is due.
 
-## Zetaris sources
+## Tables (DuckDB)
 
-Each processed file is registered in Zetaris as its own source (a Lightning database with
-one table) by `scripts/zetaris/register_sources.py`, read from the read-only mount
-`/home/zetaris/customer-data/shared/coverage_detective/` (see the README).
+Each processed file is a DuckDB view in its own schema (`coverage_detective/data/db.py`), e.g.
+`CD_CELLS.cells_r7` reads `data/processed/cells_r7.parquet`. Nothing is registered ahead of time.
 
-| Zetaris source | Table | File | Rows |
+| Schema | Table | File | Rows |
 |---|---|---|---|
 | `CD_CELLS` | `cells_r7` | `cells_r7.parquet` | 56,592 |
 | `CD_OOKLA_MOBILE` | `ookla_mobile_r7` | `ookla_mobile_r7.parquet` | 23,412 |
@@ -46,7 +45,6 @@ one table) by `scripts/zetaris/register_sources.py`, read from the read-only mou
 | `CD_GAP_ZONE_CELLS` | `gap_zone_cells` | `gap_zone_cells.parquet` | 2,921 |
 | `CD_OPP_ZONES` | `opportunity_zones` | `opportunity_zones.parquet` | 1,816 |
 | `CD_OPP_ZONE_CELLS` | `opportunity_zone_cells` | `opportunity_zone_cells.parquet` | 8,832 |
-| `CD_LIVE_EA_FLOODS` | `floods`, `flood_areas` | REST (live EA API, see below) | 136 / 4,208 on 25 Oct 2026 |
 
 ## ONS Countries boundaries
 
@@ -108,7 +106,8 @@ Licence: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). File f
 (United Kingdom), downloaded with a free account token (`OPENCELLID_TOKEN`) from
 `https://opencellid.org/ocid/downloads?type=mcc&file=234.csv.gz`. OpenCelliD publishes no
 MCC 235 file ("FILE_NOT_FOUND"). The free file holds cells updated in roughly the last 18
-months (145,365 rows on 25 Oct 2026).
+months (145,365 rows on 25 Oct 2026). Optional: it is the only input that needs an account token, and
+without it `build_masts.py` builds the sites from OpenStreetMap and the Ofcom register only.
 
 Each row is one radio cell (a sector on one technology) with a position **estimated from
 crowd-sourced measurements**, not the surveyed mast position. Coverage of the database is
@@ -188,7 +187,7 @@ positions, so one shared mast often appears as several sites.
 Caveat: OSM-only sites include broadcast-only towers, so `masts_osm_only_within_5km` is
 reported separately and evidence should say which source a mast comes from.
 
-List columns are comma-separated strings so any SQL engine (Zetaris) can read them.
+List columns are comma-separated strings so any SQL engine can read them.
 
 ## UK network codes (MCC/MNC → operator)
 
@@ -374,13 +373,13 @@ the gap zones (derived data).
 
 ## Sample-mode extracts (committed)
 
-`scripts/build_samples.py` → `sample_data/zetaris/` (one Parquet per Zetaris source, cut to 12 km around each
+`scripts/build_samples.py` → `sample_data/db/` (one Parquet per table, cut to 12 km around each
 sample place and the example zones' cells + 16 km; `extract.json` lists tables, boxes and row counts;
 `uk_context.json` holds the UK-wide medians from the full data) and `sample_data/dem/` (Copernicus GLO-30
 crops for the same boxes, int16 metres, native 30 m, deflate). 27 Oct 2026: 2,245 cells, 6,869 mast sites,
 20,891 Ookla tiles, 2 gap zones and 4 opportunities; 9.6 MB in all, 8.2 MB of it DEM. Same sources and
 licences as the full tables above (derived extracts; the DEM crops carry the Copernicus attribution). Used
-only by sample mode (`python run.py --sample`, DuckDB in place of Zetaris) and the tests. Live samples for
+only by sample mode (`python run.py --sample`: the same DuckDB views over the extracts) and the tests. Live samples for
 the five sample places (`sample_data/<source>/`) were refreshed on 27 Oct 2026.
 
 ## Live sources (phase D)
@@ -426,11 +425,6 @@ warnings, which makes them useful test cases.
   | none | otherwise |
 
   Only `severe` can support the `weather` cause.
-- Zetaris: not registered. A Zetaris REST table can take per-query parameters
-  (`${lat}` in the endpoint, filled by the hint `/*+ apiParam('lat', '54.4') */`), but
-  creating the table calls the endpoint as written to infer its schema, and Open-Meteo's
-  firewall rejects a literal `${` with HTTP 403 (so does the EA gateway). A fixed-location
-  table would be no use for arbitrary points, so weather stays Python-only.
 
 ### Met Office severe weather warnings
 
@@ -458,13 +452,3 @@ warnings, which makes them useful test cases.
   (flood alert); level 4 (no longer in force) is dropped. Outside England the answer is
   `not_covered` with the message "not covered (England only for now)", never an empty
   list. SEPA, Natural Resources Wales and DfI Rivers are not wired in yet.
-- Zetaris: registered as the live REST source `CD_LIVE_EA_FLOODS` (`register_ea_floods`),
-  with tables `floods` (`/id/floods`: every alert and warning in England now) and
-  `flood_areas` (`/id/floodAreas?_limit=10000`: each area's centre). Every query calls the
-  EA API; `flood_warnings.zetaris_sql()` explodes both, joins on the area id and keeps
-  areas whose centre is within 10 km (about 0.7 s). EA's own `dist` filter measures to
-  the area polygon, which the REST tables do not have, so the centre-based query misses
-  long river and coast areas (Great Langdale, 25 Oct 2026: the API found 2 alerts whose
-  centres are 11 and 13 km away; Zetaris found 0). So for a point the explorer and
-  `/api/live` use the API by default; the Zetaris path (`flood_via=zetaris`) suits
-  England-wide or regional queries, e.g. joining warnings in force to cells.
