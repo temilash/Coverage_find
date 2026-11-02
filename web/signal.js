@@ -264,9 +264,9 @@ function causeHTML(c) {
   const n = c.evidence_ids.length + c.contradicting_ids.length;
   return `<li class="why-item">
     <div class="why-head"><strong>${esc(c.label)}</strong></div>
-    <div class="cbar" title="Rule score from 0 to 1: how strongly the data points to this cause, not a probability">
+    <div class="cbar" title="Rule-based score from 0 to 1: how strongly the data points to this cause, not a probability">
       <div class="conf-track"><div class="conf-fill ${scoreClass(c.score)}" style="width:${Math.round(c.score * 100)}%"></div></div>
-      <span class="conf-num">${c.score.toFixed(2)}</span></div>
+      <span class="conf-num">rule score ${c.score.toFixed(2)}</span></div>
     <p>${esc(c.explanation)}${c.weak_only ? ` <span class="muted">Supported by weak evidence only.</span>` : ""}</p>
     <details class="more-block"><summary>Evidence (${n})</summary>
       <ul class="plain-list muted">${citedList(c.evidence_ids)}${citedList(c.contradicting_ids, "against:")}</ul></details></li>`;
@@ -277,6 +277,8 @@ function diagnosisHTML(b) {
   return `<section class="diag" id="diag">
     <h3>Why: likely causes</h3>
     <p class="rp-headline">${esc(d.headline)}</p>
+    <p class="muted">Each cause has a rule-based score from 0 to 1, set by fixed rules from the evidence below. It shows
+      how strongly the data points to the cause; it is not a probability.</p>
     ${d.causes.length ? `<ul class="why">${d.causes.map(causeHTML).join("")}</ul>` : ""}
     ${d.ruled_out.length ? `<h4 class="rp-h4">Ruled out</h4><ul class="ruled">${d.ruled_out.map((r) =>
       `<li><strong>${esc(r.cause.replace("_", " "))}</strong> <span class="muted">${esc(r.reason)}</span></li>`).join("")}</ul>` : ""}

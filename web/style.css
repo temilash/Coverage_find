@@ -402,7 +402,7 @@ button.link { font: 600 var(--fs-s) var(--sans); color: var(--accent); backgroun
 .conf-fill.c-likely { background: var(--accent); }
 .conf-fill.c-possible { background: #60A5FA; }
 .conf-fill.c-unlikely { background: #CBD5E1; }
-.conf-num { font: 600 var(--fs-s) var(--mono); min-width: 48px; text-align: right; }
+.conf-num { font: 600 var(--fs-s) var(--mono); min-width: 48px; text-align: right; white-space: nowrap; }
 
 
 
