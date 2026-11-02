@@ -15,13 +15,17 @@ a PR into `master`.
 
 1. **Phase 1, done**: sponsor tech and the LLM agent loop removed; DuckDB is the only SQL engine; the diagnosis is
    rule-based (`diagnosis.py`); outreach letters are a fixed template.
-2. **Phase 2**: radio propagation model (`coverage_detective/radio/`), terrain only: RSRP per approximate mast
-   site to H3 cells; an established model (ITU-R P.1812 if a maintained open implementation exists, else
-   free space / Hata plus knife-edge diffraction); all assumptions in one config (band per operator, EIRP,
-   antenna height 25 m, receiver height 1.5 m but any height, omni pattern); an optional clutter / building
-   height input per point or cell (default none; LiDAR comes later, do not download it); pilot region Surrey
-   with the region as a CLI option; Parquet in DuckDB; API; `docs/radio_validation.md` vs Ookla; unit tests;
-   the UI labels it a model estimate.
+2. **Phase 2, done (awaiting review)**: radio propagation model (`coverage_detective/radio/`, docs/radio_model.md).
+   No P.1812 implementation met the bar (Py1812's licence is a custom notice, not MIT/BSD/Apache; pycraf is GPL),
+   so: max(free space, Hata / COST-231 Hata) + excess Bullington diffraction over the DEM profile. All
+   assumptions in `radio/config.py` (800 MHz per operator, RS EIRP, 25 m antennas unless Ofcom's register
+   says otherwise, receiver 1.5 m but any height, omni); optional obstruction input (`profile.CellClutter`,
+   default none). `scripts/radio/build_coverage.py --region` (estimates and times first; stops over 1 h
+   without `--yes`); built for Surrey (pilot) and Westmorland and Furness. `CD_RADIO.radio_coverage_r7`,
+   `/api/radio/*`, map layer "Model estimate: best signal". `scripts/radio/validate.py` ->
+   docs/radio_validation.md: the model does not yet rank cells by Ookla speed better than distance alone.
+   Building heights from LiDAR: Step 1 report done (`coverage_detective/lidar/catalog.py`), Steps 2-6 wait
+   for the go-ahead.
 3. **Phase 3**: multi-scale map: H3 roll-ups (res 5 to 9), PMTiles (vector hexagons and sites, raster coverage)
    as static files, zoom-dependent UI with a placeholder building layer, incremental rebuilds,
    `docs/hosting.md` (static hosting, Zenodo archive; never upload anything).
@@ -95,8 +99,15 @@ coverage_detective/     package
   api/app.py            FastAPI: explorer API, /api/live, /api/los, POST /api/evidence; pages /, /signal, /council
   api/diagnosis.py      POST /api/diagnose, GET /api/outreach/recipients, POST /api/email
   api/council.py        /api/council/* (view, scopes, ranked zones, CSV, zone detail with fixes)
+  api/radio.py          /api/radio/* (model estimates per cell and operator, always labelled as such)
+  radio/                config.py (every assumption), profile.py (ragged DEM profiles, obstruction input),
+                        propagation.py (free space, Hata, knife edge, Bullington), coverage.py (pairs, best server)
+  lidar/catalog.py      open LiDAR tile catalogue and sizes per nation (no downloads)
+  data/regions.py       named regions: UK, nation, local authority, county (Surrey), bbox
 scripts/download/       fetch raw data into data/raw/<source>/ (skip existing files)
 scripts/process/        build data/processed/*.parquet (+ build_web_layers.py for the map)
+scripts/radio/          build_coverage.py (per region), validate.py (docs/radio_validation.md)
+scripts/lidar/          size_check.py (LiDAR download sizes per nation and region)
 scripts/check_data.py   data report (docs/data_report.md); --phases for detailed checks
 scripts/refresh.py      refresh stored sources on their cadence
 scripts/build_samples.py sample extracts (sample_data/db/, sample_data/dem/)

@@ -165,10 +165,13 @@ function renderLegend() {
   const s = l.scale;
   const items = s.colors.map((c, i) => `<li><span class="swatch" style="background:${c}"></span>${esc(s.labels[i])}</li>`).join("");
   const weakNote = ["download_mbps", "trend_pct"].includes(l.name) ? `<p class="note">Faded cells: weak evidence (fewer than 10 tests).</p>` : "";
+  const modelNote = l.model_estimate ? `<p class="model-note">Model estimate, not a measurement. Terrain only (no buildings), crowd-sourced mast sites, ` +
+    `assumed antennas; only the regions modelled so far. Check an address on <a href="https://www.ofcom.org.uk/mobile-coverage-checker" target="_blank" rel="noopener">Ofcom's coverage checker</a>.</p>` : "";
   $("legend").innerHTML = `
     <h2>${esc(l.title)}</h2>
     <p class="units">${esc([l.units, l.data_period].filter(Boolean).join(" · "))}</p>
-    <ul>${items}<li><span class="swatch" style="background:rgba(168,174,184,0.35)"></span>No data</li></ul>
+    ${modelNote}
+    <ul>${items}<li><span class="swatch" style="background:rgba(168,174,184,0.35)"></span>${l.model_estimate ? "Not modelled" : "No data"}</li></ul>
     ${weakNote}
     <ul class="masts">
       <li><span class="dot" style="background:${SOURCE_COLORS.opencellid}"></span>Mast site · OpenCelliD</li>
@@ -221,7 +224,8 @@ function onHover(info) {
     const entry = state.values.get(info.object);
     const v = entry ? entry[0] : null;
     html = `<strong>${esc(state.layer.title)}:</strong> ${v === null ? "no data" : esc(typeof v === "number" ? fmt(v, 2) : v)} ${v === null ? "" : esc(state.layer.units || "")}` +
-      (entry && entry[1] ? `<br><span>weak evidence</span>` : "");
+      (entry && entry[1] ? `<br><span>weak evidence</span>` : "") +
+      (state.layer.model_estimate && entry ? `<br><span>model estimate, not a measurement</span>` : "");
   } else if (info.layer.id === "masts") {
     const m = info.object;
     html = `<strong>Approximate mast site</strong><br>Sources: ${esc(m.sources)}` +

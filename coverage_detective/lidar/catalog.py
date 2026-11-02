@@ -27,9 +27,10 @@ from dataclasses import dataclass
 import httpx
 from pyproj import Transformer
 from shapely.geometry import Polygon, box, shape
-from shapely.ops import transform, unary_union
+from shapely.ops import transform
 
 from coverage_detective.config import RAW, ROOT
+from coverage_detective.data.regions import nations, region  # noqa: F401 (used by scripts)
 from coverage_detective.sources.ofcom_wtr import GRID_LETTERS
 
 CACHE = ROOT / "data" / "cache" / "lidar"
@@ -125,34 +126,6 @@ def _letters(e100: int, n100: int) -> tuple[str, str]:
 
 def to_bng(geom_wgs84):
     return transform(_TO_BNG.transform, geom_wgs84)
-
-
-def nations() -> dict[str, object]:
-    """Nation polygons (WGS84) from the ONS countries file (data/raw/boundary/uk_countries.geojson)."""
-    gj = json.loads((RAW / "boundary" / "uk_countries.geojson").read_text())
-    out = {}
-    for f in gj["features"]:
-        name = next(v for k, v in f["properties"].items() if k.upper().startswith("CTRY") and k.upper().endswith("NM"))
-        out[name] = shape(f["geometry"])
-    return out
-
-
-def region(name: str | None = None, bbox: str | None = None):
-    """A region (WGS84): a nation, a local authority (ONS Dec 2024 names), "UK", or a bbox "w,s,e,n"."""
-    if bbox:
-        w, s, e, n = (float(v) for v in bbox.split(","))
-        return box(w, s, e, n), f"bbox {bbox}"
-    ns = nations()
-    if name in ns:
-        return ns[name], name
-    if name and name.upper() in ("UK", "UNITED KINGDOM"):
-        return unary_union(list(ns.values())), "United Kingdom"
-    gj = json.loads((RAW / "boundary" / "lad_2024.geojson").read_text())
-    for f in gj["features"]:
-        lad = next(v for k, v in f["properties"].items() if k.upper().startswith("LAD") and k.upper().endswith("NM"))
-        if lad.lower() == (name or "").lower():
-            return shape(f["geometry"]), lad
-    raise LookupError(f"no nation or local authority called {name!r} (or pass a bbox)")
 
 
 # ------------------------------------------------------------------ England

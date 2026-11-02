@@ -61,15 +61,16 @@ def layer_defs() -> list[dict]:
     los = _read("los_r7.parquet", ["cell_id", "los_class"])
     terr = _read("terrain_r7.parquet", ["cell_id", "elevation_range_m"])
     dep = _read("deprivation_r7.parquet", ["cell_id", "deprivation_decile_within_nation"])
+    radio = _read("radio_coverage_r7.parquet", ["cell_id", "best_rsrp_dbm"])
 
     defs = []
 
-    def add(name, title, description, units, scale, table, frame, column, weak=None, decimals=2):
+    def add(name, title, description, units, scale, table, frame, column, weak=None, decimals=2, model=False):
         if frame is None:
             return
         defs.append({
             "name": name, "title": title, "description": description, "units": units, "scale": scale,
-            "table": table,
+            "table": table, "model_estimate": model,
             "rows": lambda: _rows(frame.cell_id.to_numpy(), frame[column].to_numpy(),
                                   None if weak is None else weak(frame).to_numpy(), decimals),
         })
@@ -134,6 +135,15 @@ def layer_defs() -> list[dict]:
         {"type": "bins", "breaks": [3, 5, 7, 9], "colors": ["#9A3412", "#F59E0B", "#E5E7EB", "#93C5FD", "#1D4ED8"],
          "labels": ["1 – 2", "3 – 4", "5 – 6", "7 – 8", "9 – 10"]}, "deprivation_r7", dep,
         "deprivation_decile_within_nation", decimals=0)
+    add("rsrp_best_dbm", "Model estimate: best signal", "MODEL ESTIMATE, NOT A MEASUREMENT. Estimated 4G "
+        "signal strength (RSRP) at the cell centre from the strongest approximate mast site of any operator: "
+        "Hata / COST-231 Hata path loss plus terrain diffraction, 800 MHz, omni antennas, outdoors at 1.5 m. Only "
+        "the regions modelled so far (scripts/radio/build_coverage.py). Mast data is crowd-sourced and "
+        "incomplete; no buildings yet.", "dBm (RSRP)",
+        {"type": "bins", "breaks": [-110, -100, -90, -80],
+         "colors": ["#C2410C", "#F59E0B", "#FDE68A", "#93C5FD", "#1D4ED8"],
+         "labels": ["< -110 very weak", "-110 – -100 weak", "-100 – -90 fair", "-90 – -80 good", "-80 + strong"]},
+        "radio_coverage_r7", radio, "best_rsrp_dbm", decimals=0, model=True)
     return defs
 
 

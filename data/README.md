@@ -45,6 +45,7 @@ Each processed file is a DuckDB view in its own schema (`coverage_detective/data
 | `CD_GAP_ZONE_CELLS` | `gap_zone_cells` | `gap_zone_cells.parquet` | 2,921 |
 | `CD_OPP_ZONES` | `opportunity_zones` | `opportunity_zones.parquet` | 1,816 |
 | `CD_OPP_ZONE_CELLS` | `opportunity_zone_cells` | `opportunity_zone_cells.parquet` | 8,832 |
+| `CD_RADIO` | `radio_coverage_r7` | `radio_coverage_r7.parquet` | 1,183 (modelled regions only) |
 
 ## ONS Countries boundaries
 
@@ -370,6 +371,18 @@ the UK median, and devices per head >= UK 90th percentile or a 20% fall). Zones 
 "limited data". 26 Oct 2026 (UK median 102.7 Mbps): slow 4,293 cells, falling 1,357, few_operators
 3,656, capacity 947; 1,816 zones, 9.41 m people, 622 with limited data. Same sources and licences as
 the gap zones (derived data).
+
+## Radio model coverage (derived)
+
+`scripts/radio/build_coverage.py --region <name>` → `radio_coverage_r7.parquet` (plus `radio_config.json`, the
+assumptions used): estimated best-server RSRP per H3 r7 cell centre, overall and per operator, from every
+mast site with a known operator within 30 km, over the Copernicus DEM (`coverage_detective/radio/`,
+[docs/radio_model.md](../docs/radio_model.md)). Built per region; a rebuild replaces that region's cells. 2 Nov
+2026: Surrey (356 cells, 1.49 m site-cell pairs, 3.6 min) and Westmorland and Furness (827 cells, 0.66 m pairs,
+1.6 min). Model estimates, not measurements; derived from the mast sites (OpenCelliD CC BY-SA 4.0,
+OpenStreetMap ODbL, Ofcom WTR) and the DEM (Copernicus attribution). Validation against Ookla:
+[docs/radio_validation.md](../docs/radio_validation.md). Generated, so not in the sample extracts: in sample
+mode `/api/radio/*` answers that no results are built.
 
 ## Sample-mode extracts (committed)
 

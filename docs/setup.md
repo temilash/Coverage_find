@@ -39,6 +39,8 @@ About 5 GB of downloads and a few hours of processing for the whole UK. Two inpu
 .venv/bin/python scripts/process/build_terrain.py  # elevation and line of sight per cell
 .venv/bin/python scripts/process/build_places.py   # OSM place names (zone names)
 .venv/bin/python scripts/process/build_zones.py    # gap zones and improvement opportunities
+.venv/bin/python scripts/radio/build_coverage.py --region Surrey  # radio model estimates (~4 min; per region)
+.venv/bin/python scripts/radio/validate.py         # docs/radio_validation.md (model vs Ookla)
 .venv/bin/python scripts/process/build_web_layers.py # map layers for Explore (data/web/layers/)
 .venv/bin/python scripts/check_data.py             # the data report (docs/data_report.md)
 .venv/bin/python scripts/build_samples.py          # extracts for sample mode (sample_data/db, sample_data/dem)

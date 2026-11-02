@@ -155,6 +155,21 @@
         }
       }
     },
+    "radio_coverage": {
+      "title": "Radio model: estimated best-server RSRP per H3 cell (Hata / COST-231 Hata + Bullington diffraction)",
+      "data_period": "model hata-bullington-1; regions: Surrey, Westmorland and Furness",
+      "downloaded": {},
+      "built_at": "2026-11-02T17:00:51+00:00",
+      "refresh": "after the mast sites change",
+      "licence": "derived from OpenCelliD (CC BY-SA 4.0), OpenStreetMap (ODbL), Ofcom WTR and Copernicus DEM inputs",
+      "outputs": {
+        "radio_coverage_r7.parquet": {
+          "sha256": "386a6f4ff9fbb2a605a0c790ea79545b3a1f5c1e4b4de662f5371a1df4e58549",
+          "bytes": 131198,
+          "rows": 1183
+        }
+      }
+    },
     "terrain": {
       "title": "Copernicus DEM GLO-30: terrain per cell and line of sight to the nearest site",
       "data_period": "Copernicus DEM GLO-30 (2021 release; source data 2011-2015)",
@@ -245,5 +260,5 @@
       }
     }
   },
-  "updated_at": "2026-10-26T23:10:31+00:00"
+  "updated_at": "2026-11-02T17:00:51+00:00"
 }

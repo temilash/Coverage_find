@@ -16,6 +16,7 @@ Routes:
   POST /api/evidence           evidence bundle for {"query": postcode or place} or {"lat", "lon"}, with its
                                rule-based diagnosis
   POST /api/diagnose           the diagnosis alone (api/diagnosis.py; also the outreach email)
+  GET /api/radio/*             radio model estimates per cell and operator (api/radio.py)
   /                            the data explorer (web/index.html)
   /signal                      My signal: evidence for one exact point (web/signal.html)
   /council                     Council view: ranked gap zones (web/council.html; API in api/council.py)
@@ -39,6 +40,7 @@ from coverage_detective.config import H3_RES, ROOT, sample_mode
 from coverage_detective.api.diagnosis import PointRequest, bundle_for
 from coverage_detective.api.diagnosis import router as diagnosis_router
 from coverage_detective.api.council import router as council_router
+from coverage_detective.api.radio import router as radio_router
 from coverage_detective.data import db, manifest, terrain
 from coverage_detective.data.queries import cell_sql
 from coverage_detective.data.db import QUERY_LOG, DBError, query
@@ -53,6 +55,7 @@ MAX_TILE_BBOX_DEG2 = 0.6  # tiles only when zoomed in
 app = FastAPI(title="Coverage Detective data explorer")
 app.include_router(council_router)
 app.include_router(diagnosis_router)
+app.include_router(radio_router)
 
 
 # --- static data held in memory ------------------------------------------------------------

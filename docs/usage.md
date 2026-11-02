@@ -69,7 +69,9 @@ How zones are built (`scripts/process/build_zones.py`, rules in `planning/zones.
 
 The data itself, cell by cell (H3 resolution 7, about 5 km²): speeds, tests, trend, population, nearest site,
 operators within 5 km, operator data status, Ofcom figures, elevation and line of sight from the cell centre.
-Mast sites appear from zoom 10, Ookla tiles from zoom 12. Clicking a cell runs one cross-source query, shown with
+Mast sites appear from zoom 10, Ookla tiles from zoom 12. The layer "Model estimate: best signal"
+shows the radio model's estimated RSRP for the regions built so far, with a legend saying it is a model
+estimate, not a measurement ([radio_model.md](radio_model.md)). Clicking a cell runs one cross-source query, shown with
 its SQL. "Check an exact location here" opens My signal at that point.
 
 ## API
@@ -85,6 +87,9 @@ OpenAPI docs at `/docs`.
 | `GET /api/council/view?bbox=&zoom=&scope=&show=` | the zones on the map now |
 | `GET /api/council/zones?scope=&type=&weights=`, `/zones.csv` | ranked zones with each factor's contribution |
 | `GET /api/council/zones/{zone_id}` | one zone: cells, figures, fix, candidate sites |
+| `GET /api/radio/meta` | radio model: regions modelled, assumptions, RSRP classes (model estimates, not measurements) |
+| `GET /api/radio/cells?bbox=&operator=` | estimated RSRP per modelled cell in a bbox, best server or one operator |
+| `GET /api/radio/cell/{cell_id}` | one cell's estimate: best server and each operator (site, distance, diffraction) |
 | `GET /api/cell/{cell_id}` | everything about one H3 r7 cell, from one query |
 | `GET /api/los?lat=&lon=(&site_id=)` | line of sight from the exact point to a site (default the nearest) |
 | `GET /api/live?lat=&lon=` | weather, Met Office warnings, EA flood warnings |

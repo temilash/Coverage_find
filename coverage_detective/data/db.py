@@ -49,6 +49,7 @@ TABLES = [
     ("CD_GAP_ZONE_CELLS", "gap_zone_cells"),
     ("CD_OPP_ZONES", "opportunity_zones"),
     ("CD_OPP_ZONE_CELLS", "opportunity_zone_cells"),
+    ("CD_RADIO", "radio_coverage_r7"),
 ]
 
 
